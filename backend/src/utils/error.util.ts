@@ -1,4 +1,4 @@
-import { z, type ZodError } from "zod";
+import { type ZodError } from "zod";
 
 export class AppError extends Error {
   public status: number;
@@ -14,9 +14,14 @@ export class AppError extends Error {
 };
 
 export const parseZodError = (error: ZodError) => {
-  const { fieldErrors } = z.flattenError(error);
+  const errors: Record<string, string> = {};
 
-  return new AppError(400, "Validation failed.", fieldErrors);
+  for (const issue of error.issues) {
+    const field = issue.path.join(".");
+    if (!errors[field]) errors[field] = issue.message;
+  }
+
+  return new AppError(400, "Validation failed.", errors);
 };
 
 export interface DatabaseError extends Error {

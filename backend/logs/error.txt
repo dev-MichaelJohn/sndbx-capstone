@@ -1,0 +1,53 @@
+[2026-07-13 22:11:22:1122] [ERROR]: Validation failed. - Stack: AppError: Validation failed.
+    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:13:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:3)
+[2026-07-13 22:12:13:1213] [ERROR]: Validation failed. - Stack: AppError: Validation failed.
+    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:13:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:3)
+[2026-07-13 22:16:54:1654] [ERROR]: Validation failed. - Stack: AppError: Validation failed.
+    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:13:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:3)
+[2026-07-13 22:18:41:1841] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:11:48)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+[2026-07-13 22:19:04:194] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails",
+      "institutional_id"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:11:48)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
