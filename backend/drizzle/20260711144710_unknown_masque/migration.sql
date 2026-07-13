@@ -1,0 +1,1 @@
+DROP INDEX "uidx_active_otp_codes_email";
