@@ -1,3 +1,4 @@
+import { logger } from "@/utils/logger.util.js";
 import "dotenv/config";
 import z from "zod";
 
@@ -17,6 +18,11 @@ const EnvSchema = z.object({
     .min(32, "JWT_SECRET should be at least 32 characters long.")
     .nonempty("JWT_SECRET must not be an empty string.")
     .nonoptional("JWT_SECRET is required."),
+  REFRESH_SECRET: z.string("REFRESH_SECRET is invalid.")
+    .trim()
+    .min(32, "REFRESH_SECRET should be at least 32 characters long.")
+    .nonempty("REFRESH_SECRET must not be an empty string.")
+    .nonoptional("REFRESH_SECRET is required."),
   // Nodemailer config
   GMAIL_APP_USER: z.email("GMAIL_APP_USER is invalid.")
     .trim()
@@ -31,7 +37,7 @@ const EnvSchema = z.object({
 export type EnvType = z.infer<typeof EnvSchema>;
 
 const initializeEnv = () => {
-  console.log("🔃 Initializing environment variables...");
+  logger.info("🔃 Initializing environment variables...");
 
   const result = EnvSchema.safeParse(process.env);
 

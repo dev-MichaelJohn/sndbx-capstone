@@ -1,4 +1,4 @@
-import UserController from "@/controllers/user.service.js";
+import UserController from "@/controllers/user.controller.js";
 import { Router, type IRouter } from "express";
 
 const UserRouter: IRouter = Router();

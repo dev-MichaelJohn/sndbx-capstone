@@ -38,7 +38,7 @@ export const Accounts = pgTable("accounts", {
 export const OTPCodes = pgTable("otp_codes", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
-  code: varchar("code", { length: 6 }).notNull(),
+  code: varchar("code", { length: 8 }).notNull(),
   created_at: timestamp("created_at").notNull().defaultNow(),
   expires_at: timestamp("expires_at").notNull(),
 });

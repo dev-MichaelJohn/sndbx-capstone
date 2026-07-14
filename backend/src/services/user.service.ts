@@ -5,9 +5,26 @@ import bcrypt from "bcryptjs";
 import { AppError } from "@/utils/error.util.js";
 import db from "@/configs/db.config.js";
 
+/**
+* Handles user account creation, spanning the PersonalDetails, Accounts,
+* and AccountRoles tables as a single atomic operation.
+*/
 class userService {
   constructor() { }
 
+  /**
+   * Creates a new user account: inserts personal details, hashes the
+   * password and creates the account record, then maps the account to the
+   * given system role. All steps run in a single transaction — if any step
+   * fails, all prior inserts in this call are rolled back.
+   *
+   * @param credentials - login credentials (email/password), excluding `personal_details_id`
+   * @param personalDetails - the account holder's personal details
+   * @param role - the system role to assign to the new account
+   * @returns the created credentials, details, and role-mapping records
+   * @throws {AppError} 500 if the personal details or account record fails to create
+   * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
+   */
   async createUser(
     credentials: Omit<InferInsertModel<typeof Accounts>, "personal_details_id">,
     personalDetails: InferInsertModel<typeof PersonalDetails>,

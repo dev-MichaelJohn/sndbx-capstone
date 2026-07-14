@@ -1,53 +1,166 @@
-[2026-07-13 22:11:22:1122] [ERROR]: Validation failed. - Stack: AppError: Validation failed.
-    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:13:34)
+[2026-07-14 20:22:03:223] [ERROR]: Missing credentials - Stack: AppError: Missing credentials
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:37:30)
+    at allFailed (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:110:18)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:183:28)
+    at strategy.fail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:314:9)
+    at Strategy.authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-local@1.0.0/node_modules/passport-local/lib/strategy.js:75:17)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:378:16)
+    at authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:379:7)
+    at login (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:69:6)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+[2026-07-14 20:22:15:2215] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:46:25)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:29:20)
+[2026-07-14 20:22:20:2220] [ERROR]: Cannot read properties of undefined (reading 'otpService') - Stack: TypeError: Cannot read properties of undefined (reading 'otpService')
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:40:33)
+    at strategy.success (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:222:18)
+    at verified (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-local@1.0.0/node_modules/passport-local/lib/strategy.js:83:10)
+    at Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:30:12)
+[2026-07-14 20:24:41:2441] [ERROR]: FATAL SYSTEM ERROR: Failed to guarantee a Super Admin. System roles are already seeded.
+[2026-07-14 20:25:11:2511] [ERROR]: FATAL SYSTEM ERROR: Failed to guarantee a Super Admin. System roles are already seeded.
+[2026-07-14 20:26:59:2659] [ERROR]: FATAL SYSTEM ERROR: Roles seeding failed. System roles are already seeded.
+[2026-07-14 20:32:03:323] [ERROR]: FATAL SYSTEM ERROR: Roles validation failed. System roles are already seeded.
+[2026-07-14 20:32:39:3239] [ERROR]: FATAL SYSTEM ERROR: Roles validation failed. System roles are already seeded. undefined
+[2026-07-14 20:33:12:3312] [ERROR]: Cannot read properties of undefined (reading 'otpService') - Stack: TypeError: Cannot read properties of undefined (reading 'otpService')
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:52:36)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:3)
-[2026-07-13 22:12:13:1213] [ERROR]: Validation failed. - Stack: AppError: Validation failed.
-    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:13:34)
+[2026-07-14 20:33:20:3320] [ERROR]: Cannot read properties of undefined (reading 'otpService') - Stack: TypeError: Cannot read properties of undefined (reading 'otpService')
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:52:36)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:3)
-[2026-07-13 22:16:54:1654] [ERROR]: Validation failed. - Stack: AppError: Validation failed.
-    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:13:34)
+[2026-07-14 20:35:45:3545] [ERROR]: Cannot read properties of undefined (reading 'otpService') - Stack: TypeError: Cannot read properties of undefined (reading 'otpService')
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:52:36)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:3)
-[2026-07-13 22:18:41:1841] [ERROR]: Validation failed. - Stack: ZodError: [
+[2026-07-14 20:42:36:4236] [ERROR]: Validation failed. - Stack: AppError: Validation failed.
+    at CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:147:34)
+    at otpService.generateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/otp.service.ts:73:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:57:25)
+[2026-07-14 20:45:51:4551] [ERROR]: Invalid email or expired OTP. - Stack: AppError: Invalid email or expired OTP.
+    at authService.authenticateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:68:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:49:20)
+[2026-07-14 20:45:55:4555] [ERROR]: Account details not found. - Stack: AppError: Account details not found.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:99:37)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-07-14 20:46:56:4656] [ERROR]: Invalid email or expired OTP. - Stack: AppError: Invalid email or expired OTP.
+    at authService.authenticateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:68:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:49:20)
+[2026-07-14 20:47:53:4753] [ERROR]: Account details not found. - Stack: AppError: Account details not found.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:100:37)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-07-14 21:00:09:09] [ERROR]: Validation failed. - Stack: ZodError: [
   {
     "expected": "object",
     "code": "invalid_type",
     "path": [
-      "personalDetails"
+      "user"
     ],
     "message": "Invalid input: expected object, received undefined"
-  }
-]
-    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
-    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
-    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
-    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:11:48)
-    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:24)
-    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
-    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
-    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
-    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
-    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
-[2026-07-13 22:19:04:194] [ERROR]: Validation failed. - Stack: ZodError: [
+  },
   {
-    "expected": "string",
+    "expected": "date",
     "code": "invalid_type",
     "path": [
       "personalDetails",
-      "institutional_id"
+      "created_at"
     ],
-    "message": "Invalid input: expected string, received undefined"
+    "message": "Invalid input: expected date, received string"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received string"
   }
 ]
     at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
     at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
     at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
-    at userController.createUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.service.ts:11:48)
-    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/user.router.ts:7:24)
-    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
-    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
-    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
-    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
-    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at JwtStrategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:67:47)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:123:34
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:261:12
+    at getSecret (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:101:10)
+    at module.exports [as JwtVerifier] (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/verify_jwt.js:4:16)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:104:25
+[2026-07-14 21:01:09:19] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received string"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at JwtStrategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:67:47)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:123:34
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:261:12
+    at getSecret (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:101:10)
+    at module.exports [as JwtVerifier] (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/verify_jwt.js:4:16)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:104:25
+[2026-07-14 21:01:30:130] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received string"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at JwtStrategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:68:47)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:123:34
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:261:12
+    at getSecret (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/verify.js:101:10)
+    at module.exports [as JwtVerifier] (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/verify_jwt.js:4:16)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:104:25
