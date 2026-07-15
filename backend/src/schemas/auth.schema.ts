@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, pgTable, serial, timestamp, varchar, boolean, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, timestamp, varchar, boolean, uniqueIndex, pgEnum, index } from "drizzle-orm/pg-core";
 
 export const PersonalDetails = pgTable("personal_details", {
   id: serial("id").primaryKey(),
@@ -41,7 +41,9 @@ export const OTPCodes = pgTable("otp_codes", {
   code: varchar("code", { length: 8 }).notNull(),
   created_at: timestamp("created_at").notNull().defaultNow(),
   expires_at: timestamp("expires_at").notNull(),
-});
+}, (t) => [
+  uniqueIndex("uidx_otp_email").on(t.email),
+]);
 
 export const SystemRoles = pgEnum("system_role", ["SYS_ADMIN", "ADMIN", "SUPERVISOR", "FACULTY", "STUDENT"]);
 export const Roles = pgTable("roles", {
@@ -50,7 +52,10 @@ export const Roles = pgTable("roles", {
   description: varchar("description", { length: 128 }),
   created_at: timestamp("created_at").notNull().defaultNow(),
   deleted_at: timestamp("deleted_at"),
-});
+}, (t) => [
+  uniqueIndex("uidx_active_roles_system_role").on(t.system_role)
+    .where(sql`deleted_at IS NULL`),
+]);
 
 export const AccountRoles = pgTable("account_roles", {
   id: serial("id").primaryKey(),
@@ -63,6 +68,7 @@ export const AccountRoles = pgTable("account_roles", {
 }, (t) => [
   uniqueIndex("uidx_active_accountrole_account_role").on(t.account_id, t.role_id)
     .where(sql`deleted_at IS NULL`),
+  index("idx_account_roles_role_id").on(t.role_id),
 ]);
 
 export const RefreshToken = pgTable("refresh_tokens", {
@@ -74,4 +80,7 @@ export const RefreshToken = pgTable("refresh_tokens", {
   is_revoked: boolean("is_revoked").notNull().default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),
   expires_at: timestamp("expires_at").notNull(),
-});
+}, (t) => [
+  uniqueIndex("uidx_refresh_tokens_hash").on(t.token_hash),
+  index("idx_refresh_tokens_account_id").on(t.account_id),
+]);

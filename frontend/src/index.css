@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+  font-family: 'Outfit Variable', sans-serif;
+}
+
+@theme {
+  /* hsl (fallback color) */
+  --bg-dark: hsl(100 40% 87%);
+  --bg: hsl(100 67% 92%);
+  --bg-light: hsl(100 100% 97%);
+  --text: hsl(110 100% 2%);
+  --text-muted: hsl(97 40% 23%);
+  --highlight: hsl(100 100% 94%);
+  --border: hsl(99 21% 45%);
+  --border-muted: hsl(99 23% 57%);
+  --primary: hsl(95 61% 20%);
+  --secondary: hsl(282 34% 32%);
+  --danger: hsl(8 32% 41%);
+  --warning: hsl(51 46% 30%);
+  --success: hsl(150 37% 33%);
+  --info: hsl(217 34% 43%);
+  /* oklch */
+  --bg-dark: oklch(0.92 0.04 135);
+  --bg: oklch(0.96 0.04 135);
+  --bg-light: oklch(1 0.04 135);
+  --text: oklch(0.15 0.08 135);
+  --text-muted: oklch(0.4 0.08 135);
+  --highlight: oklch(1 0.08 135);
+  --border: oklch(0.6 0.08 135);
+  --border-muted: oklch(0.7 0.08 135);
+  --primary: oklch(0.4 0.1 135);
+  --secondary: oklch(0.4 0.1 315);
+  --danger: oklch(0.5 0.08 30);
+  --warning: oklch(0.5 0.08 100);
+  --success: oklch(0.5 0.08 160);
+  --info: oklch(0.5 0.08 260);
+
+  --shadow: 0px 2px 2px oklch(0 0 0 / 0.2), 0px 4px 4px oklch(0 0 0 / 0.1)
+}

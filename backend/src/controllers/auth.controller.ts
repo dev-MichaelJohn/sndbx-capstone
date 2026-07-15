@@ -1,5 +1,5 @@
 import { AccountRoles, Roles } from "@/schemas/auth.schema.js";
-import { GetRecord } from "@/services/db.service.js";
+import { GetRecord, GetRecords } from "@/services/db.service.js";
 import EmailService from "@/services/email.service.js";
 import OTPService from "@/services/otp.service.js";
 import TokenService from "@/services/token.service.js";
@@ -98,7 +98,7 @@ class authController {
         });
         if (!personalDetails) throw new AppError(404, "Account details not found.");
 
-        const role = await GetRecord<"AccountRoles", {
+        const systemRoles = await GetRecords<"AccountRoles", {
           system_role: "SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT",
         }>("AccountRoles", {
           where: (AccountRoles) => and(
@@ -111,9 +111,10 @@ class authController {
             system_role: Roles.system_role,
           }),
         });
-        if (!role) throw new AppError(403, "No role assigned to this account.");
+        if (!systemRoles) throw new AppError(403, "No role assigned to this account.");
 
-        const token = await this.tokenService.generateWebToken(user, personalDetails, role.system_role);
+        const roles = systemRoles.map(role => role.system_role);
+        const token = await this.tokenService.generateWebToken({ user, personalDetails, roles });
         const refreshToken = this.tokenService.generateRefreshToken(user);
 
         // TODO: attach the "remember-me" here
@@ -129,7 +130,7 @@ class authController {
             id: user?.id,
             email: user?.email,
             personalDetails: personalDetails,
-            role: role.system_role,
+            roles: roles,
           }
         });
         res.status(response.status).json(response);
@@ -174,7 +175,7 @@ class authController {
     });
     if (!personalDetails) throw new AppError(404, "Account details not found.");
 
-    const role = await GetRecord<"AccountRoles", {
+    const systemRoles = await GetRecords<"AccountRoles", {
       system_role: "SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT",
     }>("AccountRoles", {
       where: (AccountRoles) => and(
@@ -187,20 +188,22 @@ class authController {
         system_role: Roles.system_role,
       }),
     });
-    if (!role) throw new AppError(403, "No role assigned to this account.");
-    const token = await this.tokenService.generateWebToken(userFiltered, personalDetails, role.system_role);
+    if (!systemRoles) throw new AppError(403, "No role assigned to this account.");
+
+    const roles = systemRoles.map(role => role.system_role);
+    const token = await this.tokenService.generateWebToken({ user: userFiltered, personalDetails, roles });
 
     type RefreshTokenResponseData = {
       token: string;
       user: Omit<typeof userFiltered, never> & {
         personalDetails: typeof personalDetails;
-        role: "SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT";
+        roles: Array<"SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT">;
       };
     };
 
     return createAPIResponse<RefreshTokenResponseData>(201, "New token issued.", {
       token: `Bearer ${token}`,
-      user: { ...userFiltered, personalDetails, role: role.system_role }
+      user: { ...userFiltered, personalDetails, roles: roles }
     });
   };
 

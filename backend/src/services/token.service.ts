@@ -31,7 +31,7 @@ export const JWTPayloadSchema = z.object({
     deleted_at: true,
     updated_at: true,
   }),
-  role: z.enum(SystemRoles.enumValues),
+  roles: z.array(z.enum(SystemRoles.enumValues)),
 });
 export type JWTPayloadType = z.infer<typeof JWTPayloadSchema>;
 
@@ -54,19 +54,15 @@ class tokenService {
    * @returns a signed JWT string
    * @throws {ZodError} if the combined payload fails {@link JWTPayloadSchema}
    */
-  async generateWebToken(
-    user: any,
-    personalDetails: InferSelectModel<typeof PersonalDetails>,
-    role: "SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT",
-  ) {
-    const validation = await JWTPayloadSchema.safeParseAsync({ user, personalDetails, role });
+  async generateWebToken({ user, personalDetails, roles }: JWTPayloadType) {
+    const validation = await JWTPayloadSchema.safeParseAsync({ user, personalDetails, roles });
     if (!validation.success) throw validation.error;
 
     return jwt.sign({
       id: user?.id,
       email: user?.email,
       personalDetails: personalDetails,
-      role: role,
+      roles: roles,
     }, env.JWT_SECRET, {
       expiresIn: "15m",
     });

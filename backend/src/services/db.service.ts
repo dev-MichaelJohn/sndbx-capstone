@@ -13,7 +13,7 @@ import type { PgColumn, PgSelect, PgTable } from "drizzle-orm/pg-core";
  * common CRUD operations. `T` is constrained to keys of `schema` that are
  * actual Postgres tables (as opposed to relations, enums, etc.).
  */
-type TableNames = {
+export type TableNames = {
   [K in keyof typeof schema]: (typeof schema)[K] extends PgTable ? K : never;
 }[keyof typeof schema];
 
@@ -117,10 +117,10 @@ export const GetRecords = async <
       ? options.where(table)
       : options.where;
 
-    if (expr) query.where(expr);
+    if (expr) query = query.where(expr) as typeof query;
   }
 
-  const result = await query.limit(1);
+  const result = await query;
   return result as TSelection[];
 };
 
