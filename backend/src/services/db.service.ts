@@ -6,7 +6,6 @@ import { GenerateZodSchemas } from "@/utils/schema.util.js";
 import { eq, type InferInsertModel, type InferSelectModel, type SQL } from "drizzle-orm";
 import type { PgColumn, PgSelect, PgTable } from "drizzle-orm/pg-core";
 
-
 /**
  * Generic helpers for querying and mutating any table defined in the schema,
  * so route/service code doesn't need to hand-write Drizzle queries for
@@ -31,6 +30,10 @@ export type HardDeletableTables = {
   [K in TableNames]: HasDeletedAt<(typeof schema)[K]> extends true ? never : K;
 }[TableNames];
 
+// wherever your shared types live, e.g. types/drizzle-helpers.ts
+export type PartialInsert<T> = {
+  [K in keyof T]?: T[K] | undefined;
+};
 /**
  * Fetches a single row from the given table, optionally with a custom
  * column selection, join, and/or where clause. Returns `undefined` if no
@@ -50,27 +53,29 @@ export type HardDeletableTables = {
  */
 export const GetRecord = async <
   T extends TableNames,
-  TSelection = InferSelectModel<(typeof schema)[T]>
->(tablename: T, options?: {
-  select?: (table: (typeof schema)[T]) => any,
-  where?: SQL | ((table: (typeof schema)[T]) => SQL | undefined),
-  join?: (query: PgSelect) => PgSelect,
-  tx?: PgTransaction,
-}) => {
+  TSelection = InferSelectModel<(typeof schema)[T]>,
+>(
+  tablename: T,
+  options?: {
+    select?: (table: (typeof schema)[T]) => any;
+    where?: SQL | ((table: (typeof schema)[T]) => SQL | undefined);
+    join?: (query: PgSelect) => PgSelect;
+    tx?: PgTransaction;
+  },
+) => {
   const client = options?.tx || db;
   const table = schema[tablename];
 
-  let query = (options?.select
-    ? client.select(options.select(table)).from(table as any)
-    : client.select().from(table as any)
+  let query = (
+    options?.select
+      ? client.select(options.select(table)).from(table as any)
+      : client.select().from(table as any)
   ).$dynamic();
 
   if (options?.join) query = options.join(query as any) as typeof query;
 
   if (options?.where) {
-    const expr = typeof options.where === "function"
-      ? options.where(table)
-      : options.where;
+    const expr = typeof options.where === "function" ? options.where(table) : options.where;
 
     if (expr) query.where(expr);
   }
@@ -95,27 +100,29 @@ export const GetRecord = async <
  */
 export const GetRecords = async <
   T extends TableNames,
-  TSelection = InferSelectModel<(typeof schema)[T]>
->(tablename: T, options?: {
-  select?: (table: (typeof schema)[T]) => any,
-  where?: SQL | ((table: (typeof schema)[T]) => SQL | undefined),
-  join?: (query: PgSelect) => PgSelect,
-  tx?: PgTransaction,
-}) => {
+  TSelection = InferSelectModel<(typeof schema)[T]>,
+>(
+  tablename: T,
+  options?: {
+    select?: (table: (typeof schema)[T]) => any;
+    where?: SQL | ((table: (typeof schema)[T]) => SQL | undefined);
+    join?: (query: PgSelect) => PgSelect;
+    tx?: PgTransaction;
+  },
+) => {
   const client = options?.tx || db;
   const table = schema[tablename];
 
-  let query = (options?.select
-    ? client.select(options.select(table)).from(table as any)
-    : client.select().from(table as any)
+  let query = (
+    options?.select
+      ? client.select(options.select(table)).from(table as any)
+      : client.select().from(table as any)
   ).$dynamic();
 
   if (options?.join) query = options.join(query as any) as typeof query;
 
   if (options?.where) {
-    const expr = typeof options.where === "function"
-      ? options.where(table)
-      : options.where;
+    const expr = typeof options.where === "function" ? options.where(table) : options.where;
 
     if (expr) query = query.where(expr) as typeof query;
   }
@@ -149,14 +156,16 @@ export const CreateRecord = async <T extends TableNames>(
   let result;
 
   if (tx) {
-    [result] = await tx.insert(table)
+    [result] = await tx
+      .insert(table)
       .values(data as any)
       .returning();
 
     return result;
   } else {
-    return await db.transaction(async tx => {
-      const [nestedResult] = await tx.insert(table)
+    return await db.transaction(async (tx) => {
+      const [nestedResult] = await tx
+        .insert(table)
         .values(data as any)
         .returning();
 
@@ -179,7 +188,7 @@ export const CreateRecord = async <T extends TableNames>(
 export const UpdateRecord = async <T extends TableNames>(
   tablename: T,
   id: unknown,
-  data: Partial<InferInsertModel<(typeof schema)[T]>>,
+  data: PartialInsert<InferInsertModel<(typeof schema)[T]>>,
   idColumn?: PgColumn,
   tx?: PgTransaction,
 ) => {
@@ -193,15 +202,17 @@ export const UpdateRecord = async <T extends TableNames>(
 
   let result;
   if (tx) {
-    [result] = await tx.update(table)
+    [result] = await tx
+      .update(table)
       .set(data as any)
       .where(eq(column, id))
       .returning();
 
     return result;
   } else {
-    return await db.transaction(async tx => {
-      const [nestedResult] = await tx.update(table)
+    return await db.transaction(async (tx) => {
+      const [nestedResult] = await tx
+        .update(table)
         .set(data as any)
         .where(eq(column, id))
         .returning();
@@ -233,15 +244,17 @@ export const SoftDeleteRecord = async <T extends SoftDeletableTables>(
 
   let result;
   if (tx) {
-    [result] = await tx.update(table)
+    [result] = await tx
+      .update(table)
       .set({ deleted_at: new Date() } as any)
       .where(eq(column, id))
       .returning();
 
     return result;
   } else {
-    return await db.transaction(async tx => {
-      const [nestedResult] = await tx.update(table)
+    return await db.transaction(async (tx) => {
+      const [nestedResult] = await tx
+        .update(table)
         .set({ deleted_at: new Date() } as any)
         .where(eq(column, id))
         .returning();
@@ -274,16 +287,12 @@ export const HardDeleteRecord = async <T extends HardDeletableTables>(
 
   let result;
   if (tx) {
-    [result] = await tx.delete(table)
-      .where(eq(column, id))
-      .returning();
+    [result] = await tx.delete(table).where(eq(column, id)).returning();
 
     return result;
   } else {
-    return await db.transaction(async tx => {
-      const [nestedResult] = await tx.delete(table)
-        .where(eq(column, id))
-        .returning();
+    return await db.transaction(async (tx) => {
+      const [nestedResult] = await tx.delete(table).where(eq(column, id)).returning();
 
       return nestedResult;
     });

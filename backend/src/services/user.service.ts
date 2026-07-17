@@ -1,16 +1,43 @@
-import { type Accounts, type PersonalDetails } from "@/schemas/auth.schema.js";
-import { eq, type InferInsertModel } from "drizzle-orm";
-import { CreateRecord, GetRecord } from "./db.service.js";
+import { AccountRoles, Accounts, Roles, type PersonalDetails } from "@/schemas/auth.schema.js";
+import { and, eq, getColumns, isNull, type InferInsertModel } from "drizzle-orm";
+import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
 import bcrypt from "bcryptjs";
 import { AppError } from "@/utils/error.util.js";
-import db from "@/configs/db.config.js";
+import db, { type PgTransaction } from "@/configs/db.config.js";
+import {
+  CreateUserReqSchema,
+  type AccountRecordWithRole,
+  type SystemRole,
+} from "@/types/user.type.js";
 
 /**
-* Handles user account creation, spanning the PersonalDetails, Accounts,
-* and AccountRoles tables as a single atomic operation.
-*/
+ * Handles user account creation, spanning the PersonalDetails, Accounts,
+ * and AccountRoles tables as a single atomic operation.
+ */
 class userService {
-  constructor() { }
+  constructor() {}
+
+  private async accountHasRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
+    const accountRecords = await GetRecords<"Accounts", AccountRecordWithRole>("Accounts", {
+      select: (Accounts) => ({
+        ...getColumns(Accounts),
+        system_role: Roles.system_role,
+      }),
+      where: (Accounts) => and(eq(Accounts.id, accountId), isNull(Accounts.deleted_at)),
+      join: (query) =>
+        query
+          .leftJoin(
+            AccountRoles,
+            and(eq(AccountRoles.account_id, Accounts.id), isNull(AccountRoles.deleted_at)),
+          )
+          .leftJoin(Roles, and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at))),
+      ...(tx && { tx }),
+    });
+    if (accountRecords.length === 0) throw new AppError(404, "Account not found.");
+
+    const roles = accountRecords.map((r) => r.system_role);
+    return roles.includes(role);
+  }
 
   /**
    * Creates a new user account: inserts personal details, hashes the
@@ -21,52 +48,213 @@ class userService {
    * @param credentials - login credentials (email/password), excluding `personal_details_id`
    * @param personalDetails - the account holder's personal details
    * @param role - the system role to assign to the new account
-   * @returns the created credentials, details, and role-mapping records
+   * @returns the created account record as `credentials` (including its
+   *   generated id), the created personal-details record as `details`, and
+   *   the role-mapping record as `role`
    * @throws {AppError} 500 if the personal details or account record fails to create
    * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
    */
   async createUser(
     credentials: Omit<InferInsertModel<typeof Accounts>, "personal_details_id">,
     personalDetails: InferInsertModel<typeof PersonalDetails>,
-    role: "SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT",
+    role: SystemRole,
   ) {
-    return await db.transaction(async tx => {
+    const validation = await CreateUserReqSchema.safeParseAsync({
+      credentials,
+      personalDetails,
+      role,
+    });
+    if (!validation.success) throw validation.error;
+
+    return await db.transaction(async (tx) => {
       const userDetails = await CreateRecord("PersonalDetails", personalDetails, tx);
-      if (!userDetails) throw new AppError(500,
-        "Failed to create personal details record while registering user. User account was not created.");
+      if (!userDetails)
+        throw new AppError(
+          500,
+          "Failed to create personal details record while registering user. User account was not created.",
+        );
 
       const hash = await bcrypt.hash(credentials.password, 10);
       const userCredentials: InferInsertModel<typeof Accounts> = {
         ...credentials,
         password: hash,
-        personal_details_id: userDetails?.id
+        personal_details_id: userDetails?.id,
       };
       const userAccount = await CreateRecord("Accounts", userCredentials, tx);
-      if (!userAccount) throw new AppError(500,
-        "Failed to create account record while registering user. Personal details record was rolled back.");
+      if (!userAccount)
+        throw new AppError(
+          500,
+          "Failed to create account record while registering user. Personal details record was rolled back.",
+        );
 
       const systemRole = await GetRecord("Roles", {
         where: (Roles) => eq(Roles.system_role, role),
-        tx
+        tx,
       });
-      if (!systemRole) throw new AppError(400,
-        "Given role has not been found. Changes during account creation were rolled back.");
+      if (!systemRole)
+        throw new AppError(
+          400,
+          "Given role has not been found. Changes during account creation were rolled back.",
+        );
 
-      const userRole = await CreateRecord("AccountRoles", {
-        account_id: userAccount.id,
-        role_id: systemRole.id,
-      }, tx);
-      if (!userRole) throw new AppError(400,
-        "Failed to map account record to a role. Changes during account creation were rolled back.");
+      const userRole = await CreateRecord(
+        "AccountRoles",
+        {
+          account_id: userAccount.id,
+          role_id: systemRole.id,
+        },
+        tx,
+      );
+      if (!userRole)
+        throw new AppError(
+          400,
+          "Failed to map account record to a role. Changes during account creation were rolled back.",
+        );
 
       return {
-        credentials: userCredentials,
-        details: userCredentials,
+        credentials: userAccount,
+        details: userDetails,
         role: userRole,
       };
     });
-  };
-};
+  }
+
+  /**
+   * Same steps as {@link createUser} — inserts personal details, hashes the
+   * password, creates the account record, and maps it to the given system
+   * role — but runs within a transaction the caller already owns instead of
+   * opening its own. Used when user creation is one step of a larger atomic
+   * operation (e.g. creating a college along with a brand-new dean account).
+   *
+   * @param credentials - login credentials (email/password), excluding `personal_details_id`
+   * @param personalDetails - the account holder's personal details
+   * @param role - the system role to assign to the new account
+   * @param tx - the transaction to run the inserts within
+   * @returns the created account record as `credentials` (including its
+   *   generated id), the created personal-details record as `details`, and
+   *   the role-mapping record as `role`
+   * @throws {AppError} 500 if the personal details or account record fails to create
+   * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
+   */
+  async createUserRecordViaExistingTx(
+    credentials: Omit<InferInsertModel<typeof Accounts>, "personal_details_id">,
+    personalDetails: InferInsertModel<typeof PersonalDetails>,
+    role: SystemRole,
+    tx: PgTransaction,
+  ) {
+    const validation = await CreateUserReqSchema.safeParseAsync({
+      credentials,
+      personalDetails,
+      role,
+    });
+
+    if (!validation.success) throw validation.error;
+    const userDetails = await CreateRecord<"PersonalDetails">(
+      "PersonalDetails",
+      personalDetails,
+      tx,
+    );
+    if (!userDetails)
+      throw new AppError(
+        500,
+        "Failed to create personal details record while registering user. User account was not created.",
+      );
+
+    const hash = await bcrypt.hash(credentials.password, 10);
+    const userCredentials: InferInsertModel<typeof Accounts> = {
+      ...credentials,
+      password: hash,
+      personal_details_id: userDetails?.id,
+    };
+    const userAccount = await CreateRecord("Accounts", userCredentials, tx);
+    if (!userAccount)
+      throw new AppError(
+        500,
+        "Failed to create account record while registering user. Personal details record was rolled back.",
+      );
+
+    const systemRole = await GetRecord("Roles", {
+      where: (Roles) => eq(Roles.system_role, role),
+      tx,
+    });
+    if (!systemRole)
+      throw new AppError(
+        400,
+        "Given role has not been found. Changes during account creation were rolled back.",
+      );
+
+    const userRole = await CreateRecord(
+      "AccountRoles",
+      {
+        account_id: userAccount.id,
+        role_id: systemRole.id,
+      },
+      tx,
+    );
+    if (!userRole)
+      throw new AppError(
+        400,
+        "Failed to map account record to a role. Changes during account creation were rolled back.",
+      );
+
+    return {
+      credentials: userAccount,
+      details: userDetails,
+      role: userRole,
+    };
+  }
+
+  /**
+   * Grants a system role to an account, if it doesn't already have it.
+   * No-ops if the account already holds the given role.
+   *
+   * @param accountId - the account to grant the role to
+   * @param role - the system role to grant
+   * @param tx - optional transaction to run the insert within
+   * @throws {AppError} 404 if the given role has not been found
+   * @throws {AppError} 500 if the role grant fails
+   */
+  async grantRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
+    if (!(await this.accountHasRole(accountId, role, tx))) {
+      const systemRole = await GetRecord("Roles", {
+        where: (Roles) => eq(Roles.system_role, role),
+        ...(tx && { tx }),
+      });
+      if (!systemRole) throw new AppError(404, "Given role has not been found.");
+
+      const newRole = await CreateRecord(
+        "AccountRoles",
+        {
+          account_id: accountId,
+          role_id: systemRole.id,
+        },
+        tx,
+      );
+      if (!newRole) throw new AppError(500, "Failed to grant new role.");
+    }
+  }
+
+  /**
+   * Revokes a system role from an account, if it currently has it.
+   * No-ops if the account doesn't hold the given role.
+   *
+   * @param accountId - the account to revoke the role from
+   * @param role - the system role to revoke
+   * @param tx - optional transaction to run the soft-delete within
+   * @throws {AppError} 500 if the role revocation fails
+   */
+  async revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
+    if (await this.accountHasRole(accountId, role, tx)) {
+      const revokedRole = await SoftDeleteRecord(
+        "AccountRoles",
+        accountId,
+        AccountRoles.account_id,
+        tx,
+      );
+      if (!revokedRole) throw new AppError(500, "Failed to revoke role.");
+    }
+  }
+}
 
 const UserService = new userService();
 export default UserService;
