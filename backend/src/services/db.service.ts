@@ -142,7 +142,10 @@ export const GetRecords = async <
  * @returns the newly inserted row
  * @throws {AppError} 400 if `data` fails the table's generated insert schema
  */
-export const CreateRecord = async <T extends TableNames>(
+export const CreateRecord = async <
+  T extends TableNames,
+  TSelection = InferSelectModel<(typeof schema)[T]>,
+>(
   tablename: T,
   data: InferInsertModel<(typeof schema)[T]>,
   tx?: PgTransaction,
@@ -161,7 +164,7 @@ export const CreateRecord = async <T extends TableNames>(
       .values(data as any)
       .returning();
 
-    return result;
+    return result as TSelection;
   } else {
     return await db.transaction(async (tx) => {
       const [nestedResult] = await tx
@@ -169,7 +172,7 @@ export const CreateRecord = async <T extends TableNames>(
         .values(data as any)
         .returning();
 
-      return nestedResult;
+      return nestedResult as TSelection;
     });
   }
 };
@@ -185,7 +188,10 @@ export const CreateRecord = async <T extends TableNames>(
  * @returns the updated row
  * @throws {AppError} 400 if `data` fails the table's generated update schema
  */
-export const UpdateRecord = async <T extends TableNames>(
+export const UpdateRecord = async <
+  T extends TableNames,
+  TSelection = InferSelectModel<(typeof schema)[T]>,
+>(
   tablename: T,
   id: unknown,
   data: PartialInsert<InferInsertModel<(typeof schema)[T]>>,
@@ -208,7 +214,7 @@ export const UpdateRecord = async <T extends TableNames>(
       .where(eq(column, id))
       .returning();
 
-    return result;
+    return result as TSelection;
   } else {
     return await db.transaction(async (tx) => {
       const [nestedResult] = await tx
@@ -217,7 +223,7 @@ export const UpdateRecord = async <T extends TableNames>(
         .where(eq(column, id))
         .returning();
 
-      return nestedResult;
+      return nestedResult as TSelection;
     });
   }
 };
@@ -232,7 +238,10 @@ export const UpdateRecord = async <T extends TableNames>(
  * @param tx - run within an existing transaction instead of creating one
  * @returns the updated (soft-deleted) row
  */
-export const SoftDeleteRecord = async <T extends SoftDeletableTables>(
+export const SoftDeleteRecord = async <
+  T extends SoftDeletableTables,
+  TSelection = InferSelectModel<(typeof schema)[T]>,
+>(
   tablename: T,
   id: unknown,
   idColumn?: PgColumn,
@@ -250,7 +259,7 @@ export const SoftDeleteRecord = async <T extends SoftDeletableTables>(
       .where(eq(column, id))
       .returning();
 
-    return result;
+    return result as TSelection;
   } else {
     return await db.transaction(async (tx) => {
       const [nestedResult] = await tx
@@ -259,7 +268,7 @@ export const SoftDeleteRecord = async <T extends SoftDeletableTables>(
         .where(eq(column, id))
         .returning();
 
-      return nestedResult;
+      return nestedResult as TSelection;
     });
   }
 };
@@ -275,7 +284,10 @@ export const SoftDeleteRecord = async <T extends SoftDeletableTables>(
  * @param tx - run within an existing transaction instead of creating one
  * @returns the deleted row
  */
-export const HardDeleteRecord = async <T extends HardDeletableTables>(
+export const HardDeleteRecord = async <
+  T extends HardDeletableTables,
+  TSelection = InferSelectModel<(typeof schema)[T]>,
+>(
   tablename: T,
   id: unknown,
   idColumn?: PgColumn,
@@ -289,12 +301,12 @@ export const HardDeleteRecord = async <T extends HardDeletableTables>(
   if (tx) {
     [result] = await tx.delete(table).where(eq(column, id)).returning();
 
-    return result;
+    return result as TSelection;
   } else {
     return await db.transaction(async (tx) => {
       const [nestedResult] = await tx.delete(table).where(eq(column, id)).returning();
 
-      return nestedResult;
+      return nestedResult as TSelection;
     });
   }
 };

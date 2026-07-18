@@ -1,10 +1,10 @@
 import db from "@/configs/db.config.js";
 import { CreateRecord, GetRecords, GetRecord } from "./db.service.js";
-import UserService from "./user.service.js";
+import UserService, { type IUserService } from "./user.service.js";
 import { AppError } from "@/utils/error.util.js";
 import { AccountRoles, Roles, SystemRoles } from "@/schemas/auth.schema.js";
 import { logger } from "@/utils/logger.util.js";
-import { CreateUserReqSchema } from "@/utils/user.util.js";
+import { CreateUserReqSchema } from "@/types/user.type.js";
 import type z from "zod";
 import { and, eq, isNull } from "drizzle-orm";
 
@@ -15,36 +15,41 @@ export const SuperAdminSchema = CreateUserReqSchema.omit({
 });
 export type SuperAdminType = z.infer<typeof SuperAdminSchema>;
 
+/** Public surface of {@link SeederService}, for dependency injection/mocking. */
+export interface ISeederService {
+  seedRoles(): Promise<{ message: string }>;
+  seedSuperAdmin(
+    userData: SuperAdminType,
+  ): Promise<Awaited<ReturnType<IUserService["createUser"]>>>;
+}
+
 /**
  * One-time setup operations run against a fresh database: seeding the
  * fixed set of system roles, and creating the initial super admin account.
  * Both operations are idempotent-safe — they refuse to run again once
  * already seeded, rather than creating duplicates.
  */
-class seederService {
+class seederService implements ISeederService {
   constructor(
     private client = db,
-    private userService = UserService
-  ) { }
+    private userService: IUserService = UserService,
+  ) {}
 
   /** Checks whether the Roles table has no rows yet. */
   private async isRolesEmpty() {
     const result = await GetRecords("Roles");
     return result.length === 0;
-  };
+  }
 
   /** Checks whether any active (non-deleted) account currently holds the SYS_ADMIN role. */
   private async isSuperAdminEmpty() {
     const result = await GetRecord("AccountRoles", {
-      where: (AccountRoles) => and(
-        eq(Roles.system_role, "SYS_ADMIN"),
-        isNull(AccountRoles.deleted_at),
-      ),
-      join: (query) =>
-        query.innerJoin(Roles, eq(AccountRoles.role_id, Roles.id)),
+      where: (AccountRoles) =>
+        and(eq(Roles.system_role, "SYS_ADMIN"), isNull(AccountRoles.deleted_at)),
+      join: (query) => query.innerJoin(Roles, eq(AccountRoles.role_id, Roles.id)),
     });
     return !result;
-  };
+  }
 
   /**
    * Seeds the system's fixed set of roles, if they haven't been seeded yet.
@@ -72,7 +77,7 @@ class seederService {
       logger.error(`Seeding transaction failed: ${error instanceof Error ? error.message : error}`);
       throw new AppError(500, "An unexpected database error occurred during seeding roles.");
     }
-  };
+  }
 
   /**
    * Creates the initial super admin account, if one doesn't already exist.
@@ -85,11 +90,16 @@ class seederService {
   async seedSuperAdmin(userData: SuperAdminType) {
     const validation = await SuperAdminSchema.safeParseAsync(userData);
     if (!validation.success) throw validation.error;
-    if (!await this.isSuperAdminEmpty()) throw new AppError(409, "A super admin account already exists.");
+    if (!(await this.isSuperAdminEmpty()))
+      throw new AppError(409, "A super admin account already exists.");
 
-    return await this.userService.createUser(userData.credentials, userData.personalDetails, "SYS_ADMIN");
+    return await this.userService.createUser(
+      userData.credentials,
+      userData.personalDetails,
+      "SYS_ADMIN",
+    );
   }
-};
+}
 
 const SeederService = new seederService();
 export default SeederService;

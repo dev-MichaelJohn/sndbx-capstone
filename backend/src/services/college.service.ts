@@ -41,11 +41,34 @@ import {
 } from "@/types/college.types.js";
 import db, { type PgTransaction } from "@/configs/db.config.js";
 import { AppError } from "@/utils/error.util.js";
-import UserService from "./user.service.js";
+import UserService, { type IUserService } from "./user.service.js";
 
-class collegeService {
-  constructor() {}
-  private getSearchConditions(search: string) {
+export interface ICollegeService {
+  createCollegeDeanRecord(dean: CollegeDeanInsert, tx?: PgTransaction): Promise<CollegeDeanSelect>;
+
+  getColleges(
+    params: CollegeSearchQuery,
+  ): Promise<ReturnType<typeof createPaginatedData<InferSelectModel<typeof Colleges>[]>>>;
+
+  getCollege(id: number, tx?: PgTransaction): Promise<CollegeWithDean | undefined>;
+
+  searchAvailableDeanCandidates(search: string, tx?: PgTransaction): Promise<DeanCandidate[]>;
+
+  createCollegeRecord(
+    params: CreateCollegeRecordType,
+  ): Promise<{ college: CollegeSelect; dean?: CollegeDeanSelect }>;
+
+  updateCollegeRecord(
+    params: UpdateCollegeRecordType,
+  ): Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>;
+
+  deleteCollegeRecord(collegeId: number): Promise<void>;
+}
+
+class CollegeService implements ICollegeService {
+  constructor(private userService: IUserService = UserService) {}
+  private getSearchConditions(search: string | undefined) {
+    if (!search || search.trim().length === 0) return undefined;
     return or(ilike(Colleges.name, `%${search}%`), ilike(Colleges.initialism, `%${search}%`));
   }
 
@@ -271,7 +294,7 @@ class collegeService {
         if (deanInfo.type === "existing") accountId = deanInfo.id;
         else {
           const { credentials, personalDetails } = deanInfo.details;
-          const accountRecord = await UserService.createUserRecordViaExistingTx(
+          const accountRecord = await this.userService.createUserRecordViaExistingTx(
             credentials,
             personalDetails,
             "FACULTY",
@@ -286,7 +309,7 @@ class collegeService {
           accountId = accountRecord.credentials.id;
         }
 
-        await UserService.grantRole(accountId, "SUPERVISOR", tx);
+        await this.userService.grantRole(accountId, "SUPERVISOR", tx);
         collegeDeanRecord = (await this.createCollegeDeanRecord(
           { dean_id: accountId, college_id: collegeRecord.id },
           tx,
@@ -363,7 +386,7 @@ class collegeService {
         if (deanInfo.type === "existing") accountId = deanInfo.id;
         else {
           const { credentials, personalDetails } = deanInfo.details;
-          const accountRecord = await UserService.createUserRecordViaExistingTx(
+          const accountRecord = await this.userService.createUserRecordViaExistingTx(
             credentials,
             personalDetails,
             "FACULTY",
@@ -380,7 +403,7 @@ class collegeService {
 
         if (existingCollegeRecord.account_id) {
           if (!(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)))
-            await UserService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
+            await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
 
           const deletedCollegeDeanRecord = await SoftDeleteRecord(
             "CollegeDeans",
@@ -395,7 +418,7 @@ class collegeService {
             );
         }
 
-        await UserService.grantRole(accountId, "SUPERVISOR", tx);
+        await this.userService.grantRole(accountId, "SUPERVISOR", tx);
         collegeDeanRecord = (await this.createCollegeDeanRecord(
           { dean_id: accountId, college_id: existingCollegeRecord.id },
           tx,
@@ -439,7 +462,7 @@ class collegeService {
         existingCollegeRecord.account_id &&
         !(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx))
       )
-        await UserService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
+        await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
 
       const deletedCollegeDeanRecord = await SoftDeleteRecord(
         "CollegeDeans",
@@ -468,5 +491,7 @@ class collegeService {
   }
 }
 
-const CollegeService = new collegeService();
-export default CollegeService;
+// Composition root: the concrete userService singleton is wired in here.
+// Swap it for a mock/stub implementing IUserService in tests.
+const collegeService = new CollegeService();
+export default collegeService;

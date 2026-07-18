@@ -1,8 +1,14 @@
 import { AccountRoles, Roles } from "@/schemas/auth.schema.js";
 import { GetRecord, GetRecords } from "@/services/db.service.js";
-import EmailService from "@/services/email.service.js";
-import OTPService from "@/services/otp.service.js";
-import TokenService from "@/services/token.service.js";
+import EmailService, { type IEmailService } from "@/services/email.service.js";
+import OTPService, { type IOTPService } from "@/services/otp.service.js";
+import TokenService, { type ITokenService } from "@/services/token.service.js";
+import {
+  AccountSchema,
+  type AccountSelect,
+  type PersonalDetailsSelect,
+  type SystemRole,
+} from "@/types/user.type.js";
 import { GenerateOTPHtmlTemplate, GenerateOTPTextTemplate } from "@/utils/email.util.js";
 import { AppError } from "@/utils/error.util.js";
 import { createAPIResponse } from "@/utils/response.util.js";
@@ -12,15 +18,25 @@ import passport from "passport";
 import type { IVerifyOptions } from "passport-local";
 import z from "zod";
 
+/** Shape of the data returned by {@link authController.refresh}. Hoisted to
+ * module scope so {@link IAuthController} can reference it. */
+type RefreshTokenResponseData = {
+  token: string;
+  user: Pick<AccountSelect, "id" | "email"> & {
+    personalDetails: PersonalDetailsSelect;
+    roles: Array<SystemRole>;
+  };
+};
+
 /**
  * Handles authentication flows: login (password + OTP two-factor),
  * OTP verification, and access-token refresh via the verifyJWT middleware.
  */
 class authController {
   constructor(
-    private otpService = OTPService,
-    private tokenService = TokenService,
-    private emailService = EmailService,
+    private otpService: IOTPService = OTPService,
+    private tokenService: ITokenService = TokenService,
+    private emailService: IEmailService = EmailService,
   ) {
     this.login = this.login.bind(this);
     this.verifyOTP = this.verifyOTP.bind(this);
@@ -37,41 +53,62 @@ class authController {
    * @throws {AppError} 500 if OTP generation fails
    */
   login = async (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate("local", { session: false }, async (err?: any, user?: any, info?: IVerifyOptions) => {
-      if (err) return next(err);
-      if (!user) return next(new AppError(400, info?.message || "Invalid email or password."));
+    passport.authenticate(
+      "local",
+      { session: false },
+      async (err?: any, user?: any, info?: IVerifyOptions) => {
+        if (err) return next(err);
+        if (!user) return next(new AppError(400, info?.message || "Invalid email or password."));
 
-      try {
-        const flag = await this.otpService.stopDuplicateOTPResend({ email: user?.email });
-        if (flag.success) {
-          const OTP_COOLDOWN_MS = 120_000;
-          const resend = Date.now() + OTP_COOLDOWN_MS;
+        try {
+          const validation = await AccountSchema.select
+            .omit({
+              password: true,
+            })
+            .safeParseAsync(user);
+          if (!validation.success) throw validation.error;
 
-          const response = createAPIResponse(200, "An OTP was already sent. Please wait before requesting another.", {
-            email: user?.email,
-            resendAt: resend,
-          });
-          return res.status(response.status).json(response);
-        }
+          const parsedUser = validation.data;
 
-        const otpCode = await this.otpService.generateOTP({ email: user?.email });
-        if (!otpCode) throw new AppError(500, "Failed to generate OTP. Please try again");
+          const flag = await this.otpService.stopDuplicateOTPResend({ email: parsedUser.email });
+          if (flag.success) {
+            const OTP_COOLDOWN_MS = 120_000;
+            const resend = Date.now() + OTP_COOLDOWN_MS;
 
-        await this.emailService.sendEmail({
-          to: user?.email,
-          options: {
-            subject: "Verification Code",
-            text: GenerateOTPTextTemplate(otpCode.code),
-            html: GenerateOTPHtmlTemplate(otpCode.code),
+            const response = createAPIResponse(
+              200,
+              "An OTP was already sent. Please wait before requesting another.",
+              {
+                email: user?.email,
+                resendAt: resend,
+              },
+            );
+            return res.status(response.status).json(response);
           }
-        });
 
-        const response = createAPIResponse(201, "Please enter the code sent to your email address. Code will expire in 5 minutes.", { email: user?.email });
-        res.status(response.status).json(response);
-      } catch (error) {
-        next(error);
-      }
-    })(req, res, next);
+          const otpCode = await this.otpService.generateOTP({ email: parsedUser.email });
+          if (!otpCode) throw new AppError(500, "Failed to generate OTP. Please try again");
+
+          await this.emailService.sendEmail({
+            to: user?.email,
+            options: {
+              subject: "Verification Code",
+              text: GenerateOTPTextTemplate(otpCode.code),
+              html: GenerateOTPHtmlTemplate(otpCode.code),
+            },
+          });
+
+          const response = createAPIResponse(
+            201,
+            "Please enter the code sent to your email address. Code will expire in 5 minutes.",
+            { email: parsedUser.email },
+          );
+          res.status(response.status).json(response);
+        } catch (error) {
+          next(error);
+        }
+      },
+    )(req, res, next);
   };
 
   /**
@@ -85,59 +122,86 @@ class authController {
    * @throws {AppError} 500 if the refresh token fails to save
    */
   verifyOTP = async (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate("otp", { session: false }, async (err?: any, user?: any, info?: IVerifyOptions) => {
-      if (err) return next(err);
-      if (!user) return next(new AppError(400, info?.message || "Invalid email or expired OTP."));
+    passport.authenticate(
+      "otp",
+      { session: false },
+      async (err?: any, user?: any, info?: IVerifyOptions) => {
+        if (err) return next(err);
+        if (!user) return next(new AppError(400, info?.message || "Invalid email or expired OTP."));
 
-      try {
-        const personalDetails = await GetRecord("PersonalDetails", {
-          where: (PersonalDetails) => and(
-            eq(PersonalDetails.id, user?.personal_details_id),
-            isNull(PersonalDetails.deleted_at),
-          ),
-        });
-        if (!personalDetails) throw new AppError(404, "Account details not found.");
+        try {
+          const validation = await AccountSchema.select
+            .omit({
+              password: true,
+            })
+            .safeParseAsync(user);
+          if (!validation.success) throw validation.error;
 
-        const systemRoles = await GetRecords<"AccountRoles", {
-          system_role: "SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT",
-        }>("AccountRoles", {
-          where: (AccountRoles) => and(
-            eq(AccountRoles.account_id, user?.id),
-            isNull(AccountRoles.deleted_at),
-          ),
-          join: (query) =>
-            query.innerJoin(Roles, eq(AccountRoles.role_id, Roles.id)),
-          select: () => ({
-            system_role: Roles.system_role,
-          }),
-        });
-        if (!systemRoles) throw new AppError(403, "No role assigned to this account.");
+          const parsedUser = validation.data;
 
-        const roles = systemRoles.map(role => role.system_role);
-        const token = await this.tokenService.generateWebToken({ user, personalDetails, roles });
-        const refreshToken = this.tokenService.generateRefreshToken(user);
+          const personalDetails = await GetRecord("PersonalDetails", {
+            where: (PersonalDetails) =>
+              and(
+                eq(PersonalDetails.id, parsedUser.personal_details_id),
+                isNull(PersonalDetails.deleted_at),
+              ),
+          });
+          if (!personalDetails) throw new AppError(404, "Account details not found.");
 
-        // TODO: attach the "remember-me" here
-        const result = await this.tokenService.saveRefreshToken(user, refreshToken);
-        if (!result) throw new AppError(500, "Failed to save refresh token. Please try again.");
+          const systemRoles = await GetRecords<
+            "AccountRoles",
+            {
+              system_role: SystemRole;
+            }
+          >("AccountRoles", {
+            where: (AccountRoles) =>
+              and(eq(AccountRoles.account_id, parsedUser.id), isNull(AccountRoles.deleted_at)),
+            join: (query) => query.innerJoin(Roles, eq(AccountRoles.role_id, Roles.id)),
+            select: () => ({
+              system_role: Roles.system_role,
+            }),
+          });
+          if (!systemRoles) throw new AppError(403, "No role assigned to this account.");
 
-        const cookieOptions = this.tokenService.generateCookieOptions();
-        res.cookie("refresh", refreshToken, cookieOptions);
+          const roles = systemRoles.map((role) => role.system_role);
+          const token = await this.tokenService.generateWebToken({
+            user: {
+              id: parsedUser.id,
+              email: parsedUser.email,
+            },
+            personalDetails,
+            roles,
+          });
+          const refreshToken = this.tokenService.generateRefreshToken({
+            id: parsedUser.id,
+            email: parsedUser.email,
+          });
 
-        const response = createAPIResponse(200, "Authentication successful.", {
-          token: `Bearer ${token}`,
-          user: {
-            id: user?.id,
-            email: user?.email,
-            personalDetails: personalDetails,
-            roles: roles,
-          }
-        });
-        res.status(response.status).json(response);
-      } catch (error) {
-        next(error);
-      }
-    })(req, res, next);
+          // TODO: attach the "remember-me" here
+          const result = await this.tokenService.saveRefreshToken(
+            { id: parsedUser.id, email: parsedUser.email },
+            refreshToken,
+          );
+          if (!result) throw new AppError(500, "Failed to save refresh token. Please try again.");
+
+          const cookieOptions = this.tokenService.generateCookieOptions();
+          res.cookie("refresh", refreshToken, cookieOptions);
+
+          const response = createAPIResponse(200, "Authentication successful.", {
+            token: `Bearer ${token}`,
+            user: {
+              id: parsedUser.id,
+              email: parsedUser.email,
+              personalDetails: personalDetails,
+              roles: roles,
+            },
+          });
+          res.status(response.status).json(response);
+        } catch (error) {
+          next(error);
+        }
+      },
+    )(req, res, next);
   };
 
   /**
@@ -152,58 +216,77 @@ class authController {
    * @throws {AppError} 403 if the account has no assigned role
    */
   refresh = async (resfreshToken: string) => {
-    const RefreshJWTSchema = z.string().trim().min(32).nonempty("Refresh token is invalid or expired");
+    const RefreshJWTSchema = z
+      .string()
+      .trim()
+      .min(32)
+      .nonempty("Refresh token is invalid or expired");
     const validation = await RefreshJWTSchema.safeParseAsync(resfreshToken);
     if (!validation.success) throw new AppError(400, "Validation failed", validation.error);
 
     const result = await this.tokenService.verifyToken(resfreshToken);
     const user = await GetRecord("Accounts", {
-      where: (Accounts) => and(
-        eq(Accounts.id, result.accountId),
-        eq(Accounts.email, result.email),
-        isNull(Accounts.deleted_at),
-      ),
+      where: (Accounts) =>
+        and(
+          eq(Accounts.id, result.accountId),
+          eq(Accounts.email, result.email),
+          isNull(Accounts.deleted_at),
+        ),
     });
     if (!user) throw new AppError(404, "Account not found.");
-    const { personal_details_id, password, ...userFiltered } = user;
+    const { password, ...userFiltered } = user;
+
+    const userValidation = await AccountSchema.select
+      .omit({
+        password: true,
+      })
+      .safeParseAsync(userFiltered);
+    if (!userValidation.success) throw userValidation.error;
+
+    const parsedUser = userValidation.data;
 
     const personalDetails = await GetRecord("PersonalDetails", {
-      where: (PersonalDetails) => and(
-        eq(PersonalDetails.id, user?.personal_details_id),
-        isNull(PersonalDetails.deleted_at),
-      ),
+      where: (PersonalDetails) =>
+        and(
+          eq(PersonalDetails.id, parsedUser.personal_details_id),
+          isNull(PersonalDetails.deleted_at),
+        ),
     });
     if (!personalDetails) throw new AppError(404, "Account details not found.");
 
-    const systemRoles = await GetRecords<"AccountRoles", {
-      system_role: "SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT",
-    }>("AccountRoles", {
-      where: (AccountRoles) => and(
-        eq(AccountRoles.account_id, user?.id),
-        isNull(AccountRoles.deleted_at),
-      ),
-      join: (query) =>
-        query.innerJoin(Roles, eq(AccountRoles.role_id, Roles.id)),
+    const systemRoles = await GetRecords<
+      "AccountRoles",
+      {
+        system_role: SystemRole;
+      }
+    >("AccountRoles", {
+      where: (AccountRoles) =>
+        and(eq(AccountRoles.account_id, parsedUser.id), isNull(AccountRoles.deleted_at)),
+      join: (query) => query.innerJoin(Roles, eq(AccountRoles.role_id, Roles.id)),
       select: () => ({
         system_role: Roles.system_role,
       }),
     });
     if (!systemRoles) throw new AppError(403, "No role assigned to this account.");
 
-    const roles = systemRoles.map(role => role.system_role);
-    const token = await this.tokenService.generateWebToken({ user: userFiltered, personalDetails, roles });
-
-    type RefreshTokenResponseData = {
-      token: string;
-      user: Omit<typeof userFiltered, never> & {
-        personalDetails: typeof personalDetails;
-        roles: Array<"SYS_ADMIN" | "ADMIN" | "SUPERVISOR" | "FACULTY" | "STUDENT">;
-      };
-    };
+    const roles = systemRoles.map((role) => role.system_role);
+    const token = await this.tokenService.generateWebToken({
+      user: {
+        id: parsedUser.id,
+        email: parsedUser.email,
+      },
+      personalDetails,
+      roles,
+    });
 
     return createAPIResponse<RefreshTokenResponseData>(201, "New token issued.", {
       token: `Bearer ${token}`,
-      user: { ...userFiltered, personalDetails, roles: roles }
+      user: {
+        id: parsedUser.id,
+        email: parsedUser.email,
+        personalDetails,
+        roles: roles,
+      },
     });
   };
 
@@ -217,34 +300,41 @@ class authController {
    * @throws {AppError} 500 if the refresh attempt returns no data
    */
   verifyJWT = async (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate("jwt", { session: false }, async (err?: any, user?: any, info?: IVerifyOptions) => {
-      if (err) return next(err);
+    passport.authenticate(
+      "jwt",
+      { session: false },
+      async (err?: any, user?: any, _info?: IVerifyOptions) => {
+        if (err) return next(err);
 
-      try {
-        if (!user) {
-          const refreshToken = req.cookies?.refresh;
-          if (!refreshToken) {
-            throw new AppError(401, "Session expired or access token invalid. Please log in again.");
+        try {
+          if (!user) {
+            const refreshToken = req.cookies?.refresh;
+            if (!refreshToken) {
+              throw new AppError(
+                401,
+                "Session expired or access token invalid. Please log in again.",
+              );
+            }
+
+            const result = await this.refresh(refreshToken);
+            if (!result || !result.data) {
+              throw new AppError(401, "Your session has expired. Please log in again.");
+            }
+
+            res.setHeader("x-access-token", result.data.token);
+            req.user = result.data.user;
+          } else {
+            req.user = user;
           }
 
-          const result = await this.refresh(refreshToken);
-          if (!result || !result.data) {
-            throw new AppError(401, "Your session has expired. Please log in again.");
-          }
-
-          res.setHeader("x-access-token", result.data.token);
-          req.user = result.data.user;
-        } else {
-          req.user = user;
+          next();
+        } catch (error) {
+          next(error);
         }
-
-        next();
-      } catch (error) {
-        next(error);
-      }
-    })(req, res, next);
+      },
+    )(req, res, next);
   };
-};
+}
 
 const AuthController = new authController();
 export default AuthController;

@@ -9,39 +9,55 @@ import z from "zod";
 export const VerifyOTPSchema = GenerateZodSchemas(OTPCodes).insert.omit({
   expires_at: true,
 });
-export type VerifyOTPType = z.infer<typeof VerifyOTPSchema>
+export type VerifyOTPType = z.infer<typeof VerifyOTPSchema>;
+
+/** Public surface of {@link otpService}, for dependency injection/mocking. */
+export interface IOTPService {
+  stopDuplicateOTPResend(
+    credentials: Omit<UserLoginType, "password">,
+  ): Promise<{ success: true; otpData: InferSelectModel<typeof OTPCodes> } | { success: false }>;
+  generateOTP(
+    credentials: Omit<UserLoginType, "password">,
+  ): Promise<InferSelectModel<typeof OTPCodes>>;
+  /**
+   * Note: declared as possibly `undefined` here even though the
+   * implementation currently casts its result to a non-undefined type —
+   * see the flag on {@link otpService.verifyOTP} below.
+   */
+  verifyOTP(credentials: VerifyOTPType): Promise<InferSelectModel<typeof OTPCodes> | undefined>;
+}
 
 /**
  * Generates, verifies, and rate-limits one-time password (OTP) codes used
  * as the second factor after a successful password login.
  */
-class otpService {
-  constructor() { }
+class otpService implements IOTPService {
+  constructor() {}
 
   /**
    * Checks whether an active (non-expired) OTP already exists for this
    * email, to prevent spamming new codes before the current one expires.
    *
-   *
    * @param credentials - the email to check for an existing active OTP
    * @returns `{ success: true, otpData }` if active OTP exists,
    *          `{ success: false }` if none
    */
-  async stopDuplicateOTPResend(credentials: Omit<UserLoginType, "password">) {
+  async stopDuplicateOTPResend(
+    credentials: Omit<UserLoginType, "password">,
+  ): Promise<{ success: true; otpData: InferSelectModel<typeof OTPCodes> } | { success: false }> {
     const existingOTP = await GetRecord("OTPCodes", {
-      where: (OTPCodes) => and(
-        eq(OTPCodes.email, credentials.email),
-        gt(OTPCodes.expires_at, new Date()),
-      ),
+      where: (OTPCodes) =>
+        and(eq(OTPCodes.email, credentials.email), gt(OTPCodes.expires_at, new Date())),
     });
 
-    if (existingOTP) return {
-      success: true,
-      otpData: existingOTP,
-    };
+    if (existingOTP)
+      return {
+        success: true,
+        otpData: existingOTP,
+      };
 
     return { success: false };
-  };
+  }
 
   /**
    * Creates and stores a new 8-digit numeric OTP for the given email,
@@ -51,7 +67,9 @@ class otpService {
    * @returns the newly created OTP record
    * @throws {ZodError} if `credentials` fails schema validation
    */
-  async generateOTP(credentials: Omit<UserLoginType, "password">) {
+  async generateOTP(
+    credentials: Omit<UserLoginType, "password">,
+  ): Promise<InferSelectModel<typeof OTPCodes>> {
     const schema = GenerateZodSchemas(Accounts).insert.omit({
       password: true,
       personal_details_id: true,
@@ -67,7 +85,7 @@ class otpService {
       specialChars: false,
     });
 
-    const OTP_EXPIRY_TIME = 5 * 60 * 1000;  // 5 minutes
+    const OTP_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes
     const expires_at = new Date(Date.now() + OTP_EXPIRY_TIME);
 
     const result = await CreateRecord("OTPCodes", {
@@ -76,8 +94,8 @@ class otpService {
       expires_at,
     });
 
-    return result as InferSelectModel<typeof OTPCodes>;
-  };
+    return result;
+  }
 
   /**
    * Looks up a matching, non-expired OTP record for the given email/code
@@ -88,21 +106,24 @@ class otpService {
    * @returns the matching OTP record, or `undefined` if none matches
    * @throws {ZodError} if `credentials` fails schema validation
    */
-  async verifyOTP(credentials: VerifyOTPType) {
+  async verifyOTP(
+    credentials: VerifyOTPType,
+  ): Promise<InferSelectModel<typeof OTPCodes> | undefined> {
     const validation = await VerifyOTPSchema.safeParseAsync(credentials);
     if (!validation.success) throw validation.error;
 
     const result = await GetRecord("OTPCodes", {
-      where: (OTPCodes) => and(
-        eq(OTPCodes.email, credentials.email),
-        eq(OTPCodes.code, credentials.code),
-        gt(OTPCodes.expires_at, new Date()),
-      ),
+      where: (OTPCodes) =>
+        and(
+          eq(OTPCodes.email, credentials.email),
+          eq(OTPCodes.code, credentials.code),
+          gt(OTPCodes.expires_at, new Date()),
+        ),
     });
 
-    return result as InferSelectModel<typeof OTPCodes>;
-  };
-};
+    return result;
+  }
+}
 
 const OTPService = new otpService();
 export default OTPService;

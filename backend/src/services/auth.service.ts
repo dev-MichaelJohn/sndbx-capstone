@@ -2,16 +2,37 @@ import { Accounts } from "@/schemas/auth.schema.js";
 import { GenerateZodSchemas } from "@/utils/schema.util.js";
 import type z from "zod";
 import { GetRecord, HardDeleteRecord } from "./db.service.js";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { AppError } from "@/utils/error.util.js";
 import bcrypt from "bcryptjs";
-import OTPService, { VerifyOTPSchema, type VerifyOTPType } from "./otp.service.js";
-import { JWTPayloadSchema, type JWTPayloadType } from "./token.service.js";
+import OTPService, {
+  VerifyOTPSchema,
+  type IOTPService,
+  type VerifyOTPType,
+} from "./otp.service.js";
+import { JWTPayloadSchema, type JWTPayloadType } from "@/types/token.type.js";
+import type { AccountSelect } from "@/types/user.type.js";
 
 export const UserLoginSchema = GenerateZodSchemas(Accounts).insert.omit({
   personal_details_id: true,
 });
 export type UserLoginType = z.infer<typeof UserLoginSchema>;
+
+/** An Accounts row with the password field stripped, as returned to callers. */
+type SafeAccount = Omit<AccountSelect, "password">;
+
+/** Public surface of {@link AuthService}, for dependency injection/mocking. */
+export interface IAuthService {
+  authenticateUserCredentials(
+    credentials: UserLoginType,
+  ): Promise<{ success: boolean; user: SafeAccount }>;
+
+  authenticateOTP(credentials: VerifyOTPType): Promise<{ success: boolean; user: SafeAccount }>;
+
+  authenticateJWT(
+    payload: JWTPayloadType,
+  ): Promise<{ success: boolean; message: string } | { success: boolean; user: SafeAccount }>;
+}
 
 /**
  * Core authentication logic: verifying login credentials, verifying OTP codes,
@@ -19,8 +40,8 @@ export type UserLoginType = z.infer<typeof UserLoginSchema>;
  * strategies ("local", "otp", "jwt") to produce the `user`/`info` values they
  * hand back to route handlers.
  */
-class authService {
-  constructor() { }
+class authService implements IAuthService {
+  constructor(private otpService: IOTPService = OTPService) {}
 
   /**
    * Verifies an email/password pair against the Accounts table.
@@ -35,10 +56,7 @@ class authService {
     if (!validation.success) throw validation.error;
 
     const user = await GetRecord("Accounts", {
-      where: (Accounts) => and(
-        eq(Accounts.email, credentials.email),
-        isNull(Accounts.deleted_at),
-      )
+      where: (Accounts) => and(eq(Accounts.email, credentials.email), isNull(Accounts.deleted_at)),
     });
     if (!user) throw new AppError(401, "Invalid email or password.");
 
@@ -46,9 +64,8 @@ class authService {
     if (!isMatch) throw new AppError(401, "Invalid email or password.");
 
     const { password, ...userFiltered } = user;
-
     return { success: true, user: userFiltered };
-  };
+  }
 
   /**
    * Verifies a submitted OTP code, consumes it (hard-deletes the record so it
@@ -64,23 +81,19 @@ class authService {
     const validation = await VerifyOTPSchema.safeParseAsync(credentials);
     if (!validation.success) throw validation.error;
 
-    const otpCode = await OTPService.verifyOTP(credentials);
+    const otpCode = await this.otpService.verifyOTP(credentials);
     if (!otpCode) throw new AppError(401, "Invalid email or expired OTP.");
 
     await HardDeleteRecord("OTPCodes", otpCode.id);
 
     const user = await GetRecord("Accounts", {
-      where: (Accounts) => and(
-        eq(Accounts.email, credentials.email),
-        isNull(Accounts.deleted_at),
-      ),
+      where: (Accounts) => and(eq(Accounts.email, credentials.email), isNull(Accounts.deleted_at)),
     });
     if (!user) throw new AppError(404, "No account record found.");
 
     const { password, ...userFiltered } = user;
-
-    return { user: userFiltered };
-  };
+    return { success: true, user: userFiltered };
+  }
 
   /**
    * Re-validates a decoded JWT payload against the current Accounts table,
@@ -96,20 +109,18 @@ class authService {
     if (!validation.success) throw validation.error;
 
     const user = await GetRecord("Accounts", {
-      where: (Accounts) => and(
-        eq(Accounts.email, payload.user.email),
-        isNull(Accounts.deleted_at),
-      ),
+      where: (Accounts) => and(eq(Accounts.email, payload.user.email), isNull(Accounts.deleted_at)),
     });
-    if (!user) return {
-      success: false,
-      message: "Token expired.",
-    };
+    if (!user)
+      return {
+        success: false,
+        message: "Token expired.",
+      };
 
-    const { personal_details_id, password, ...userFiltered } = user;
+    const { password, ...userFiltered } = user;
     return { success: true, user: userFiltered };
-  };
-};
+  }
+}
 
 const AuthService = new authService();
 export default AuthService;

@@ -1,39 +1,37 @@
 import env from "@/configs/env.config.js";
-import { Accounts, PersonalDetails, SystemRoles } from "@/schemas/auth.schema.js";
 import bcrypt from "bcryptjs";
-import { and, eq, gt, type InferSelectModel } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { CreateRecord, GetRecord } from "./db.service.js";
 import { AppError } from "@/utils/error.util.js";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
-import z from "zod";
+import {
+  ONE_DAY,
+  type JWTRefreshToken,
+  JWTPayloadSchema,
+  type JWTPayloadType,
+} from "@/types/token.type.js";
+import type { AccountSelect } from "@/types/user.type.js";
 
-const ONE_DAY = 24 * 60 * 60 * 1000;
-
-/** Decoded shape of a refresh token's JWT payload. */
-export interface JWTRefreshToken extends jwt.JwtPayload {
-  id: number,
-  email: string,
+/** Cookie options shape returned by {@link tokenService.generateCookieOptions}. */
+type RefreshCookieOptions = {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "strict";
+  maxAge?: number;
 };
 
-/** Shape of the payload embedded in an access (web) token. */
-export const JWTPayloadSchema = z.object({
-  user: GenerateZodSchemas(Accounts).select.omit({
-    personal_details_id: true,
-    password: true,
-    created_at: true,
-    deleted_at: true,
-    updated_at: true,
-    is_verified: true,
-  }),
-  personalDetails: GenerateZodSchemas(PersonalDetails).select.omit({
-    created_at: true,
-    deleted_at: true,
-    updated_at: true,
-  }),
-  roles: z.array(z.enum(SystemRoles.enumValues)),
-});
-export type JWTPayloadType = z.infer<typeof JWTPayloadSchema>;
+/** Public surface of {@link tokenService}, for dependency injection/mocking. */
+export interface ITokenService {
+  generateWebToken(payload: JWTPayloadType): Promise<string>;
+  generateRefreshToken(user: Pick<AccountSelect, "id" | "email">): string;
+  generateCookieOptions(rememberMe?: boolean): RefreshCookieOptions;
+  saveRefreshToken(
+    user: Pick<AccountSelect, "id" | "email">,
+    token: string,
+    rememberMe?: boolean,
+  ): ReturnType<typeof CreateRecord<"RefreshToken">>;
+  verifyToken(token: string): Promise<{ accountId: number; email: string }>;
+}
 
 /**
  * Issues, stores, and verifies access and refresh tokens. Access tokens are
@@ -41,32 +39,38 @@ export type JWTPayloadType = z.infer<typeof JWTPayloadSchema>;
  * longer-lived, hashed and stored in the DB so they can be looked up,
  * revoked, and checked for expiry independently of the JWT's own claims.
  */
-class tokenService {
-  constructor() { }
+class tokenService implements ITokenService {
+  constructor() {}
 
   /**
    * Signs a short-lived (15m) access token embedding the user's id, email,
-   * personal details, and role.
+   * personal details, and roles.
    *
    * @param user - the account record (or filtered subset) to embed
    * @param personalDetails - the account's personal details record
-   * @param role - the account's system role
+   * @param roles - the account's assigned system roles
    * @returns a signed JWT string
    * @throws {ZodError} if the combined payload fails {@link JWTPayloadSchema}
    */
-  async generateWebToken({ user, personalDetails, roles }: JWTPayloadType) {
+  async generateWebToken({ user, personalDetails, roles }: JWTPayloadType): Promise<string> {
     const validation = await JWTPayloadSchema.safeParseAsync({ user, personalDetails, roles });
     if (!validation.success) throw validation.error;
 
-    return jwt.sign({
-      id: user?.id,
-      email: user?.email,
-      personalDetails: personalDetails,
-      roles: roles,
-    }, env.JWT_SECRET, {
-      expiresIn: "15m",
-    });
-  };
+    return jwt.sign(
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+        personalDetails: personalDetails,
+        roles: roles,
+      },
+      env.JWT_SECRET,
+      {
+        expiresIn: "15m",
+      },
+    );
+  }
 
   /**
    * Signs a long-lived (7d) refresh token containing only the account's id
@@ -77,14 +81,18 @@ class tokenService {
    * @param user - the account to generate a refresh token for
    * @returns a signed JWT string
    */
-  generateRefreshToken(user: any) {
-    return jwt.sign({
-      id: user?.id,
-      email: user?.email
-    }, env.REFRESH_SECRET, {
-      expiresIn: "7d",
-    });
-  };
+  generateRefreshToken(user: Pick<AccountSelect, "id" | "email">): string {
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+      },
+      env.REFRESH_SECRET,
+      {
+        expiresIn: "7d",
+      },
+    );
+  }
 
   /**
    * Builds the cookie options used when setting the refresh-token cookie.
@@ -93,16 +101,18 @@ class tokenService {
    *   if false, omits `maxAge` (session cookie, cleared when the browser closes)
    * @returns an options object for `res.cookie(...)`
    */
-  generateCookieOptions(rememberMe: boolean = false) {
+  generateCookieOptions(rememberMe: boolean = false): RefreshCookieOptions {
     return {
       httpOnly: true,
       secure: env.NODE_ENV !== "development",
       sameSite: "strict" as const,
-      ...(rememberMe ? {
-        maxAge: (7) * ONE_DAY,
-      } : {}),
+      ...(rememberMe
+        ? {
+            maxAge: 7 * ONE_DAY,
+          }
+        : {}),
     };
-  };
+  }
 
   /**
    * Hashes and stores a refresh token so it can later be verified and
@@ -113,22 +123,26 @@ class tokenService {
    * @param rememberMe - if true, stores a 7-day expiry; otherwise 1 day
    * @returns the newly created RefreshToken record
    */
-  async saveRefreshToken(user: any, token: string, rememberMe: boolean = false) {
+  async saveRefreshToken(
+    user: Pick<AccountSelect, "id" | "email">,
+    token: string,
+    rememberMe: boolean = false,
+  ) {
     const expires_at = rememberMe
-      ? new Date(Date.now() + ((7) * ONE_DAY))
+      ? new Date(Date.now() + 7 * ONE_DAY)
       : new Date(Date.now() + ONE_DAY);
 
     const hash = await bcrypt.hash(token, 10);
 
     const refreshToken = await CreateRecord("RefreshToken", {
-      account_id: user?.id,
-      email: user?.email,
+      account_id: user.id,
+      email: user.email,
       token_hash: hash,
       expires_at: expires_at,
     });
 
     return refreshToken;
-  };
+  }
 
   /**
    * Verifies a refresh token's signature/expiry, then confirms it matches
@@ -141,16 +155,17 @@ class tokenService {
    * @throws {AppError} 400 if no matching, active RefreshToken record is
    *   found, or if the token doesn't match the stored hash
    */
-  async verifyToken(token: string) {
+  async verifyToken(token: string): Promise<{ accountId: number; email: string }> {
     const decoded = jwt.verify(token, env.REFRESH_SECRET) as JWTRefreshToken;
 
     const refreshToken = await GetRecord("RefreshToken", {
-      where: (RefreshToken) => and(
-        eq(RefreshToken.account_id, decoded.id),
-        eq(RefreshToken.email, decoded.email),
-        eq(RefreshToken.is_revoked, false),
-        gt(RefreshToken.expires_at, new Date()),
-      ),
+      where: (RefreshToken) =>
+        and(
+          eq(RefreshToken.account_id, decoded.id),
+          eq(RefreshToken.email, decoded.email),
+          eq(RefreshToken.is_revoked, false),
+          gt(RefreshToken.expires_at, new Date()),
+        ),
     });
     if (!refreshToken) throw new AppError(400, "Refresh token has been revoked or expired.");
 
@@ -161,8 +176,8 @@ class tokenService {
       accountId: decoded.id,
       email: decoded.email,
     };
-  };
-};
+  }
+}
 
 const TokenService = new tokenService();
 export default TokenService;

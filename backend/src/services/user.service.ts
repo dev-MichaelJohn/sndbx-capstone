@@ -1,5 +1,5 @@
-import { AccountRoles, Accounts, Roles, type PersonalDetails } from "@/schemas/auth.schema.js";
-import { and, eq, getColumns, isNull, type InferInsertModel } from "drizzle-orm";
+import { AccountRoles, Accounts, Roles } from "@/schemas/auth.schema.js";
+import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
 import bcrypt from "bcryptjs";
 import { AppError } from "@/utils/error.util.js";
@@ -7,14 +7,43 @@ import db, { type PgTransaction } from "@/configs/db.config.js";
 import {
   CreateUserReqSchema,
   type AccountRecordWithRole,
+  type AccountSelect,
   type SystemRole,
+  type PersonalDetailsSelect,
+  type AccountRoleSelect,
+  type AccountInsert,
+  type PersonalDetailsInsert,
 } from "@/types/user.type.js";
+
+/** Result of {@link userService.createUser} — `credentials` has the password stripped. */
+type CreateUserResult = {
+  credentials: Omit<AccountSelect, "password">;
+  details: PersonalDetailsSelect;
+  role: AccountRoleSelect;
+};
+
+/** Public surface of {@link userService}, for dependency injection/mocking. */
+export interface IUserService {
+  createUser(
+    credentials: Omit<AccountInsert, "personal_details_id">,
+    personalDetails: PersonalDetailsInsert,
+    role: SystemRole,
+  ): Promise<CreateUserResult>;
+  createUserRecordViaExistingTx(
+    credentials: Omit<AccountInsert, "personal_details_id">,
+    personalDetails: PersonalDetailsInsert,
+    role: SystemRole,
+    tx: PgTransaction,
+  ): Promise<CreateUserResult>;
+  grantRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void>;
+  revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void>;
+}
 
 /**
  * Handles user account creation, spanning the PersonalDetails, Accounts,
  * and AccountRoles tables as a single atomic operation.
  */
-class userService {
+class userService implements IUserService {
   constructor() {}
 
   private async accountHasRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
@@ -39,6 +68,11 @@ class userService {
     return roles.includes(role);
   }
 
+  private stripPassword(data: AccountSelect) {
+    const { password, ...user } = data;
+    return user;
+  }
+
   /**
    * Creates a new user account: inserts personal details, hashes the
    * password and creates the account record, then maps the account to the
@@ -48,17 +82,17 @@ class userService {
    * @param credentials - login credentials (email/password), excluding `personal_details_id`
    * @param personalDetails - the account holder's personal details
    * @param role - the system role to assign to the new account
-   * @returns the created account record as `credentials` (including its
-   *   generated id), the created personal-details record as `details`, and
-   *   the role-mapping record as `role`
+   * @returns the created account record as `credentials` (password stripped,
+   *   including its generated id), the created personal-details record as
+   *   `details`, and the role-mapping record as `role`
    * @throws {AppError} 500 if the personal details or account record fails to create
    * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
    */
   async createUser(
-    credentials: Omit<InferInsertModel<typeof Accounts>, "personal_details_id">,
-    personalDetails: InferInsertModel<typeof PersonalDetails>,
+    credentials: Omit<AccountInsert, "personal_details_id">,
+    personalDetails: PersonalDetailsInsert,
     role: SystemRole,
-  ) {
+  ): Promise<CreateUserResult> {
     const validation = await CreateUserReqSchema.safeParseAsync({
       credentials,
       personalDetails,
@@ -75,7 +109,7 @@ class userService {
         );
 
       const hash = await bcrypt.hash(credentials.password, 10);
-      const userCredentials: InferInsertModel<typeof Accounts> = {
+      const userCredentials: AccountInsert = {
         ...credentials,
         password: hash,
         personal_details_id: userDetails?.id,
@@ -112,7 +146,7 @@ class userService {
         );
 
       return {
-        credentials: userAccount,
+        credentials: this.stripPassword(userAccount),
         details: userDetails,
         role: userRole,
       };
@@ -130,18 +164,18 @@ class userService {
    * @param personalDetails - the account holder's personal details
    * @param role - the system role to assign to the new account
    * @param tx - the transaction to run the inserts within
-   * @returns the created account record as `credentials` (including its
-   *   generated id), the created personal-details record as `details`, and
-   *   the role-mapping record as `role`
+   * @returns the created account record as `credentials` (password stripped,
+   *   including its generated id), the created personal-details record as
+   *   `details`, and the role-mapping record as `role`
    * @throws {AppError} 500 if the personal details or account record fails to create
    * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
    */
   async createUserRecordViaExistingTx(
-    credentials: Omit<InferInsertModel<typeof Accounts>, "personal_details_id">,
-    personalDetails: InferInsertModel<typeof PersonalDetails>,
+    credentials: Omit<AccountInsert, "personal_details_id">,
+    personalDetails: PersonalDetailsInsert,
     role: SystemRole,
     tx: PgTransaction,
-  ) {
+  ): Promise<CreateUserResult> {
     const validation = await CreateUserReqSchema.safeParseAsync({
       credentials,
       personalDetails,
@@ -161,7 +195,7 @@ class userService {
       );
 
     const hash = await bcrypt.hash(credentials.password, 10);
-    const userCredentials: InferInsertModel<typeof Accounts> = {
+    const userCredentials: AccountInsert = {
       ...credentials,
       password: hash,
       personal_details_id: userDetails?.id,
@@ -198,7 +232,7 @@ class userService {
       );
 
     return {
-      credentials: userAccount,
+      credentials: this.stripPassword(userAccount),
       details: userDetails,
       role: userRole,
     };
@@ -214,7 +248,7 @@ class userService {
    * @throws {AppError} 404 if the given role has not been found
    * @throws {AppError} 500 if the role grant fails
    */
-  async grantRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
+  async grantRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
     if (!(await this.accountHasRole(accountId, role, tx))) {
       const systemRole = await GetRecord("Roles", {
         where: (Roles) => eq(Roles.system_role, role),
@@ -243,7 +277,7 @@ class userService {
    * @param tx - optional transaction to run the soft-delete within
    * @throws {AppError} 500 if the role revocation fails
    */
-  async revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
+  async revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
     if (await this.accountHasRole(accountId, role, tx)) {
       const revokedRole = await SoftDeleteRecord(
         "AccountRoles",
