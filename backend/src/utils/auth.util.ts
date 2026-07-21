@@ -76,10 +76,7 @@ export const JWTAuthStrategy = new JWTStrategy(
   ) => {
     try {
       const parsedPayload: JWTPayloadType = {
-        user: {
-          id: payload.id,
-          email: payload.email,
-        },
+        user: payload.user,
         personalDetails: payload.personalDetails,
         roles: payload.roles,
       };

@@ -3,6 +3,7 @@ import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
 import bcrypt from "bcryptjs";
 import { AppError } from "@/utils/error.util.js";
+import crypto from "node:crypto";
 import db, { type PgTransaction } from "@/configs/db.config.js";
 import {
   CreateUserReqSchema,
@@ -12,7 +13,7 @@ import {
   type PersonalDetailsSelect,
   type AccountRoleSelect,
   type AccountInsert,
-  type PersonalDetailsInsert,
+  type CreateUserReqType,
 } from "@/types/user.type.js";
 
 /** Result of {@link userService.createUser} — `credentials` has the password stripped. */
@@ -24,15 +25,9 @@ type CreateUserResult = {
 
 /** Public surface of {@link userService}, for dependency injection/mocking. */
 export interface IUserService {
-  createUser(
-    credentials: Omit<AccountInsert, "personal_details_id">,
-    personalDetails: PersonalDetailsInsert,
-    role: SystemRole,
-  ): Promise<CreateUserResult>;
+  createUser(info: CreateUserReqType): Promise<CreateUserResult>;
   createUserRecordViaExistingTx(
-    credentials: Omit<AccountInsert, "personal_details_id">,
-    personalDetails: PersonalDetailsInsert,
-    role: SystemRole,
+    info: CreateUserReqType,
     tx: PgTransaction,
   ): Promise<CreateUserResult>;
   grantRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void>;
@@ -73,6 +68,40 @@ class userService implements IUserService {
     return user;
   }
 
+  private generatePassword(length: number = 12) {
+    const minLength = Math.max(8, length);
+
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const numbers = "0123456789";
+    const symbols = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+    const allChars = uppercase + lowercase + numbers + symbols;
+
+    const passwordArray: string[] = [
+      uppercase[crypto.randomInt(0, uppercase.length)]!,
+      lowercase[crypto.randomInt(0, lowercase.length)]!,
+      numbers[crypto.randomInt(0, numbers.length)]!,
+      symbols[crypto.randomInt(0, symbols.length)]!,
+    ];
+
+    for (let i = passwordArray.length; i < minLength; i++) {
+      passwordArray.push(allChars[crypto.randomInt(0, allChars.length)]!);
+    }
+
+    for (let i = passwordArray.length - 1; i > 0; i--) {
+      const j = crypto.randomInt(0, i + 1);
+
+      // Non-null assertions added to array indexing
+      const charI = passwordArray[i]!;
+      const charJ = passwordArray[j]!;
+
+      passwordArray[i] = charJ;
+      passwordArray[j] = charI;
+    }
+
+    return passwordArray.join("");
+  }
+
   /**
    * Creates a new user account: inserts personal details, hashes the
    * password and creates the account record, then maps the account to the
@@ -88,11 +117,11 @@ class userService implements IUserService {
    * @throws {AppError} 500 if the personal details or account record fails to create
    * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
    */
-  async createUser(
-    credentials: Omit<AccountInsert, "personal_details_id">,
-    personalDetails: PersonalDetailsInsert,
-    role: SystemRole,
-  ): Promise<CreateUserResult> {
+  async createUser({
+    credentials,
+    personalDetails,
+    role,
+  }: CreateUserReqType): Promise<CreateUserResult> {
     const validation = await CreateUserReqSchema.safeParseAsync({
       credentials,
       personalDetails,
@@ -107,6 +136,9 @@ class userService implements IUserService {
           500,
           "Failed to create personal details record while registering user. User account was not created.",
         );
+
+      if (!credentials.password || credentials.password?.trim().length === 0)
+        credentials.password = this.generatePassword();
 
       const hash = await bcrypt.hash(credentials.password, 10);
       const userCredentials: AccountInsert = {
@@ -171,9 +203,7 @@ class userService implements IUserService {
    * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
    */
   async createUserRecordViaExistingTx(
-    credentials: Omit<AccountInsert, "personal_details_id">,
-    personalDetails: PersonalDetailsInsert,
-    role: SystemRole,
+    { credentials, personalDetails, role }: CreateUserReqType,
     tx: PgTransaction,
   ): Promise<CreateUserResult> {
     const validation = await CreateUserReqSchema.safeParseAsync({
@@ -193,6 +223,9 @@ class userService implements IUserService {
         500,
         "Failed to create personal details record while registering user. User account was not created.",
       );
+
+    if (!credentials.password || credentials.password?.trim().length === 0)
+      credentials.password = this.generatePassword();
 
     const hash = await bcrypt.hash(credentials.password, 10);
     const userCredentials: AccountInsert = {

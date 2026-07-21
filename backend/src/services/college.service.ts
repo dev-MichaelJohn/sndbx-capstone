@@ -6,10 +6,11 @@ import {
   or,
   getColumns,
   sql,
-  type InferSelectModel,
   eq,
   asc,
   desc,
+  notExists,
+  inArray,
 } from "drizzle-orm";
 import z from "zod";
 import {
@@ -20,7 +21,7 @@ import {
   SoftDeleteRecord,
 } from "./db.service.js";
 import { createPaginatedData } from "@/utils/response.util.js";
-import { Accounts, PersonalDetails } from "@/schemas/auth.schema.js";
+import { AccountRoles, Accounts, PersonalDetails, Roles } from "@/schemas/auth.schema.js";
 import {
   CollegeDeanSchema,
   CreateCollegeDeanSchema,
@@ -44,41 +45,85 @@ import { AppError } from "@/utils/error.util.js";
 import UserService, { type IUserService } from "./user.service.js";
 
 export interface ICollegeService {
+  /** Creates a CollegeDeans link record tying an account to a college. */
   createCollegeDeanRecord(dean: CollegeDeanInsert, tx?: PgTransaction): Promise<CollegeDeanSelect>;
 
+  /** Retrieves a paginated, searchable, sortable list of colleges, each joined with its current dean. */
   getColleges(
     params: CollegeSearchQuery,
-  ): Promise<ReturnType<typeof createPaginatedData<InferSelectModel<typeof Colleges>[]>>>;
+  ): Promise<ReturnType<typeof createPaginatedData<CollegeWithDean[]>>>;
 
-  getCollege(id: number, tx?: PgTransaction): Promise<CollegeWithDean | undefined>;
+  /** Retrieves a single college by id, joined with its current dean's account and personal details. */
+  getCollege(id: number, tx?: PgTransaction): Promise<CollegeWithDean>;
 
-  searchAvailableDeanCandidates(search: string, tx?: PgTransaction): Promise<DeanCandidate[]>;
+  /** Searches accounts eligible to be a dean, flagging each as already assigned or not. */
+  searchAvailableDeanCandidates(
+    search: string | undefined,
+    tx?: PgTransaction,
+  ): Promise<DeanCandidate[]>;
 
+  /** Creates a new college, optionally assigning a dean (existing or brand-new account) in the same transaction. */
   createCollegeRecord(
     params: CreateCollegeRecordType,
   ): Promise<{ college: CollegeSelect; dean?: CollegeDeanSelect }>;
 
+  /** Updates a college's fields and/or reassigns its dean, handling the old dean's role/link cleanup. */
   updateCollegeRecord(
     params: UpdateCollegeRecordType,
   ): Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>;
 
+  /** Soft-deletes a college and its current dean link, revoking the dean's role if appropriate. */
   deleteCollegeRecord(collegeId: number): Promise<void>;
 }
 
+/**
+ * Handles college CRUD and college-dean assignment. A dean is an account
+ * linked to a college via `CollegeDeans` and granted the SUPERVISOR role;
+ * assigning, reassigning, or removing a dean keeps that role grant and
+ * link record in sync as a side effect of the college operation.
+ */
 class CollegeService implements ICollegeService {
   constructor(private userService: IUserService = UserService) {}
+
+  /**
+   * Builds the WHERE-clause fragment for a college name/initialism search.
+   *
+   * @param search - the raw search term, if any
+   * @returns an `or(ilike(...), ilike(...))` condition, or `undefined` if
+   *   `search` is empty/whitespace-only (i.e. no filtering should apply)
+   */
   private getSearchConditions(search: string | undefined) {
     if (!search || search.trim().length === 0) return undefined;
     return or(ilike(Colleges.name, `%${search}%`), ilike(Colleges.initialism, `%${search}%`));
   }
 
+  /**
+   * Validates and normalizes the raw `dean` input from a create/update
+   * request into a discriminated `{ type: "existing" | "new", ... }` shape.
+   *
+   * @param info - the raw dean assignment payload, if any
+   * @returns the parsed dean info, or `undefined` if no dean info was given
+   * @throws {ZodError} if `info` fails schema validation
+   */
   private async parseDeanInfo(info?: CreateCollegeDean) {
-    if (!info) return undefined;
+    if (!info || Object.keys(info).length === 0) return undefined;
     const parsed = await CreateCollegeDeanSchema.safeParseAsync(info);
     if (!parsed.success) throw parsed.error;
     return parsed.data;
   }
 
+  /**
+   * Checks whether a proposed dean assignment refers to the college's
+   * current dean, so callers can skip re-running the reassignment steps
+   * (role grant/revoke, link soft-delete/insert) when nothing would
+   * actually change.
+   *
+   * @param info - the parsed dean info from the request, if any
+   * @param existingDean - the college's current dean account id / institutional id
+   * @returns `true` if `info` is absent, or if it identifies the same
+   *   account (by id for an "existing" dean, by institutional id for a
+   *   "new" one — matching against the same person re-submitted)
+   */
   private sameDeanInfo(
     info: CreateCollegeDean | undefined,
     existingDean: Pick<DeanCandidate, "account_id" | "institutional_id">,
@@ -89,6 +134,15 @@ class CollegeService implements ICollegeService {
     else return info.details.personalDetails.institutional_id === existingDean.institutional_id;
   }
 
+  /**
+   * Checks whether an account currently chairs any active program, used to
+   * decide whether their SUPERVISOR role should survive being unassigned
+   * as a college dean (a program chair still needs it).
+   *
+   * @param accountId - the account to check
+   * @param tx - optional transaction to run the query within
+   * @returns `true` if the account chairs at least one non-deleted program
+   */
   private async hasProgramsHandled(accountId: number, tx?: PgTransaction) {
     const existingPrograms = await GetRecords("ProgramChairs", {
       where: (ProgramChairs) =>
@@ -97,6 +151,51 @@ class CollegeService implements ICollegeService {
     });
 
     return existingPrograms.length > 0;
+  }
+
+  /**
+   * Validates that an account is eligible to be assigned as a college dean:
+   *  - the account exists and isn't soft-deleted
+   *  - it doesn't hold a SYS_ADMIN, ADMIN, or STUDENT role
+   *  - it isn't already linked as the current dean of another college
+   *
+   * Only relevant for the "existing account" dean path — a brand-new
+   * account created via {@link IUserService.createUserRecordViaExistingTx}
+   * satisfies all three by construction, so this isn't (and shouldn't be)
+   * called for that branch.
+   *
+   * @param accountId - the account id being proposed as a dean
+   * @param tx - optional transaction to run the checks within
+   * @throws {AppError} 404 if the account doesn't exist or is deleted
+   * @throws {AppError} 400 if the account holds a disallowed role
+   * @throws {AppError} 409 if the account is already assigned as a dean
+   */
+  private async validateDeanCandidate(accountId: number, tx?: PgTransaction) {
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.id, accountId), isNull(Accounts.deleted_at)),
+      ...(tx && { tx }),
+    });
+    if (!account) throw new AppError(404, "Dean account not found.");
+
+    const roleRecords = await GetRecords<"AccountRoles", { system_role: string }>("AccountRoles", {
+      select: () => ({ system_role: Roles.system_role }),
+      where: (AccountRoles) =>
+        and(eq(AccountRoles.account_id, accountId), isNull(AccountRoles.deleted_at)),
+      join: (query) =>
+        query.innerJoin(Roles, and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at))),
+      ...(tx && { tx }),
+    });
+    const disallowedRoles = ["SYS_ADMIN", "ADMIN", "STUDENT"];
+    if (roleRecords.some((r) => disallowedRoles.includes(r.system_role)))
+      throw new AppError(400, "This account's role is not eligible to be assigned as a dean.");
+
+    const existingDeanLink = await GetRecord("CollegeDeans", {
+      where: (CollegeDeans) =>
+        and(eq(CollegeDeans.dean_id, accountId), isNull(CollegeDeans.deleted_at)),
+      ...(tx && { tx }),
+    });
+    if (existingDeanLink)
+      throw new AppError(409, "This account is already assigned as the dean of a college.");
   }
 
   /**
@@ -172,7 +271,7 @@ class CollegeService implements ICollegeService {
     const totalItems = rows[0]?.totalItems ?? 0;
     const data = rows.map(({ totalItems, ...rest }) => rest);
 
-    return createPaginatedData<InferSelectModel<typeof Colleges>[]>({
+    return createPaginatedData<CollegeWithDean[]>({
       data,
       currentPage: page,
       pageSize: PAGE_SIZE,
@@ -186,7 +285,8 @@ class CollegeService implements ICollegeService {
    *
    * @param id - the college id to look up
    * @param tx - optional transaction to run the query within
-   * @returns the matching college record, or undefined if not found
+   * @returns the matching college record
+   * @throws {AppError} 404 if the no record found
    */
   async getCollege(id: number, tx?: PgTransaction) {
     const validation = await z.coerce.number().positive().safeParseAsync(id);
@@ -216,6 +316,7 @@ class CollegeService implements ICollegeService {
           .leftJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id)),
       ...(tx && { tx }),
     });
+    if (!data) throw new AppError(404, "No college record found.");
 
     return data;
   }
@@ -228,8 +329,8 @@ class CollegeService implements ICollegeService {
    * @param tx - optional transaction to run the query within
    * @returns the matching account records with an `is_college_dean` flag
    */
-  async searchAvailableDeanCandidates(search: string, tx?: PgTransaction) {
-    return await GetRecords<"Accounts", DeanCandidate>("Accounts", {
+  async searchAvailableDeanCandidates(search: string | undefined, tx?: PgTransaction) {
+    const deans = await GetRecords<"Accounts", DeanCandidate>("Accounts", {
       select: (Accounts) => ({
         id: Accounts.id,
         first_name: PersonalDetails.first_name,
@@ -249,19 +350,41 @@ class CollegeService implements ICollegeService {
           )
           .leftJoin(
             CollegeDeans,
-            and(eq(CollegeDeans.dean_id, Accounts.id), isNull(PersonalDetails.deleted_at)),
+            and(eq(CollegeDeans.dean_id, Accounts.id), isNull(CollegeDeans.deleted_at)),
           ),
-      where: () =>
+      where: (Accounts) =>
         and(
           isNull(Accounts.deleted_at),
-          or(
-            ilike(PersonalDetails.first_name, `%${search}%`),
-            ilike(PersonalDetails.last_name, `%${search}%`),
-            ilike(PersonalDetails.institutional_id, `%${search}%`),
+
+          // 🚫 Exclude SYS_ADMIN, ADMIN, and STUDENT via subquery
+          notExists(
+            db
+              .select({ id: AccountRoles.id })
+              .from(AccountRoles)
+              .innerJoin(Roles, eq(Roles.id, AccountRoles.role_id))
+              .where(
+                and(
+                  eq(AccountRoles.account_id, Accounts.id),
+                  isNull(AccountRoles.deleted_at),
+                  isNull(Roles.deleted_at),
+                  inArray(Roles.system_role, ["SYS_ADMIN", "ADMIN", "STUDENT"]),
+                ),
+              ),
           ),
+
+          // 🔍 Search filter
+          search
+            ? or(
+                ilike(PersonalDetails.first_name, `%${search}%`),
+                ilike(PersonalDetails.last_name, `%${search}%`),
+                ilike(PersonalDetails.institutional_id, `%${search}%`),
+              )
+            : undefined,
         ),
       ...(tx && { tx }),
     });
+
+    return deans;
   }
 
   /**
@@ -291,13 +414,17 @@ class CollegeService implements ICollegeService {
       if (deanInfo) {
         let accountId: number;
 
-        if (deanInfo.type === "existing") accountId = deanInfo.id;
-        else {
+        if (deanInfo.type === "existing") {
+          await this.validateDeanCandidate(deanInfo.id, tx);
+          accountId = deanInfo.id;
+        } else {
           const { credentials, personalDetails } = deanInfo.details;
           const accountRecord = await this.userService.createUserRecordViaExistingTx(
-            credentials,
-            personalDetails,
-            "FACULTY",
+            {
+              credentials,
+              personalDetails,
+              role: "FACULTY",
+            },
             tx,
           );
           if (!accountRecord)
@@ -383,13 +510,13 @@ class CollegeService implements ICollegeService {
       ) {
         let accountId: number;
 
-        if (deanInfo.type === "existing") accountId = deanInfo.id;
-        else {
+        if (deanInfo.type === "existing") {
+          await this.validateDeanCandidate(deanInfo.id, tx);
+          accountId = deanInfo.id;
+        } else {
           const { credentials, personalDetails } = deanInfo.details;
           const accountRecord = await this.userService.createUserRecordViaExistingTx(
-            credentials,
-            personalDetails,
-            "FACULTY",
+            { credentials, personalDetails, role: "FACULTY" },
             tx,
           );
           if (!accountRecord)
@@ -458,23 +585,22 @@ class CollegeService implements ICollegeService {
       const existingCollegeRecord = await this.getCollege(parsed, tx);
       if (!existingCollegeRecord) throw new AppError(404, "No college record found.");
 
-      if (
-        existingCollegeRecord.account_id &&
-        !(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx))
-      )
-        await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
+      if (existingCollegeRecord.account_id) {
+        if (!(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)))
+          await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
 
-      const deletedCollegeDeanRecord = await SoftDeleteRecord(
-        "CollegeDeans",
-        existingCollegeRecord.id,
-        CollegeDeans.college_id,
-        tx,
-      );
-      if (!deletedCollegeDeanRecord)
-        throw new AppError(
-          500,
-          "Failed to remove old college-dean record. Changes during this process were rolled back.",
+        const deletedCollegeDeanRecord = await SoftDeleteRecord(
+          "CollegeDeans",
+          existingCollegeRecord.id,
+          CollegeDeans.college_id,
+          tx,
         );
+        if (!deletedCollegeDeanRecord)
+          throw new AppError(
+            500,
+            "Failed to remove old college-dean record. Changes during this process were rolled back.",
+          );
+      }
 
       const deletedCollegeRecord = await SoftDeleteRecord(
         "Colleges",
@@ -491,7 +617,5 @@ class CollegeService implements ICollegeService {
   }
 }
 
-// Composition root: the concrete userService singleton is wired in here.
-// Swap it for a mock/stub implementing IUserService in tests.
 const collegeService = new CollegeService();
 export default collegeService;

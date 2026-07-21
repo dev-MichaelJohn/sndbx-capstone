@@ -1,6 +1,6 @@
 import UserService, { type IUserService } from "@/services/user.service.js";
 import { createAPIResponse } from "@/utils/response.util.js";
-import { CreateUserReqSchema, type CreateUserReqType } from "@/types/user.type.js";
+import { CreateUserReqSchema } from "@/types/user.type.js";
 import type { NextFunction, Request, Response } from "express";
 
 /** Handles user account creation requests. */
@@ -18,15 +18,11 @@ class userController {
    */
   async createUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const parsed = await CreateUserReqSchema.safeParseAsync(req.body);
-      if (!parsed.success) throw parsed.error;
+      const validation = await CreateUserReqSchema.safeParseAsync(req.body);
+      if (!validation.success) throw validation.error;
 
-      const { body }: { body: CreateUserReqType } = req;
-      const user = await this.userService.createUser(
-        body.credentials,
-        body.personalDetails,
-        body.role,
-      );
+      const { credentials, personalDetails, role } = validation.data;
+      const user = await this.userService.createUser({ credentials, personalDetails, role });
 
       const response = createAPIResponse<typeof user>(
         201,
@@ -34,7 +30,7 @@ class userController {
         user,
       );
       res.status(response.status).json(response);
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }

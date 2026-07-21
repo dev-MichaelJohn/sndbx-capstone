@@ -93,11 +93,11 @@ class seederService implements ISeederService {
     if (!(await this.isSuperAdminEmpty()))
       throw new AppError(409, "A super admin account already exists.");
 
-    return await this.userService.createUser(
-      userData.credentials,
-      userData.personalDetails,
-      "SYS_ADMIN",
-    );
+    return await this.userService.createUser({
+      credentials: userData.credentials,
+      personalDetails: userData.personalDetails,
+      role: "SYS_ADMIN",
+    });
   }
 }
 
