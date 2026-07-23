@@ -127,3 +127,4 @@ class otpService implements IOTPService {
 
 const OTPService = new otpService();
 export default OTPService;
+export { otpService };

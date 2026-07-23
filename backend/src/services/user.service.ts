@@ -1,4 +1,4 @@
-import { AccountRoles, Accounts, Roles } from "@/schemas/auth.schema.js";
+import { AccountRoles, Accounts, PersonalDetails, Roles } from "@/schemas/auth.schema.js";
 import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
 import bcrypt from "bcryptjs";
@@ -14,7 +14,11 @@ import {
   type AccountRoleSelect,
   type AccountInsert,
   type CreateUserReqType,
+  AccountSchema,
+  type RoleSelect,
+  type UserType,
 } from "@/types/user.type.js";
+import z from "zod";
 
 /** Result of {@link userService.createUser} — `credentials` has the password stripped. */
 type CreateUserResult = {
@@ -25,6 +29,7 @@ type CreateUserResult = {
 
 /** Public surface of {@link userService}, for dependency injection/mocking. */
 export interface IUserService {
+  getUser(credentials: Pick<AccountSelect, "id" | "email">): Promise<UserType>;
   createUser(info: CreateUserReqType): Promise<CreateUserResult>;
   createUserRecordViaExistingTx(
     info: CreateUserReqType,
@@ -100,6 +105,53 @@ class userService implements IUserService {
     }
 
     return passwordArray.join("");
+  }
+
+  async getUser(credentials: Pick<AccountSelect, "id" | "email">) {
+    const validation = await AccountSchema.select
+      .pick({
+        id: true,
+        email: true,
+      })
+      .extend({
+        id: z.coerce.number().int().positive().nonoptional(),
+      })
+      .safeParseAsync(credentials);
+    if (!validation.success) throw validation.error;
+
+    const { id, email } = validation.data;
+
+    const user = await GetRecord<"Accounts">("Accounts", {
+      where: (Accounts) =>
+        and(eq(Accounts.id, id), eq(Accounts.email, email), isNull(Accounts.deleted_at)),
+    });
+    if (!user) throw new AppError(404, "No user account found.");
+
+    const personalDetails = await GetRecord<"PersonalDetails">("PersonalDetails", {
+      where: (PersonalDetails) =>
+        and(eq(PersonalDetails.id, user.personal_details_id), isNull(PersonalDetails.deleted_at)),
+    });
+    if (!personalDetails) throw new AppError(404, "No user details found.");
+
+    const roleRecords = await GetRecords<"AccountRoles", Pick<RoleSelect, "system_role">>(
+      "AccountRoles",
+      {
+        select: () => ({ system_role: Roles.system_role }),
+        where: (AccountRoles) =>
+          and(eq(AccountRoles.account_id, id), isNull(AccountRoles.deleted_at)),
+        join: (query) =>
+          query.innerJoin(Roles, and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at))),
+      },
+    );
+    if (roleRecords.length === 0) throw new AppError(404, "No role associated with this account.");
+
+    const roles = roleRecords.map((role) => role.system_role);
+
+    return {
+      user,
+      personalDetails,
+      roles,
+    };
   }
 
   /**
@@ -325,3 +377,4 @@ class userService implements IUserService {
 
 const UserService = new userService();
 export default UserService;
+export { userService };

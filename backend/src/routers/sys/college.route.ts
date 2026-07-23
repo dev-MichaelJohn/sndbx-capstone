@@ -1,5 +1,6 @@
 import CollegeController from "@/controllers/college.controller.js";
 import { Router, type IRouter } from "express";
+import ProgramRouter from "./program.router.js";
 
 const CollegeRouter: IRouter = Router();
 
@@ -25,5 +26,7 @@ CollegeRouter.put("/:id", async (req, res, next) => {
 CollegeRouter.delete("/:id", async (req, res, next) => {
   await CollegeController.deleteCollegeRecord(req, res, next);
 });
+
+CollegeRouter.use("/:id/programs", ProgramRouter);
 
 export default CollegeRouter;

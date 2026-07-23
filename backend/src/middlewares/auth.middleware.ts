@@ -1,5 +1,4 @@
-import { JWTPayloadSchema } from "@/types/token.type.js";
-import type { SystemRole } from "@/types/user.type.js";
+import { UserSchema, type SystemRole } from "@/types/user.type.js";
 import { AppError } from "@/utils/error.util.js";
 import type { RequestHandler } from "express";
 
@@ -8,7 +7,7 @@ export const authorizeHandler = (allowedRole: SystemRole): RequestHandler => {
     try {
       const user = req.user;
       if (!user) throw new AppError(401, "Authentication required.");
-      const validation = await JWTPayloadSchema.safeParseAsync(user);
+      const validation = await UserSchema.safeParseAsync(user);
       if (!validation.success) throw validation.error;
 
       const parsed = validation.data;

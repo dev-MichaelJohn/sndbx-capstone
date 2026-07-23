@@ -1,4 +1,9 @@
-import { AppError, parseDatabaseError, parseZodError, type DatabaseError } from "@/utils/error.util.js";
+import {
+  AppError,
+  isDatabaseError,
+  parseDatabaseError,
+  parseZodError,
+} from "@/utils/error.util.js";
 import { logger } from "@/utils/logger.util.js";
 import { createAPIResponse } from "@/utils/response.util.js";
 import type { NextFunction, Request, Response } from "express";
@@ -17,21 +22,29 @@ import { ZodError } from "zod";
  *
  * Recognizes three error shapes and falls back to a generic 500 otherwise:
  * - `ZodError` → converted via {@link parseZodError} (400, field-level messages)
- * - errors with a `.code` (Postgres/pg errors) → converted via {@link parseDatabaseError}
  * - `AppError` → used as-is
+ * - anything {@link isDatabaseError} recognizes (a Drizzle-wrapped error, a
+ *   bare `pg.DatabaseError`, or a connection failure) → converted via
+ *   {@link parseDatabaseError}
  * - anything else → wrapped as a generic 500 `AppError`
  */
-export const errorHandler = (error: any, _req: Request, res: Response, _next: NextFunction) => {
+export const errorHandler = (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   let finalError: AppError;
 
   if (error instanceof ZodError) finalError = parseZodError(error);
-  else if (error.code) finalError = parseDatabaseError(error as DatabaseError);
-  else if (error instanceof AppError) finalError = error
-  else finalError = new AppError(500, error.message || "Something went wrong.");
+  else if (error instanceof AppError) finalError = error;
+  else if (isDatabaseError(error)) finalError = parseDatabaseError(error);
+  else
+    finalError = new AppError(
+      500,
+      error instanceof Error ? error.message : "Something went wrong.",
+    );
 
-  logger.error(`${finalError.message} - Stack: ${error.stack || error}`);
-
-  res.status(finalError.status).json(
-    createAPIResponse<null>(finalError.status, finalError.message, null, finalError.errors),
+  logger.error(
+    `${finalError.message} - Stack: ${error instanceof Error ? error.stack : String(error)}`,
   );
+
+  res
+    .status(finalError.status)
+    .json(createAPIResponse<null>(finalError.status, finalError.message, null, finalError.errors));
 };

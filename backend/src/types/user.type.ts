@@ -88,3 +88,14 @@ export type CreateUserReqType = z.infer<typeof CreateUserReqSchema>;
 export type AccountRecordWithRole = AccountInsert & {
   system_role: SystemRole;
 };
+
+export const UserSchema = z.object({
+  user: AccountSchema.select.extend({
+    id: z.coerce.number().int().positive().nonoptional(),
+  }),
+  personalDetails: PersonalDetailsSchema.select.extend({
+    id: z.coerce.number().int().positive().nonoptional(),
+  }),
+  roles: z.array(z.enum(SystemRoles.enumValues)),
+});
+export type UserType = z.infer<typeof UserSchema>;

@@ -94,7 +94,7 @@ export const CreateCollegeRecord = z.object({
 export type CreateCollegeRecordType = z.infer<typeof CreateCollegeRecord>;
 
 export const UpdateCollegeRecord = z.object({
-  collegeId: z.coerce.number().positive().nonoptional(),
+  collegeId: z.coerce.number().int().positive().nonoptional(),
   college: CollegeSchema.update.optional(),
   dean: CreateCollegeDeanSchema.optional(),
 });

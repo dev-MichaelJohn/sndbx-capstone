@@ -55,3 +55,4 @@ class emailService implements IEmailService {
 
 const EmailService = new emailService();
 export default EmailService;
+export { emailService };

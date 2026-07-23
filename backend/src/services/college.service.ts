@@ -82,7 +82,7 @@ export interface ICollegeService {
  * assigning, reassigning, or removing a dean keeps that role grant and
  * link record in sync as a side effect of the college operation.
  */
-class CollegeService implements ICollegeService {
+class collegeService implements ICollegeService {
   constructor(private userService: IUserService = UserService) {}
 
   /**
@@ -230,7 +230,12 @@ class CollegeService implements ICollegeService {
    * @returns a paginated response containing the matching college records
    */
   async getColleges({ search, page, orderBy = "id", orderDir = "asc" }: CollegeSearchQuery) {
-    const validation = await CollegeSearchQuerySchema.safeParseAsync({ search, page });
+    const validation = await CollegeSearchQuerySchema.safeParseAsync({
+      search,
+      page,
+      orderBy,
+      orderDir,
+    });
     if (!validation.success) throw validation.error;
 
     const PAGE_SIZE = 10;
@@ -355,8 +360,6 @@ class CollegeService implements ICollegeService {
       where: (Accounts) =>
         and(
           isNull(Accounts.deleted_at),
-
-          // 🚫 Exclude SYS_ADMIN, ADMIN, and STUDENT via subquery
           notExists(
             db
               .select({ id: AccountRoles.id })
@@ -371,8 +374,6 @@ class CollegeService implements ICollegeService {
                 ),
               ),
           ),
-
-          // 🔍 Search filter
           search
             ? or(
                 ilike(PersonalDetails.first_name, `%${search}%`),
@@ -478,7 +479,7 @@ class CollegeService implements ICollegeService {
     const deanInfo = await this.parseDeanInfo(dean);
 
     const hasCollegeInfo = college && Object.keys(college).length > 0;
-    const hasDeanInfo = dean && Object.keys(dean).length > 0;
+    const hasDeanInfo = deanInfo && Object.keys(deanInfo).length > 0;
 
     if (!hasCollegeInfo && !hasDeanInfo)
       throw new AppError(400, "No update parameters were provided.");
@@ -502,7 +503,7 @@ class CollegeService implements ICollegeService {
       }
 
       if (
-        deanInfo &&
+        hasDeanInfo &&
         !this.sameDeanInfo(deanInfo, {
           account_id: existingCollegeRecord.account_id,
           institutional_id: existingCollegeRecord.institutional_id,
@@ -589,10 +590,20 @@ class CollegeService implements ICollegeService {
         if (!(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)))
           await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
 
+        const collegeDean = await GetRecord<"CollegeDeans">("CollegeDeans", {
+          where: (CollegeDeans) =>
+            and(
+              eq(CollegeDeans.college_id, existingCollegeRecord.id),
+              eq(CollegeDeans.dean_id, existingCollegeRecord.account_id),
+              isNull(CollegeDeans.deleted_at),
+            ),
+        });
+        if (!collegeDean) throw new AppError(404, "No college dean record found.");
+
         const deletedCollegeDeanRecord = await SoftDeleteRecord(
           "CollegeDeans",
-          existingCollegeRecord.id,
-          CollegeDeans.college_id,
+          collegeDean.id,
+          CollegeDeans.id,
           tx,
         );
         if (!deletedCollegeDeanRecord)
@@ -617,5 +628,6 @@ class CollegeService implements ICollegeService {
   }
 }
 
-const collegeService = new CollegeService();
-export default collegeService;
+const CollegeService = new collegeService();
+export default CollegeService;
+export { collegeService };

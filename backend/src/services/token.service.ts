@@ -2,15 +2,18 @@ import env from "@/configs/env.config.js";
 import bcrypt from "bcryptjs";
 import { and, eq, gt } from "drizzle-orm";
 import jwt from "jsonwebtoken";
-import { CreateRecord, GetRecord } from "./db.service.js";
+import { CreateRecord, GetRecord, GetRecords, UpdateRecord } from "./db.service.js";
 import { AppError } from "@/utils/error.util.js";
 import {
   ONE_DAY,
   type JWTRefreshToken,
   JWTPayloadSchema,
   type JWTPayloadType,
+  type RefreshTokenSelect,
 } from "@/types/token.type.js";
 import type { AccountSelect } from "@/types/user.type.js";
+import { RefreshToken } from "@/schemas/auth.schema.js";
+import db, { type PgTransaction } from "@/configs/db.config.js";
 
 /** Cookie options shape returned by {@link tokenService.generateCookieOptions}. */
 type RefreshCookieOptions = {
@@ -29,7 +32,13 @@ export interface ITokenService {
     user: Pick<AccountSelect, "id" | "email">,
     token: string,
     rememberMe?: boolean,
-  ): ReturnType<typeof CreateRecord<"RefreshToken">>;
+  ): Promise<RefreshTokenSelect>;
+  rotateRefreshToken(
+    user: Pick<AccountSelect, "id" | "email">,
+    oldRefreshToken: string,
+    newRefreshToken: string,
+    rememberMe?: boolean,
+  ): Promise<RefreshTokenSelect>;
   verifyToken(token: string): Promise<{ accountId: number; email: string }>;
 }
 
@@ -127,6 +136,7 @@ class tokenService implements ITokenService {
     user: Pick<AccountSelect, "id" | "email">,
     token: string,
     rememberMe: boolean = false,
+    tx?: PgTransaction,
   ) {
     const expires_at = rememberMe
       ? new Date(Date.now() + 7 * ONE_DAY)
@@ -134,14 +144,64 @@ class tokenService implements ITokenService {
 
     const hash = await bcrypt.hash(token, 10);
 
-    const refreshToken = await CreateRecord("RefreshToken", {
-      account_id: user.id,
-      email: user.email,
-      token_hash: hash,
-      expires_at: expires_at,
-    });
+    const refreshToken = await CreateRecord<"RefreshToken">(
+      "RefreshToken",
+      {
+        account_id: user.id,
+        email: user.email,
+        token_hash: hash,
+        expires_at: expires_at,
+      },
+      tx,
+    );
 
     return refreshToken;
+  }
+
+  async rotateRefreshToken(
+    user: Pick<AccountSelect, "id" | "email">,
+    oldRefreshToken: string,
+    newRefreshToken: string,
+    rememberMe: boolean = false,
+  ) {
+    return await db.transaction(async (tx) => {
+      const userTokens = await GetRecords("RefreshToken", {
+        where: (RefreshToken) =>
+          and(
+            eq(RefreshToken.account_id, user.id),
+            eq(RefreshToken.email, user.email),
+            eq(RefreshToken.is_revoked, false),
+            gt(RefreshToken.expires_at, new Date()),
+          ),
+        tx,
+      });
+
+      let matchedTokenRecord = null;
+      for (const record of userTokens) {
+        const isMatch = await bcrypt.compare(oldRefreshToken, record.token_hash);
+        if (isMatch) {
+          matchedTokenRecord = record;
+          break;
+        }
+      }
+
+      if (!matchedTokenRecord)
+        throw new AppError(500, "Refresh token is invalid, expired, or already revoked.");
+
+      const revoked = await UpdateRecord(
+        "RefreshToken",
+        matchedTokenRecord.id,
+        { is_revoked: true },
+        RefreshToken.id,
+        tx,
+      );
+      if (!revoked) throw new AppError(500, "Failed to revoke old token.");
+
+      const result = await this.saveRefreshToken(user, newRefreshToken, rememberMe, tx);
+      if (!result) throw new AppError(500, "Failed to save new refresh token. Please try again.");
+
+      return result;
+    });
   }
 
   /**
@@ -181,3 +241,4 @@ class tokenService implements ITokenService {
 
 const TokenService = new tokenService();
 export default TokenService;
+export { tokenService };

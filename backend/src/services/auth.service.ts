@@ -11,7 +11,9 @@ import OTPService, {
   type VerifyOTPType,
 } from "./otp.service.js";
 import { JWTPayloadSchema, type JWTPayloadType } from "@/types/token.type.js";
-import type { AccountSelect } from "@/types/user.type.js";
+import type { AccountSelect, UserType } from "@/types/user.type.js";
+import type { IUserService } from "./user.service.js";
+import UserService from "./user.service.js";
 
 export const UserLoginSchema = GenerateZodSchemas(Accounts).insert.omit({
   personal_details_id: true,
@@ -31,7 +33,7 @@ export interface IAuthService {
 
   authenticateJWT(
     payload: JWTPayloadType,
-  ): Promise<{ success: boolean; message: string } | { success: boolean; user: SafeAccount }>;
+  ): Promise<{ success: boolean; message: string } | { success: boolean; user: UserType }>;
 }
 
 /**
@@ -41,7 +43,10 @@ export interface IAuthService {
  * hand back to route handlers.
  */
 class authService implements IAuthService {
-  constructor(private otpService: IOTPService = OTPService) {}
+  constructor(
+    private otpService: IOTPService = OTPService,
+    private userService: IUserService = UserService,
+  ) {}
 
   /**
    * Verifies an email/password pair against the Accounts table.
@@ -108,19 +113,17 @@ class authService implements IAuthService {
     const validation = await JWTPayloadSchema.safeParseAsync(payload);
     if (!validation.success) throw validation.error;
 
-    const user = await GetRecord("Accounts", {
-      where: (Accounts) => and(eq(Accounts.email, payload.user.email), isNull(Accounts.deleted_at)),
-    });
+    const user = await this.userService.getUser({ id: payload.user.id, email: payload.user.email });
     if (!user)
       return {
         success: false,
         message: "Token expired.",
       };
 
-    const { password, ...userFiltered } = user;
-    return { success: true, user: userFiltered };
+    return { success: true, user };
   }
 }
 
 const AuthService = new authService();
 export default AuthService;
+export { authService };

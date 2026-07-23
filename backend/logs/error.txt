@@ -722,3 +722,2953 @@ params: College of Technology and Engineering,COTE
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
     at async collegeController.getCollege (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:40:22)
     at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:14:3)
+[2026-07-22 14:05:41:541] [ERROR]: Refresh token has been revoked or expired. - Stack: AppError: Refresh token has been revoked or expired.
+    at tokenService.verifyToken (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/token.service.ts:170:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async authController.refresh (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:228:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:322:28)
+[2026-07-22 14:11:46:1146] [ERROR]: Invalid email or expired OTP. - Stack: AppError: Invalid email or expired OTP.
+    at authService.authenticateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:85:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:54:22)
+[2026-07-22 14:12:36:1236] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "array",
+    "code": "invalid_type",
+    "path": [
+      "roles"
+    ],
+    "message": "Invalid input: expected array, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:11:49)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 14:12:41:1241] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "array",
+    "code": "invalid_type",
+    "path": [
+      "roles"
+    ],
+    "message": "Invalid input: expected array, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:11:49)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 14:13:53:1353] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "array",
+    "code": "invalid_type",
+    "path": [
+      "roles"
+    ],
+    "message": "Invalid input: expected array, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:11:49)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 14:14:44:1444] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "array",
+    "code": "invalid_type",
+    "path": [
+      "roles"
+    ],
+    "message": "Invalid input: expected array, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:49)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 14:17:18:1718] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "array",
+    "code": "invalid_type",
+    "path": [
+      "roles"
+    ],
+    "message": "Invalid input: expected array, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:11:49)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 14:19:29:1929] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "personalDetails"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  },
+  {
+    "expected": "array",
+    "code": "invalid_type",
+    "path": [
+      "roles"
+    ],
+    "message": "Invalid input: expected array, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:49)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:14:56:1456] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:16:20:1620] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:17:54:1754] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:18:42:1842] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:19:24:1924] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:20:55:2055] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:21:11:2111] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:22:21:2221] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:23:35:2335] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:25:31:2531] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:25:32:2532] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:25:49:2549] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:26:00:260] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:26:01:261] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:26:02:262] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:26:02:262] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:26:02:262] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:26:03:263] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:26:03:263] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:12:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:335:11)
+[2026-07-22 15:33:14:3314] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:33:18:3318] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:35:02:352] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:37:57:3757] [ERROR]: Program ID is required. - Stack: AppError: Program ID is required.
+    at programController.extractProgramId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:24:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:39:28:3928] [ERROR]: College ID is required. - Stack: AppError: College ID is required.
+    at programController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:24:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:39:32:3932] [ERROR]: College ID is required. - Stack: AppError: College ID is required.
+    at programController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:24:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:39:37:3937] [ERROR]: College ID is required. - Stack: AppError: College ID is required.
+    at programController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:24:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:39:37:3937] [ERROR]: College ID is required. - Stack: AppError: College ID is required.
+    at programController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:24:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:39:38:3938] [ERROR]: College ID is required. - Stack: AppError: College ID is required.
+    at programController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:24:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:39:38:3938] [ERROR]: College ID is required. - Stack: AppError: College ID is required.
+    at programController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:24:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:40:48:4048] [ERROR]: College ID is required. - Stack: AppError: College ID is required.
+    at programController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:14:20)
+    at programController.getPrograms (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:25:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:7:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+[2026-07-22 15:57:43:5743] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:57:45:5745] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:58:02:582] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:58:16:5816] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 15:58:22:5822] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:333:11)
+[2026-07-22 16:01:11:111] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:334:11)
+[2026-07-22 16:01:49:149] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "personal_details_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "password"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "boolean",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "is_verified"
+    ],
+    "message": "Invalid input: expected boolean, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "created_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "updated_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  },
+  {
+    "expected": "date",
+    "code": "invalid_type",
+    "path": [
+      "user",
+      "deleted_at"
+    ],
+    "message": "Invalid input: expected date, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/auth.middleware.ts:10:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:342:13)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:297:9
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:291:5)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:334:11)
+[2026-07-22 16:09:08:98] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Invalid input: expected number, received NaN"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at collegeController.extractCollegeId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:15:65)
+    at collegeController.getCollege (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:39:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:15:27)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+[2026-07-22 16:09:53:953] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Invalid input: expected number, received NaN"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at collegeController.extractCollegeId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:15:65)
+    at collegeController.getCollege (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:39:29)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:15:27)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+[2026-07-23 10:10:58:1058] [ERROR]: No program record found. - Stack: AppError: No program record found.
+    at programService.getProgram (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:257:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async programController.getProgram (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:53:22)
+[2026-07-23 10:19:44:1944] [ERROR]: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE - Stack: DrizzleQueryError: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:162:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:410:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async collegeService.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:409:12)
+    at async collegeController.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:77:22)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:19:3)
+[2026-07-23 10:20:48:2048] [ERROR]: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE - Stack: DrizzleQueryError: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:162:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:410:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async collegeService.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:409:12)
+    at async collegeController.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:77:22)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:19:3)
+[2026-07-23 10:34:48:3448] [ERROR]: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE - Stack: DrizzleQueryError: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:162:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:410:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async collegeService.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:409:12)
+    at async collegeController.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:77:22)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:19:3)
+[2026-07-23 10:35:58:3558] [ERROR]: A record with name "College of Technology and Engineering" already exists. - Stack: DrizzleQueryError: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:162:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:410:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async collegeService.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:409:12)
+    at async collegeController.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:77:22)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:19:3)
+[2026-07-23 10:38:10:3810] [ERROR]: A record with name "College of Technology and Engineering" already exists. - Stack: DrizzleQueryError: Failed query: insert into "colleges" ("id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, default, default, default) returning "id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: College of Technology and Engineering,COTE
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:162:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:410:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async collegeService.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:409:12)
+    at async collegeController.createCollegeRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:77:22)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:19:3)
+[2026-07-23 10:40:35:4035] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "program",
+      "college_id"
+    ],
+    "message": "Invalid input: expected number, received undefined"
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 3,
+    "inclusive": true,
+    "path": [
+      "program",
+      "name"
+    ],
+    "message": "Program name must be at least 3 characters."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "program",
+      "initialism"
+    ],
+    "message": "Initialism must be at least 2 characters (e.g., BSIT, BSEE)."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:332:44)
+    at programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:48)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:19:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+[2026-07-23 10:44:44:4444] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 3,
+    "inclusive": true,
+    "path": [
+      "program",
+      "name"
+    ],
+    "message": "Program name must be at least 3 characters."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "program",
+      "initialism"
+    ],
+    "message": "Initialism must be at least 2 characters (e.g., BSIT, BSEE)."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:332:44)
+    at programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:48)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:19:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+[2026-07-23 10:45:30:4530] [ERROR]: No college record found. - Stack: AppError: No college record found.
+    at collegeService.getCollege (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/college.service.ts:324:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async collegeController.getCollege (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/college.controller.ts:40:22)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/college.route.ts:15:3)
+[2026-07-23 10:47:15:4715] [ERROR]: Invalid College ID. - Stack: AppError: Invalid College ID.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:344:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 10:47:25:4725] [ERROR]: Invalid College ID. - Stack: AppError: Invalid College ID.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:344:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:01:12:112] [ERROR]: Invalid College ID. - Stack: AppError: Invalid College ID.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:344:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:01:15:115] [ERROR]: Invalid College ID. - Stack: AppError: Invalid College ID.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:344:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:02:18:218] [ERROR]: A record with college_id, name "14, Bachelor of Science in Information Technology" already exists. - Stack: DrizzleQueryError: Failed query: insert into "programs" ("id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, $3, default, default, default) returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Information Technology,BSIT
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:346:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:03:15:315] [ERROR]: A record with college_id, name "14, Bachelor of Science in Information Technology" already exists. - Stack: DrizzleQueryError: Failed query: insert into "programs" ("id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, $3, default, default, default) returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Information Technology,BSIT
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:346:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:03:34:334] [ERROR]: A record with initialism "BSIT" already exists. - Stack: DrizzleQueryError: Failed query: insert into "programs" ("id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, $3, default, default, default) returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Mechanical Engineering,BSIT
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:346:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:03:43:343] [ERROR]: This account's role is not eligible to be assigned as a dean. - Stack: AppError: This account's role is not eligible to be assigned as a dean.
+    at programService.validateChairCandidate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:106:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async programService.getAccountId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:113:7)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:352:28)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:339:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:07:11:711] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [
+      "chair",
+      "id"
+    ],
+    "message": "Invalid input: expected number, received NaN"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:332:44)
+    at programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:48)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:19:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+[2026-07-23 11:07:29:729] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "email",
+    "pattern": "/^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$/",
+    "path": [
+      "chair",
+      "details",
+      "credentials",
+      "email"
+    ],
+    "message": "Invalid email address format."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 8,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "institutional_id"
+    ],
+    "message": "Institutional ID is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "last_name"
+    ],
+    "message": "Last name is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "first_name"
+    ],
+    "message": "First name is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:332:44)
+    at programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:48)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:19:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+[2026-07-23 11:11:08:118] [ERROR]: No program record found. - Stack: AppError: No program record found.
+    at programService.getProgram (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:257:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:380:31)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:379:12)
+    at async programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:22)
+[2026-07-23 11:13:17:1317] [ERROR]: Database operation failed. - Stack: DrizzleQueryError: Failed query: select "programs"."id", "programs"."college_id", "programs"."name", "programs"."initialism", "programs"."created_at", "programs"."updated_at", "programs"."deleted_at", "accounts"."id", "personal_details"."institutional_id", "personal_details"."first_name", "personal_details"."last_name", "personal_details"."middle_name", "personal_details"."suffix", count(*) over()::int as "totalItems" from "programs" left join "program_chairs" on (("program_chairs"."program_id" = "programs"."id") and (("program_chairs"."deleted_at" is null))) left join "accounts" on (("accounts"."id" = "program_chairs"."chair_id") and (("accounts"."deleted_at" is null))) left join "personal_details" on "personal_details"."id" = "accounts"."personal_details_id" where ((("programs"."deleted_at" is null)) and ( = $1)) limit $2
+params: 6,1
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:83:20)
+    at async programService.getProgram (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:232:18)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:380:31)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:379:12)
+    at async programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:22)
+[2026-07-23 11:15:39:1539] [ERROR]: A record with college_id, name "14, Bachelor of Science in Information Technology" already exists. - Stack: DrizzleQueryError: Failed query: update "programs" set "college_id" = $1, "name" = $2, "initialism" = $3, "updated_at" = $4 where "programs"."id" = $5 returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Information Technology,BSIT,2026-07-23T03:15:39.525Z,6
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async UpdateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:211:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:386:25)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:378:12)
+    at async programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:22)
+[2026-07-23 11:16:17:1617] [ERROR]: A record with college_id, name "14, Bachelor of Science in Information Technology" already exists. - Stack: DrizzleQueryError: Failed query: update "programs" set "college_id" = $1, "name" = $2, "initialism" = $3, "updated_at" = $4 where "programs"."id" = $5 returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Information Technology,BSIT,2026-07-23T03:16:17.044Z,6
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async UpdateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:211:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:386:25)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:378:12)
+    at async programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:22)
+[2026-07-23 11:16:37:1637] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "email",
+    "pattern": "/^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$/",
+    "path": [
+      "chair",
+      "details",
+      "credentials",
+      "email"
+    ],
+    "message": "Invalid email address format."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 8,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "institutional_id"
+    ],
+    "message": "Institutional ID is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "last_name"
+    ],
+    "message": "Last name is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "first_name"
+    ],
+    "message": "First name is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:366:44)
+    at programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-07-23 11:17:40:1740] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "email",
+    "pattern": "/^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$/",
+    "path": [
+      "chair",
+      "details",
+      "credentials",
+      "email"
+    ],
+    "message": "Invalid email address format."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 8,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "institutional_id"
+    ],
+    "message": "Institutional ID is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "last_name"
+    ],
+    "message": "Last name is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "first_name"
+    ],
+    "message": "First name is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:366:44)
+    at programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-07-23 11:21:06:216] [ERROR]: A record with college_id, name "14, Bachelor of Science in Information Technology" already exists. - Stack: DrizzleQueryError: Failed query: insert into "programs" ("id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, $3, default, default, default) returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Information Technology,BSIT
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:345:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:338:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:21:17:2117] [ERROR]: A record with college_id, name "14, Bachelor of Science in Mechanical Engineering" already exists. - Stack: DrizzleQueryError: Failed query: insert into "programs" ("id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, $3, default, default, default) returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Mechanical Engineering,BSME
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:345:29)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:338:12)
+    at async programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:22)
+[2026-07-23 11:21:34:2134] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "email",
+    "pattern": "/^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$/",
+    "path": [
+      "chair",
+      "details",
+      "credentials",
+      "email"
+    ],
+    "message": "Invalid email address format."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 8,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "institutional_id"
+    ],
+    "message": "Institutional ID is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "last_name"
+    ],
+    "message": "Last name is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "first_name"
+    ],
+    "message": "First name is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:331:44)
+    at programController.createProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:90:48)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/program.router.ts:19:21)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0/node_modules/router/index.js:435:11)
+[2026-07-23 11:21:56:2156] [ERROR]: A record with college_id, name "14, Bachelor of Science in Mechanical Engineering" already exists. - Stack: DrizzleQueryError: Failed query: update "programs" set "college_id" = $1, "name" = $2, "initialism" = $3, "updated_at" = $4 where "programs"."id" = $5 returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Mechanical Engineering,BSME,2026-07-23T03:21:56.431Z,2
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async UpdateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:211:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:386:25)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:378:12)
+    at async programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:22)
+[2026-07-23 11:22:11:2211] [ERROR]: A record with college_id, name "14, Bachelor of Science in Mechanical Engineering" already exists. - Stack: DrizzleQueryError: Failed query: update "programs" set "college_id" = $1, "name" = $2, "initialism" = $3, "updated_at" = $4 where "programs"."id" = $5 returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Mechanical Engineering,BSME,2026-07-23T03:22:11.693Z,2
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async UpdateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:211:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:386:25)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:378:12)
+    at async programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:22)
+[2026-07-23 11:23:11:2311] [ERROR]: A record with college_id, name "14, Bachelor of Science in Information Technology" already exists. - Stack: DrizzleQueryError: Failed query: update "programs" set "college_id" = $1, "name" = $2, "initialism" = $3, "updated_at" = $4 where "programs"."id" = $5 returning "id", "college_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 14,Bachelor of Science in Information Technology,BSIT,2026-07-23T03:23:11.109Z,6
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async UpdateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:211:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:386:25)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:378:12)
+    at async programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:22)
+[2026-07-23 11:23:36:2336] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "email",
+    "pattern": "/^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$/",
+    "path": [
+      "chair",
+      "details",
+      "credentials",
+      "email"
+    ],
+    "message": "Invalid email address format."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 8,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "institutional_id"
+    ],
+    "message": "Institutional ID is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "last_name"
+    ],
+    "message": "Last name is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "first_name"
+    ],
+    "message": "First name is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:366:44)
+    at programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-07-23 11:23:55:2355] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "email",
+    "pattern": "/^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$/",
+    "path": [
+      "chair",
+      "details",
+      "credentials",
+      "email"
+    ],
+    "message": "Invalid email address format."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 8,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "institutional_id"
+    ],
+    "message": "Institutional ID is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "last_name"
+    ],
+    "message": "Last name is required."
+  },
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "chair",
+      "details",
+      "personalDetails",
+      "first_name"
+    ],
+    "message": "First name is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at programService.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:366:44)
+    at programController.updateProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:112:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-07-23 11:24:10:2410] [ERROR]: No program record found. - Stack: AppError: No program record found.
+    at programService.getProgram (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:256:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:449:31)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async programService.deleteProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:448:12)
+    at async programController.deleteProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:133:22)

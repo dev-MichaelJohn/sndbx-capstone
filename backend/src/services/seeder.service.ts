@@ -103,3 +103,4 @@ class seederService implements ISeederService {
 
 const SeederService = new seederService();
 export default SeederService;
+export { seederService };

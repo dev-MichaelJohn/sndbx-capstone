@@ -3,6 +3,8 @@ import { GetRecord, GetRecords } from "@/services/db.service.js";
 import EmailService, { type IEmailService } from "@/services/email.service.js";
 import OTPService, { type IOTPService } from "@/services/otp.service.js";
 import TokenService, { type ITokenService } from "@/services/token.service.js";
+import type { IUserService } from "@/services/user.service.js";
+import UserService from "@/services/user.service.js";
 import {
   AccountSchema,
   type AccountSelect,
@@ -38,6 +40,7 @@ class authController {
     private otpService: IOTPService = OTPService,
     private tokenService: ITokenService = TokenService,
     private emailService: IEmailService = EmailService,
+    private userService: IUserService = UserService,
   ) {
     this.login = this.login.bind(this);
     this.verifyOTP = this.verifyOTP.bind(this);
@@ -189,7 +192,7 @@ class authController {
           res.cookie("refresh", refreshToken, cookieOptions);
 
           const response = createAPIResponse(200, "Authentication successful.", {
-            token: `Bearer ${token}`,
+            token: `bearer ${token}`,
             user: {
               id: parsedUser.id,
               email: parsedUser.email,
@@ -210,86 +213,42 @@ class authController {
    * Re-fetches the user, personal details, and role fresh from the DB (rather than
    * trusting the token's original payload) so role/account changes take effect immediately.
    *
-   * @param resfreshToken - the raw refresh token string, typically read from a cookie
+   * @param refreshToken - the raw refresh token string, typically read from a cookie
    * @returns an APIResponse containing the new Bearer token and refreshed user data
    * @throws {AppError} 400 if the token fails schema validation
    * @throws {AppError} 404 if the account or its personal details no longer exist
    * @throws {AppError} 403 if the account has no assigned role
    */
-  refresh = async (resfreshToken: string) => {
+  refresh = async (refreshToken: string, res: Response) => {
     const RefreshJWTSchema = z
       .string()
       .trim()
       .min(32)
       .nonempty("Refresh token is invalid or expired");
-    const validation = await RefreshJWTSchema.safeParseAsync(resfreshToken);
+    const validation = await RefreshJWTSchema.safeParseAsync(refreshToken);
     if (!validation.success) throw new AppError(400, "Validation failed", validation.error);
 
-    const result = await this.tokenService.verifyToken(resfreshToken);
-    const user = await GetRecord("Accounts", {
-      where: (Accounts) =>
-        and(
-          eq(Accounts.id, result.accountId),
-          eq(Accounts.email, result.email),
-          isNull(Accounts.deleted_at),
-        ),
+    const result = await this.tokenService.verifyToken(refreshToken);
+    const info = await this.userService.getUser({ id: result.accountId, email: result.email });
+
+    const newToken = await this.tokenService.generateWebToken(info);
+    const newRefreshToken = this.tokenService.generateRefreshToken({
+      id: result.accountId,
+      email: result.email,
     });
-    if (!user) throw new AppError(404, "Account not found.");
-    const { password, ...userFiltered } = user;
+    const saveResult = await this.tokenService.rotateRefreshToken(
+      { id: result.accountId, email: result.email },
+      refreshToken,
+      newRefreshToken,
+    );
+    if (!saveResult) throw new AppError(500, "Failed to save refresh token. Please try again.");
 
-    const userValidation = await AccountSchema.select
-      .omit({
-        password: true,
-      })
-      .safeParseAsync(userFiltered);
-    if (!userValidation.success) throw userValidation.error;
-
-    const parsedUser = userValidation.data;
-
-    const personalDetails = await GetRecord("PersonalDetails", {
-      where: (PersonalDetails) =>
-        and(
-          eq(PersonalDetails.id, parsedUser.personal_details_id),
-          isNull(PersonalDetails.deleted_at),
-        ),
-    });
-    if (!personalDetails) throw new AppError(404, "Account details not found.");
-
-    const systemRoles = await GetRecords<
-      "AccountRoles",
-      {
-        system_role: SystemRole;
-      }
-    >("AccountRoles", {
-      where: (AccountRoles) =>
-        and(eq(AccountRoles.account_id, parsedUser.id), isNull(AccountRoles.deleted_at)),
-      join: (query) => query.innerJoin(Roles, eq(AccountRoles.role_id, Roles.id)),
-      select: () => ({
-        system_role: Roles.system_role,
-      }),
-    });
-    if (!systemRoles) throw new AppError(403, "No role assigned to this account.");
-
-    const roles = systemRoles.map((role) => role.system_role);
-    const token = await this.tokenService.generateWebToken({
-      user: {
-        id: parsedUser.id,
-        email: parsedUser.email,
-      },
-      personalDetails,
-      roles,
-    });
+    const cookieOptions = this.tokenService.generateCookieOptions();
+    res.cookie("refresh", newRefreshToken, cookieOptions);
 
     return createAPIResponse<RefreshTokenResponseData>(201, "New token issued.", {
-      token: `Bearer ${token}`,
-      info: {
-        user: {
-          id: parsedUser.id,
-          email: parsedUser.email,
-        },
-        personalDetails,
-        roles: roles,
-      },
+      token: `bearer ${newToken}`,
+      info,
     });
   };
 
@@ -319,7 +278,7 @@ class authController {
               );
             }
 
-            const result = await this.refresh(refreshToken);
+            const result = await this.refresh(refreshToken, res);
             if (!result || !result.data) {
               throw new AppError(401, "Your session has expired. Please log in again.");
             }
