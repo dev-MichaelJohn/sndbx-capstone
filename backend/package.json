@@ -2,6 +2,9 @@
   "name": "backend",
   "version": "1.0.0",
   "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
   "scripts": {
     "dev": "node --watch --import tsx ./src/server.ts",
     "test": "vitest run",
@@ -49,8 +52,5 @@
     "tsx": "^4.23.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
-  },
-  "exports": {
-    "./*": "./src/*.ts"
   }
 }

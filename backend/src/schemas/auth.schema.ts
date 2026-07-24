@@ -74,8 +74,13 @@ export const OTPCodes = pgTable(
     code: varchar("code", { length: 8 }).notNull(),
     created_at: timestamp("created_at").notNull().defaultNow(),
     expires_at: timestamp("expires_at").notNull(),
+    is_active: boolean("is_active").notNull().default(true),
   },
-  (t) => [uniqueIndex("uidx_otp_email").on(t.email)],
+  (t) => [
+    uniqueIndex("uidx_otp_email")
+      .on(t.email)
+      .where(sql`${t.is_active} = true`),
+  ],
 );
 
 export const SystemRoles = pgEnum("system_role", [

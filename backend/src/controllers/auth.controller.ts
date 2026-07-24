@@ -47,6 +47,15 @@ class authController {
     this.refresh = this.refresh.bind(this);
     this.verifyJWT = this.verifyJWT.bind(this);
   }
+  generateResendTime(expires_at: Date) {
+    const OTP_LIFESPAN_MS = 5 * 60 * 1000; // 5 minutes
+    const OTP_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+
+    const expiryTime = new Date(expires_at).getTime();
+    const createdAt = expiryTime - OTP_LIFESPAN_MS;
+
+    return createdAt + OTP_COOLDOWN_MS;
+  }
 
   /**
    * Authenticates a user's email/password via the "local" Passport strategy,
@@ -74,17 +83,16 @@ class authController {
 
           const parsedUser = validation.data;
 
-          const flag = await this.otpService.stopDuplicateOTPResend({ email: parsedUser.email });
-          if (flag.success) {
-            const OTP_COOLDOWN_MS = 120_000;
-            const resend = Date.now() + OTP_COOLDOWN_MS;
+          const flag = await this.otpService.findActiveOTP({ email: parsedUser.email });
+          if (flag.hasActive) {
+            const resendAt = this.generateResendTime(flag.otpData.expires_at);
 
             const response = createAPIResponse(
               200,
               "An OTP was already sent. Please wait before requesting another.",
               {
                 email: user?.email,
-                resendAt: resend,
+                resendAt,
               },
             );
             return res.status(response.status).json(response);
@@ -102,10 +110,11 @@ class authController {
             },
           });
 
+          const resendAt = this.generateResendTime(otpCode.expires_at);
           const response = createAPIResponse(
             201,
             "Please enter the code sent to your email address. Code will expire in 5 minutes.",
-            { email: parsedUser.email },
+            { email: parsedUser.email, resendAt },
           );
           res.status(response.status).json(response);
         } catch (error) {

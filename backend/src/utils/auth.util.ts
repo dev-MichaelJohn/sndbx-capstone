@@ -3,7 +3,7 @@ import { Strategy as LocalStrategy, type IVerifyOptions } from "passport-local";
 import { Strategy as OTPStrategy } from "passport-custom";
 import { ExtractJwt, Strategy as JWTStrategy } from "passport-jwt";
 import type { Request } from "express";
-import { VerifyOTPSchema } from "@/services/otp.service.js";
+import { VerifyOTPSchema } from "@/types/otp.type.js";
 import env from "@/configs/env.config.js";
 import { JWTPayloadSchema, type JWTPayloadType } from "@/types/token.type.js";
 

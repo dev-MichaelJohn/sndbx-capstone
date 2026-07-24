@@ -3672,3 +3672,74 @@ params: 14,Bachelor of Science in Information Technology,BSIT,2026-07-23T03:23:1
     at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
     at async programService.deleteProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/program.service.ts:448:12)
     at async programController.deleteProgramRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/program.controller.ts:133:22)
+[2026-07-24 21:09:22:922] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:14:03:143] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:14:10:1410] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:14:52:1452] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:18:30:1830] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:38:59:3859] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:63:25)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:46:34:4634] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:46:47:4647] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:49:02:492] [ERROR]: A record with email "dev.michael.john@gmail.com" already exists. - Stack: DrizzleQueryError: Failed query: insert into "otp_codes" ("id", "email", "code", "created_at", "expires_at") values (default, $1, $2, default, $3) returning "id", "email", "code", "created_at", "expires_at"
+params: dev.michael.john@gmail.com,56368113,2026-07-24T13:54:02.462Z
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async otpService.generateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/otp.service.ts:86:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:93:27)
+[2026-07-24 21:49:19:4919] [ERROR]: A record with email "dev.michael.john@gmail.com" already exists. - Stack: DrizzleQueryError: Failed query: insert into "otp_codes" ("id", "email", "code", "created_at", "expires_at") values (default, $1, $2, default, $3) returning "id", "email", "code", "created_at", "expires_at"
+params: dev.michael.john@gmail.com,17369334,2026-07-24T13:54:19.352Z
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async otpService.generateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/otp.service.ts:86:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:93:27)
+[2026-07-24 22:02:49:249] [ERROR]: Database operation failed. - Stack: DrizzleQueryError: Failed query: select "id", "email", "code", "created_at", "expires_at", "is_active" from "otp_codes" where (("otp_codes"."email" = $1) and ("otp_codes"."is_active" = $2)) limit $3
+params: dev.michael.john@gmail.com,true,1
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:83:20)
+    at async otpService.findActiveOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/otp.service.ts:47:25)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:77:24)
+[2026-07-24 22:15:11:1511] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:63:25)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 22:30:09:309] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 22:30:16:3016] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 22:30:22:3022] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)

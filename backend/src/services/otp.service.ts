@@ -1,21 +1,18 @@
 import { GenerateZodSchemas } from "@/utils/schema.util.js";
-import type { UserLoginType } from "./auth.service.js";
+import type { UserLoginType } from "@/types/user.type.js";
 import { Accounts, OTPCodes } from "@/schemas/auth.schema.js";
 import { generate } from "otp-generator";
-import { CreateRecord, GetRecord } from "./db.service.js";
+import { CreateRecord, GetRecord, UpdateRecord } from "./db.service.js";
 import { and, eq, gt, type InferSelectModel } from "drizzle-orm";
-import z from "zod";
-
-export const VerifyOTPSchema = GenerateZodSchemas(OTPCodes).insert.omit({
-  expires_at: true,
-});
-export type VerifyOTPType = z.infer<typeof VerifyOTPSchema>;
+import { VerifyOTPSchema, type VerifyOTPType } from "@/types/otp.type.js";
 
 /** Public surface of {@link otpService}, for dependency injection/mocking. */
 export interface IOTPService {
-  stopDuplicateOTPResend(
+  findActiveOTP(
     credentials: Omit<UserLoginType, "password">,
-  ): Promise<{ success: true; otpData: InferSelectModel<typeof OTPCodes> } | { success: false }>;
+  ): Promise<
+    { hasActive: true; otpData: InferSelectModel<typeof OTPCodes> } | { hasActive: false }
+  >;
   generateOTP(
     credentials: Omit<UserLoginType, "password">,
   ): Promise<InferSelectModel<typeof OTPCodes>>;
@@ -42,21 +39,27 @@ class otpService implements IOTPService {
    * @returns `{ success: true, otpData }` if active OTP exists,
    *          `{ success: false }` if none
    */
-  async stopDuplicateOTPResend(
+  async findActiveOTP(
     credentials: Omit<UserLoginType, "password">,
-  ): Promise<{ success: true; otpData: InferSelectModel<typeof OTPCodes> } | { success: false }> {
+  ): Promise<
+    { hasActive: true; otpData: InferSelectModel<typeof OTPCodes> } | { hasActive: false }
+  > {
     const existingOTP = await GetRecord("OTPCodes", {
-      where: (OTPCodes) =>
-        and(eq(OTPCodes.email, credentials.email), gt(OTPCodes.expires_at, new Date())),
+      where: (OTPCodes) => and(eq(OTPCodes.email, credentials.email), eq(OTPCodes.is_active, true)),
     });
 
-    if (existingOTP)
-      return {
-        success: true,
-        otpData: existingOTP,
-      };
+    if (!existingOTP) {
+      return { hasActive: false };
+    }
 
-    return { success: false };
+    const isExpired = existingOTP.expires_at <= new Date();
+
+    if (isExpired) {
+      await UpdateRecord("OTPCodes", existingOTP.id, { is_active: false });
+      return { hasActive: false };
+    }
+
+    return { hasActive: true, otpData: existingOTP };
   }
 
   /**

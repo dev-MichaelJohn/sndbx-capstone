@@ -4729,3 +4729,132 @@ params: 14,Bachelor of Science in Information Technology,BSIT,2026-07-23T03:23:1
 [2026-07-23 20:13:34:1334] [INFO]: System roles already present.
 [2026-07-23 20:13:34:1334] [INFO]: An active Superadmin already exists. Safe to continue application startup.
 [2026-07-23 20:13:34:1334] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 21:07:08:78] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 21:07:08:78] [INFO]: System roles already present.
+[2026-07-24 21:07:08:78] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 21:07:08:78] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 21:09:20:920] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 21:09:20:920] [INFO]: System roles already present.
+[2026-07-24 21:09:20:920] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 21:09:20:920] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 21:09:22:922] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:09:22:922] [HTTP]: POST /api/v1/auth/login 401 69 - 44.677 ms
+[2026-07-24 21:14:03:143] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:14:03:143] [HTTP]: POST /api/v1/auth/login 401 69 - 31.926 ms
+[2026-07-24 21:14:10:1410] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:14:10:1410] [HTTP]: POST /api/v1/auth/login 401 69 - 6.747 ms
+[2026-07-24 21:14:52:1452] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:14:52:1452] [HTTP]: POST /api/v1/auth/login 401 69 - 26.415 ms
+[2026-07-24 21:18:30:1830] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:18:30:1830] [HTTP]: POST /api/v1/auth/login 401 69 - 57.444 ms
+[2026-07-24 21:38:59:3859] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:63:25)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:38:59:3859] [HTTP]: POST /api/v1/auth/login 401 69 - 361.297 ms
+[2026-07-24 21:39:17:3917] [HTTP]: POST /api/v1/auth/login 201 168 - 5591.721 ms
+[2026-07-24 21:46:34:4634] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:46:34:4634] [HTTP]: POST /api/v1/auth/login 401 69 - 27.843 ms
+[2026-07-24 21:46:47:4647] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 21:46:47:4647] [HTTP]: POST /api/v1/auth/login 401 69 - 24.773 ms
+[2026-07-24 21:49:02:492] [ERROR]: A record with email "dev.michael.john@gmail.com" already exists. - Stack: DrizzleQueryError: Failed query: insert into "otp_codes" ("id", "email", "code", "created_at", "expires_at") values (default, $1, $2, default, $3) returning "id", "email", "code", "created_at", "expires_at"
+params: dev.michael.john@gmail.com,56368113,2026-07-24T13:54:02.462Z
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async otpService.generateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/otp.service.ts:86:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:93:27)
+[2026-07-24 21:49:02:492] [HTTP]: POST /api/v1/auth/login 409 109 - 219.713 ms
+[2026-07-24 21:49:19:4919] [ERROR]: A record with email "dev.michael.john@gmail.com" already exists. - Stack: DrizzleQueryError: Failed query: insert into "otp_codes" ("id", "email", "code", "created_at", "expires_at") values (default, $1, $2, default, $3) returning "id", "email", "code", "created_at", "expires_at"
+params: dev.michael.john@gmail.com,17369334,2026-07-24T13:54:19.352Z
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async otpService.generateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/otp.service.ts:86:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:93:27)
+[2026-07-24 21:49:19:4919] [HTTP]: POST /api/v1/auth/login 409 109 - 188.769 ms
+[2026-07-24 21:56:39:5639] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 21:56:39:5639] [INFO]: System roles already present.
+[2026-07-24 21:56:39:5639] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 21:56:39:5639] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 21:59:36:5936] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 21:59:37:5937] [INFO]: System roles already present.
+[2026-07-24 21:59:37:5937] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 21:59:37:5937] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 22:02:29:229] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:02:29:229] [INFO]: System roles already present.
+[2026-07-24 22:02:29:229] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 22:02:29:229] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 22:02:49:249] [ERROR]: Database operation failed. - Stack: DrizzleQueryError: Failed query: select "id", "email", "code", "created_at", "expires_at", "is_active" from "otp_codes" where (("otp_codes"."email" = $1) and ("otp_codes"."is_active" = $2)) limit $3
+params: dev.michael.john@gmail.com,true,1
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:83:20)
+    at async otpService.findActiveOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/otp.service.ts:47:25)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:77:24)
+[2026-07-24 22:02:49:249] [HTTP]: POST /api/v1/auth/login 500 69 - 248.033 ms
+[2026-07-24 22:03:34:334] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:03:45:345] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:03:57:357] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:04:10:410] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:04:10:410] [INFO]: System roles already present.
+[2026-07-24 22:04:10:410] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 22:04:10:410] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 22:04:22:422] [HTTP]: POST /api/v1/auth/login 201 168 - 3011.619 ms
+[2026-07-24 22:10:22:1022] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:10:23:1023] [INFO]: System roles already present.
+[2026-07-24 22:10:23:1023] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 22:10:23:1023] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 22:15:11:1511] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:63:25)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 22:15:11:1511] [HTTP]: POST /api/v1/auth/login 401 69 - 230.481 ms
+[2026-07-24 22:15:28:1528] [HTTP]: POST /api/v1/auth/login 201 168 - 3428.564 ms
+[2026-07-24 22:16:09:169] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:16:09:169] [INFO]: System roles already present.
+[2026-07-24 22:16:09:169] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 22:16:09:169] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-24 22:16:21:1621] [HTTP]: POST /api/v1/auth/login 200 176 - 211.848 ms
+[2026-07-24 22:30:09:309] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 22:30:09:309] [HTTP]: POST /api/v1/auth/login 401 69 - 56.555 ms
+[2026-07-24 22:30:16:3016] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 22:30:16:3016] [HTTP]: POST /api/v1/auth/login 401 69 - 16.893 ms
+[2026-07-24 22:30:22:3022] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-24 22:30:22:3022] [HTTP]: POST /api/v1/auth/login 401 69 - 7.136 ms
+[2026-07-24 22:42:17:4217] [INFO]: 🔃 Initializing environment variables...
+[2026-07-24 22:42:17:4217] [INFO]: System roles already present.
+[2026-07-24 22:42:17:4217] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-24 22:42:17:4217] [INFO]: 🚀 Server is online @ http://localhost:5000

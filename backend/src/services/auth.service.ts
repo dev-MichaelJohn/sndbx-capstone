@@ -1,24 +1,18 @@
-import { Accounts } from "@/schemas/auth.schema.js";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
-import type z from "zod";
 import { GetRecord, HardDeleteRecord } from "./db.service.js";
 import { and, eq, isNull } from "drizzle-orm";
 import { AppError } from "@/utils/error.util.js";
 import bcrypt from "bcryptjs";
-import OTPService, {
-  VerifyOTPSchema,
-  type IOTPService,
-  type VerifyOTPType,
-} from "./otp.service.js";
+import OTPService, { type IOTPService } from "./otp.service.js";
 import { JWTPayloadSchema, type JWTPayloadType } from "@/types/token.type.js";
-import type { AccountSelect, UserType } from "@/types/user.type.js";
+import {
+  UserLoginSchema,
+  type AccountSelect,
+  type UserLoginType,
+  type UserType,
+} from "@/types/user.type.js";
 import type { IUserService } from "./user.service.js";
 import UserService from "./user.service.js";
-
-export const UserLoginSchema = GenerateZodSchemas(Accounts).insert.omit({
-  personal_details_id: true,
-});
-export type UserLoginType = z.infer<typeof UserLoginSchema>;
+import { VerifyOTPSchema, type VerifyOTPType } from "@/types/otp.type.js";
 
 /** An Accounts row with the password field stripped, as returned to callers. */
 type SafeAccount = Omit<AccountSelect, "password">;

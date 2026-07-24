@@ -1,12 +1,12 @@
 import z from "zod";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
 import {
   AccountRoles,
   Accounts,
   PersonalDetails,
   Roles,
   SystemRoles,
-} from "@/schemas/auth.schema.js";
+} from "../schemas/auth.schema.js";
 
 // ==========================================
 // 1. Base Entity Schemas & Inferred Types
@@ -17,6 +17,7 @@ export const AccountSchema = GenerateZodSchemas(Accounts, {
   email: (schema) => schema.trim().toLowerCase().pipe(z.email("Invalid email address format.")),
   password: (schema) =>
     schema
+      .trim()
       .min(8, "Password must be at least 8 characters long.")
       .max(72, "Password cannot exceed 72 characters."),
   personal_details_id: (schema) =>
@@ -99,3 +100,8 @@ export const UserSchema = z.object({
   roles: z.array(z.enum(SystemRoles.enumValues)),
 });
 export type UserType = z.infer<typeof UserSchema>;
+
+export const UserLoginSchema = AccountSchema.insert.omit({
+  personal_details_id: true,
+});
+export type UserLoginType = z.infer<typeof UserLoginSchema>;
