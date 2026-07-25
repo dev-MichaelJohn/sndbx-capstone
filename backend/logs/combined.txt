@@ -4942,3 +4942,16 @@ params: dev.michael.john@gmail.com,true,1
 [2026-07-25 09:26:21:2621] [HTTP]: GET /api/v1/auth/me 304 - - 23.661 ms
 [2026-07-25 09:26:28:2628] [HTTP]: GET /api/v1/auth/me 304 - - 9.078 ms
 [2026-07-25 09:26:49:2649] [HTTP]: GET /api/v1/auth/me 304 - - 26.943 ms
+[2026-07-25 09:51:20:5120] [HTTP]: GET /api/v1/auth/me 304 - - 251.768 ms
+[2026-07-25 09:57:15:5715] [HTTP]: GET /api/v1/auth/me 304 - - 22.034 ms
+[2026-07-25 09:57:23:5723] [HTTP]: GET /api/v1/auth/me 304 - - 10.797 ms
+[2026-07-25 09:58:46:5846] [HTTP]: GET /api/v1/auth/me 304 - - 22.978 ms
+[2026-07-25 09:59:27:5927] [HTTP]: GET /api/v1/auth/me 304 - - 19.465 ms
+[2026-07-25 10:04:53:453] [HTTP]: GET /api/v1/auth/me 304 - - 18.273 ms
+[2026-07-25 10:22:04:224] [HTTP]: GET /api/v1/auth/me 304 - - 441.106 ms
+[2026-07-25 10:24:02:242] [HTTP]: GET /api/v1/auth/me 304 - - 18.929 ms
+[2026-07-25 10:24:05:245] [HTTP]: GET /api/v1/auth/me 304 - - 10.721 ms
+[2026-07-25 10:24:09:249] [HTTP]: GET /api/v1/auth/me 304 - - 10.426 ms
+[2026-07-25 10:24:28:2428] [HTTP]: GET /api/v1/auth/me 304 - - 24.018 ms
+[2026-07-25 10:24:30:2430] [HTTP]: GET /api/v1/auth/me 304 - - 8.333 ms
+[2026-07-25 10:39:59:3959] [HTTP]: GET /api/v1/auth/me 304 - - 284.961 ms
