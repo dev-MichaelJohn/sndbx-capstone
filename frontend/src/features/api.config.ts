@@ -5,7 +5,8 @@ export const BACKEND_BASE_API = "http://localhost:5000/api/v1";
 
 export const apiClient = axios.create({
   baseURL: BACKEND_BASE_API,
-  timeout: 10000,
+  timeout: 30000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },

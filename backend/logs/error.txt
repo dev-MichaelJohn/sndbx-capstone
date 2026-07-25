@@ -3743,3 +3743,21 @@ params: dev.michael.john@gmail.com,true,1
     at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:60:22)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
     at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-07-25 07:40:10:4010] [ERROR]: Invalid email or expired OTP. - Stack: AppError: Invalid email or expired OTP.
+    at authService.authenticateOTP (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:84:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:54:22)
+[2026-07-25 09:06:34:634] [ERROR]: Cannot access 'user' before initialization - Stack: ReferenceError: Cannot access 'user' before initialization
+    at Object.PersonalDetails (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:132:36)
+    at GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:78:64)
+    at userService.getUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:130:35)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async authService.authenticateJWT (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:110:18)
+    at async JwtStrategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:85:22)
+[2026-07-25 09:07:01:71] [ERROR]: Cannot access 'user' before initialization - Stack: ReferenceError: Cannot access 'user' before initialization
+    at Object.PersonalDetails (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:132:36)
+    at GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:78:64)
+    at userService.getUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:130:35)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async authController.refresh (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:241:18)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:290:28)

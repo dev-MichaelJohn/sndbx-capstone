@@ -121,15 +121,18 @@ class userService implements IUserService {
 
     const { id, email } = validation.data;
 
-    const user = await GetRecord<"Accounts">("Accounts", {
+    const existingUser = await GetRecord<"Accounts">("Accounts", {
       where: (Accounts) =>
         and(eq(Accounts.id, id), eq(Accounts.email, email), isNull(Accounts.deleted_at)),
     });
-    if (!user) throw new AppError(404, "No user account found.");
+    if (!existingUser) throw new AppError(404, "No user account found.");
 
     const personalDetails = await GetRecord<"PersonalDetails">("PersonalDetails", {
       where: (PersonalDetails) =>
-        and(eq(PersonalDetails.id, user.personal_details_id), isNull(PersonalDetails.deleted_at)),
+        and(
+          eq(PersonalDetails.id, existingUser.personal_details_id),
+          isNull(PersonalDetails.deleted_at),
+        ),
     });
     if (!personalDetails) throw new AppError(404, "No user details found.");
 
@@ -146,6 +149,7 @@ class userService implements IUserService {
     if (roleRecords.length === 0) throw new AppError(404, "No role associated with this account.");
 
     const roles = roleRecords.map((role) => role.system_role);
+    const { password, ...user } = existingUser;
 
     return {
       user,

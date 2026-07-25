@@ -49,7 +49,7 @@ class authController {
   }
   generateResendTime(expires_at: Date) {
     const OTP_LIFESPAN_MS = 5 * 60 * 1000; // 5 minutes
-    const OTP_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+    const OTP_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
     const expiryTime = new Date(expires_at).getTime();
     const createdAt = expiryTime - OTP_LIFESPAN_MS;
@@ -304,6 +304,16 @@ class authController {
         }
       },
     )(req, res, next);
+  };
+
+  me = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) throw new AppError(401, "Token expired. Please log in again");
+      const response = createAPIResponse(200, "Session valid.", req.user);
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
   };
 }
 

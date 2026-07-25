@@ -2,17 +2,22 @@
   "name": "sndbx-capstone",
   "version": "1.0.0",
   "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start:backend": "cd backend && pnpm dev",
+    "start:frontend": "cd frontend && pnpm dev",
+    "start": "concurrently \"pnpm start:backend\" \"pnpm:start:frontend\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "type": "module",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@11.15.1",
+  "dependencies": {
+    "concurrently": "^10.0.3"
+  },
   "devDependencies": {
     "typescript": "^7.0.2"
-  }
+  },
+  "packageManager": "pnpm@11.17.0"
 }

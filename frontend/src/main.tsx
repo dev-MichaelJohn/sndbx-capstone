@@ -7,6 +7,7 @@ import "./index.css";
 import App from "@/app/App";
 import { ThemeProvider } from "@/components/theme-provider.tsx";
 import "@fontsource-variable/roboto";
+import { UserProvider } from "./features/auth/user.context";
 
 const queryClient = new QueryClient();
 
@@ -15,7 +16,9 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <ThemeProvider defaultTheme="light">
         <QueryClientProvider client={queryClient}>
-          <App />
+          <UserProvider>
+            <App />
+          </UserProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </BrowserRouter>

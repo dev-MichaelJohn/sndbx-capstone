@@ -5,6 +5,8 @@ import { generate } from "otp-generator";
 import { CreateRecord, GetRecord, UpdateRecord } from "./db.service.js";
 import { and, eq, gt, type InferSelectModel } from "drizzle-orm";
 import { VerifyOTPSchema, type VerifyOTPType } from "@/types/otp.type.js";
+import z from "zod";
+import { AppError } from "@/utils/error.util.js";
 
 /** Public surface of {@link otpService}, for dependency injection/mocking. */
 export interface IOTPService {
@@ -22,6 +24,7 @@ export interface IOTPService {
    * see the flag on {@link otpService.verifyOTP} below.
    */
   verifyOTP(credentials: VerifyOTPType): Promise<InferSelectModel<typeof OTPCodes> | undefined>;
+  deactivateOTP(id: number): Promise<void>;
 }
 
 /**
@@ -125,6 +128,21 @@ class otpService implements IOTPService {
     });
 
     return result;
+  }
+
+  async deactivateOTP(id: number) {
+    const validation = await z.number().int().positive().safeParseAsync(id);
+    if (!validation.success) throw validation.error;
+
+    const result = await GetRecord("OTPCodes", {
+      where: (OTPCodes) => and(eq(OTPCodes.id, id), eq(OTPCodes.is_active, true)),
+    });
+    if (!result) throw new AppError(401, "Invalid or expired OTP.");
+
+    const deactivated = await UpdateRecord("OTPCodes", id, {
+      is_active: false,
+    });
+    if (!deactivated) throw new AppError(500, "Failed to deactivate OTP.");
   }
 }
 

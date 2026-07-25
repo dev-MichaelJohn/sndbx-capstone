@@ -1,14 +1,22 @@
 import type { UserLoginType } from "backend/types/user.type";
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 
 type PendingAuth =
   | (UserLoginType & {
       resendAt: number;
+      isLoading?: boolean;
     })
   | null;
 type AuthFlowContextType = {
   pendingAuth: PendingAuth;
-  setPendingAuth: (auth: PendingAuth) => void;
+  setPendingAuth: Dispatch<SetStateAction<PendingAuth>>;
 };
 
 const AuthFlowContext = createContext<AuthFlowContextType | undefined>(undefined);

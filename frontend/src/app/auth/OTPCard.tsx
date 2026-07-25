@@ -9,11 +9,47 @@ import {
 } from "@/components/ui/card";
 import { OTPForm } from "./OTPForm";
 import { useAuthFlow } from "@/features/auth/auth.context";
-import { Navigate } from "react-router";
+import { Link, Navigate } from "react-router";
+import { ResendBtn } from "./ResendBtn";
+import { useValidateLogin } from "@/features/auth/auth.service";
+import toast from "react-hot-toast";
 
 export const OTPCard = () => {
-  const { pendingAuth } = useAuthFlow();
+  const { pendingAuth, setPendingAuth } = useAuthFlow();
   if (!pendingAuth) return <Navigate to="/auth/login" replace></Navigate>;
+
+  const login = useValidateLogin();
+
+  const handleResend = async () => {
+    let toastId: string | undefined;
+    try {
+      toastId = toast.loading("Resending...");
+      setPendingAuth((prev) => (prev ? { ...prev, isLoading: true } : null));
+      const result = await login.mutateAsync({
+        email: pendingAuth.email,
+        password: pendingAuth.password,
+      });
+
+      const { data, message } = result;
+      if (!data) throw new Error("Unexpected response from server.");
+
+      setPendingAuth((prev) =>
+        prev
+          ? {
+              ...prev,
+              resendAt: data.resendAt,
+              isLoading: false,
+            }
+          : null,
+      );
+      toast.success(message, { id: toastId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Resend failed.";
+      setPendingAuth((prev) => (prev ? { ...prev, isLoading: false } : null));
+      toast.error(message, { id: toastId });
+    } finally {
+    }
+  };
 
   return (
     <Card className="w-full max-w-sm shadow">
@@ -30,9 +66,19 @@ export const OTPCard = () => {
         <Button type="submit" form="form-otp" className="w-full text-sm font-bold">
           Login
         </Button>
-        <a href="#" className="ml-auto inline-block text-sm underline-offset-4 hover:underline">
+        {pendingAuth.resendAt && (
+          <ResendBtn
+            resendAt={pendingAuth.resendAt}
+            onResend={handleResend}
+            isLoading={login.isPending || pendingAuth.isLoading}
+          />
+        )}
+        <Link
+          to="/auth/login"
+          className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+        >
           Back to login
-        </a>
+        </Link>
       </CardFooter>
     </Card>
   );

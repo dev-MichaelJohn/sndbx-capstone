@@ -5,11 +5,18 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useAuthFlow } from "@/features/auth/auth.context";
-import { Navigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
+import { setBearerToken, useValidateOTP } from "@/features/auth/auth.service";
+import { useUser } from "@/features/auth/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
 
 export const OTPForm = () => {
-  const { pendingAuth } = useAuthFlow();
+  const { pendingAuth, setPendingAuth } = useAuthFlow();
   if (!pendingAuth) return <Navigate to="/auth/login" replace></Navigate>;
+
+  const { mutateAsync, isPending } = useValidateOTP();
+  const navigate = useNavigate();
+  const { setUser } = useUser();
 
   const form = useForm({
     defaultValues: {
@@ -19,8 +26,25 @@ export const OTPForm = () => {
     validators: {
       onSubmit: VerifyOTPSchema,
     },
-    onSubmit: () => {
-      toast.success("You submitted!");
+    onSubmit: async ({ value }) => {
+      let toastId: string | undefined;
+      try {
+        toastId = toast.loading("Verifying OTP...");
+        const result = await mutateAsync(value);
+        const { data, message } = result;
+        if (!data) throw new Error("Unexpected response from server.");
+
+        setBearerToken(data.token);
+
+        // TODO: this should re-route the user to the appropriate dashboard
+        setUser(data.info);
+        setPendingAuth(null);
+        toast.success(message, { id: toastId });
+        navigate(getHomeRouteForRoles(data.info.roles), { replace: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Login failed.";
+        toast.error(message, { id: toastId });
+      }
     },
   });
 
@@ -54,6 +78,7 @@ export const OTPForm = () => {
                   pattern={REGEXP_ONLY_DIGITS}
                   containerClassName="w-full"
                   value={field.state.value}
+                  disabled={isPending}
                   onChange={(value) => field.handleChange(value)}
                   onBlur={field.handleBlur}
                 >

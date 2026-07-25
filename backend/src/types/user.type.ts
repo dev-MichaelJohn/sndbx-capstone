@@ -91,9 +91,13 @@ export type AccountRecordWithRole = AccountInsert & {
 };
 
 export const UserSchema = z.object({
-  user: AccountSchema.select.extend({
-    id: z.coerce.number().int().positive().nonoptional(),
-  }),
+  user: AccountSchema.select
+    .omit({
+      password: true,
+    })
+    .extend({
+      id: z.coerce.number().int().positive().nonoptional(),
+    }),
   personalDetails: PersonalDetailsSchema.select.extend({
     id: z.coerce.number().int().positive().nonoptional(),
   }),
