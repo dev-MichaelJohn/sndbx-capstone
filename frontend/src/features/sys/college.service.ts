@@ -71,7 +71,7 @@ const deleteCollegeRecord = async (collegeId: number) => {
     const response = await apiClient.delete<APIResponse>(`/sys/colleges/${collegeId}`, {});
     return response.data.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to update college record."), { cause: error });
+    throw new Error(getErrorMessage(error, "Failed to delete college record."), { cause: error });
   }
 };
 

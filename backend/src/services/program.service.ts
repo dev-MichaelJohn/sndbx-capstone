@@ -261,7 +261,7 @@ class programService implements IProgramService {
   async searchAvailableChairCandidates(search: string | undefined, tx?: PgTransaction) {
     const chairs = await GetRecords<"Accounts", ChairCandidateType>("Accounts", {
       select: (Accounts) => ({
-        id: Accounts.id,
+        account_id: Accounts.id,
         first_name: PersonalDetails.first_name,
         last_name: PersonalDetails.last_name,
         middle_name: PersonalDetails.middle_name,

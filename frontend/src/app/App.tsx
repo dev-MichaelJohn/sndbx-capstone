@@ -12,6 +12,7 @@ import { SupervisorDashboard } from "./supervisor/SupervisorDashboard";
 import { FacultyDashboard } from "./faculty/FacultyDashboard";
 import { StudentDashboard } from "./student/StudentDasboard";
 import { RedirectIfAuthenticated } from "@/features/auth/RedirectIfAuthenticated";
+import { ProgramsPage } from "./sys/pages/ProgramsPage";
 
 const App = () => {
   return (
@@ -27,7 +28,10 @@ const App = () => {
         <Route element={<SysDashboard />}>
           <Route path="sys/dashboard" element={<OverviewPage />} />
           <Route path="sys/users" element={<UsersPage />} />
-          <Route path="sys/institution" element={<InstitutionPage />} />
+          <Route path="sys/institution">
+            <Route index element={<InstitutionPage />} />
+            <Route path=":collegeId/programs" element={<ProgramsPage />} />
+          </Route>
         </Route>
       </Route>
       <Route element={<RequireRole allowed={["SYS_ADMIN", "ADMIN"]} />}>

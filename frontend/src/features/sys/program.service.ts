@@ -1,6 +1,13 @@
 import type { APIResponse, PaginatedData } from "backend/utils/response.util";
-import type { ProgramWithChairType } from "backend/types/program.type";
+import type {
+  ChairCandidateType,
+  CreateProgramType,
+  ProgramWithChairType,
+  UpdateProgramType,
+} from "backend/types/program.type";
 import { apiClient, getErrorMessage } from "../api.config";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 export const getPrograms = async (search?: string) => {
   try {
@@ -23,3 +30,112 @@ export const getProgramsViaCollegeID = async (collegeId: number, search?: string
     throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
   }
 };
+
+const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
+  try {
+    const response = await apiClient.post<APIResponse<ProgramWithChairType>>("/sys/programs/", {
+      program,
+      chair,
+    });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const useCreateProgram = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createProgramRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+    },
+  });
+};
+
+const updateProgramRecord = async ({ program_id, program, chair }: UpdateProgramType) => {
+  try {
+    const response = await apiClient.put<APIResponse<ProgramWithChairType>>(
+      `/sys/programs/${program_id}`,
+      {
+        program,
+        chair,
+      },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update program record."), { cause: error });
+  }
+};
+
+export const useUpdateProgram = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateProgramRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+    },
+  });
+};
+
+const deleteProgramRecord = async (programId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/sys/programs/${programId}`, {});
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete program record."), { cause: error });
+  }
+};
+
+export const useDeleteProgram = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteProgramRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+    },
+  });
+};
+
+export const searchChairCandidates = async (search?: string) => {
+  try {
+    const response = await apiClient<APIResponse<ChairCandidateType[]>>(
+      `/sys/programs/available-chairs?search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const useSearchChairCandidates = (search?: string) => {
+  return useQuery({
+    queryKey: ["searchChairCandidates", search],
+    queryFn: () => searchChairCandidates(search),
+    enabled: !!search && search.length >= 2,
+  });
+};
+
+export function useChairSelection(initial: ChairCandidateType | null) {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selected, setSelected] = useState<ChairCandidateType | null>(initial);
+
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(handle);
+  }, [search]);
+
+  const { data: candidates, isFetching: isSearching } = useSearchChairCandidates(debouncedSearch);
+
+  const reset = (next: ChairCandidateType | null = initial) => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelected(next);
+  };
+
+  return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
+}

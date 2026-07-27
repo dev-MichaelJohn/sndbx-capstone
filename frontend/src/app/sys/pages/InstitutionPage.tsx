@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Link } from "react-router";
 
 const columns: Array<DataTableColumn<CollegeWithDean>> = [
   {
@@ -69,9 +70,14 @@ const columns: Array<DataTableColumn<CollegeWithDean>> = [
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end" className="w-40 p-1">
-            <DropdownMenuItem className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground">
-              <Eye className="mr-2 size-3.5" />
-              View Programs
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
+            >
+              <Link to={`/sys/institution/${row.id}/programs`}>
+                <Eye className="mr-2 size-3.5" />
+                View Programs
+              </Link>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -121,7 +127,7 @@ export const InstitutionPage = () => {
 
         {/* ── Table Section ───────────────────────────────────────────────── */}
         <Card className="overflow-hidden rounded-xl shadow-xs gap-0 pb-0">
-          <CardHeader className="flex items-center justify-between border-b px-6 py- flex-col gap-2.5 sm:flex-row sm:items-center">
+          <CardHeader className="flex items-center justify-between border-b px-6 flex-col gap-2.5 sm:flex-row sm:items-center">
             <div className="relative w-full max-w-xs">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
