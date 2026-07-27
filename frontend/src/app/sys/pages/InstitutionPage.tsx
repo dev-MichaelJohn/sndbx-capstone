@@ -11,6 +11,8 @@ import type { CollegeWithDean } from "backend/types/college.types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatFullName } from "@/lib/nameFormatter";
 import { CollegeEditDialog } from "../components/college-edit";
+import { CollegeCreateDialog } from "../components/college-create";
+import { CollegeDeleteDialog } from "../components/college-delete";
 
 const columns: Array<DataTableColumn<CollegeWithDean>> = [
   {
@@ -51,14 +53,7 @@ const columns: Array<DataTableColumn<CollegeWithDean>> = [
           View Programs
         </Button>
         <CollegeEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 rounded-md px-2.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Trash2 className="mr-1 size-3.5" />
-          Delete
-        </Button>
+        <CollegeDeleteDialog college={row} icon={Trash2} triggerText="Delete" />
       </div>
     ),
   },
@@ -102,10 +97,7 @@ export const InstitutionPage = () => {
                 className="h-8 rounded-lg pl-8"
               />
             </div>
-            <Button className="rounded-lg p-4 flex items-center justify-center gap-1">
-              <Plus className="size-3.5" />
-              <span className="leading-none text-sm">Add College</span>
-            </Button>
+            <CollegeCreateDialog icon={Plus} triggerText="Add College" />
           </CardHeader>
 
           <CardContent className="p-0">

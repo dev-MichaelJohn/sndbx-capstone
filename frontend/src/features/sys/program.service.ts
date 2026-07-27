@@ -12,3 +12,14 @@ export const getPrograms = async (search?: string) => {
     throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
   }
 };
+
+export const getProgramsViaCollegeID = async (collegeId: number, search?: string) => {
+  try {
+    const response = await apiClient<APIResponse<PaginatedData<ProgramWithChairType[]>>>(
+      `/sys/colleges/${collegeId}/programs?search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};

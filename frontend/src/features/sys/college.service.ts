@@ -3,6 +3,7 @@ import type {
   CollegeDeanSelect,
   CollegeSelect,
   CollegeWithDean,
+  CreateCollegeRecordType,
   DeanCandidate,
   UpdateCollegeRecordType,
 } from "backend/types/college.types";
@@ -40,11 +41,7 @@ export const useSearchDeanCandidates = (search?: string) => {
   });
 };
 
-export const updateCollegeRecord = async ({
-  collegeId,
-  college,
-  dean,
-}: UpdateCollegeRecordType) => {
+const updateCollegeRecord = async ({ collegeId, college, dean }: UpdateCollegeRecordType) => {
   try {
     const response = await apiClient.put<
       APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
@@ -63,6 +60,48 @@ export const useUpdateCollege = () => {
 
   return useMutation({
     mutationFn: updateCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+const deleteCollegeRecord = async (collegeId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/sys/colleges/${collegeId}`, {});
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update college record."), { cause: error });
+  }
+};
+
+export const useDeleteCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+const createCollegeRecord = async ({ college, dean }: CreateCollegeRecordType) => {
+  try {
+    const response = await apiClient.post<
+      APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
+    >("/sys/colleges", { college, dean });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to create college record."), { cause: error });
+  }
+};
+
+export const useCreateCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCollegeRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getColleges"] });
     },
