@@ -4,7 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getColleges } from "@/features/sys/college.service";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { DataTable } from "../components/main-data-table";
 import type { DataTableColumn } from "../components/main-data-table";
 import type { CollegeWithDean } from "backend/types/college.types";
@@ -13,6 +22,13 @@ import { formatFullName } from "@/lib/nameFormatter";
 import { CollegeEditDialog } from "../components/college-edit";
 import { CollegeCreateDialog } from "../components/college-create";
 import { CollegeDeleteDialog } from "../components/college-delete";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const columns: Array<DataTableColumn<CollegeWithDean>> = [
   {
@@ -43,17 +59,38 @@ const columns: Array<DataTableColumn<CollegeWithDean>> = [
     header: "Actions",
     className: "w-px whitespace-nowrap",
     cell: (row) => (
-      <div className="flex items-center gap-1.5 justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 rounded-md px-2.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <Eye className="mr-1 size-3.5" />
-          View Programs
-        </Button>
-        <CollegeEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
-        <CollegeDeleteDialog college={row} icon={Trash2} triggerText="Delete" />
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-40 p-1">
+            <DropdownMenuItem className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground">
+              <Eye className="mr-2 size-3.5" />
+              View Programs
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CollegeEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CollegeDeleteDialog college={row} icon={Trash2} triggerText="Delete" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     ),
   },

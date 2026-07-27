@@ -37,11 +37,14 @@ import { FormTextField } from "./form-text-field";
 import { useDeanSelection } from "@/features/sys/college.service";
 import { useUpdateCollege } from "@/features/sys/college.service";
 import type { DeanCandidate } from "backend/types/college.types";
+import { cn } from "@/lib/utils";
 
 interface CollegeEditDialogProps {
   icon: LucideIcon;
   triggerText: string;
   defaultData: CollegeWithDean;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
 }
 
 type DeanTabValue = "no-dean" | "existing" | "new";
@@ -50,6 +53,8 @@ export const CollegeEditDialog = ({
   icon: Icon,
   triggerText,
   defaultData,
+  variant = "ghost",
+  className,
 }: CollegeEditDialogProps) => {
   const [open, setOpen] = useState(false);
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
@@ -167,14 +172,17 @@ export const CollegeEditDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger>
+        <DialogTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
+            variant={variant}
             size="sm"
-            className="h-7 rounded-md px-2.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            className={cn(
+              "w-full h-full min-h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-primary hover:bg-primary/10 hover:text-primary focus-visible:outline-none",
+              className,
+            )}
           >
-            <Icon className="mr-1 size-3.5" />
+            <Icon className="mr-2 size-3.5" />
             {triggerText}
           </Button>
         </DialogTrigger>

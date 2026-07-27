@@ -17,17 +17,22 @@ import toast from "react-hot-toast";
 import { useDeleteCollege } from "@/features/sys/college.service";
 import type { CollegeWithDean } from "backend/types/college.types";
 import { getProgramsViaCollegeID } from "@/features/sys/program.service";
+import { cn } from "@/lib/utils";
 
 interface CollegeDeleteDialogProps {
   college: CollegeWithDean;
   icon?: LucideIcon;
   triggerText?: string;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
 }
 
 export const CollegeDeleteDialog = ({
   college,
   icon: Icon = Trash2,
   triggerText = "Delete",
+  variant = "ghost",
+  className,
 }: CollegeDeleteDialogProps) => {
   const [open, setOpen] = useState(false);
   const { mutateAsync, isPending: isDeleting } = useDeleteCollege();
@@ -65,12 +70,16 @@ export const CollegeDeleteDialog = ({
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button
-          variant="ghost"
+          type="button"
+          variant={variant}
           size="sm"
-          className="h-7 rounded-md px-2.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className={cn(
+            "w-full h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-destructive hover:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive focus-visible:outline-none",
+            className,
+          )}
         >
-          <Icon className="mr-1 size-3.5" />
-          {triggerText}
+          <Icon className="mr-2 size-3.5 shrink-0" />
+          <span>{triggerText}</span>
         </Button>
       </AlertDialogTrigger>
 

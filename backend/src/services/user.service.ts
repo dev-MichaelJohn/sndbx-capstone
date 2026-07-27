@@ -19,7 +19,7 @@ import {
   type UserType,
 } from "@/types/user.type.js";
 import z from "zod";
-import { emailService, type IEmailService } from "./email.service.js";
+import EmailService, { emailService, type IEmailService } from "./email.service.js";
 import { GenerateWelcomeHtmlTemplate, GenerateWelcomeTextTemplate } from "@/utils/email.util.js";
 
 /** Result of {@link userService.createUser} — `credentials` has the password stripped. */
@@ -46,7 +46,7 @@ export interface IUserService {
  * and AccountRoles tables as a single atomic operation.
  */
 class userService implements IUserService {
-  constructor(private emailService: IEmailService = emailService) {}
+  constructor(private emailService: IEmailService = EmailService) {}
 
   private async accountHasRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
     const accountRecords = await GetRecords<"Accounts", AccountRecordWithRole>("Accounts", {

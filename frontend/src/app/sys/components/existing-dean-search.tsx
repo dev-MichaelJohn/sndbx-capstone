@@ -54,7 +54,7 @@ export function ExistingDeanSearch({
   }
 
   return (
-    <Command className="max-w-sm rounded-lg border" shouldFilter={false}>
+    <Command className="w-full rounded-lg border" shouldFilter={false}>
       <CommandInput
         placeholder="Search via name or institution ID..."
         value={search}

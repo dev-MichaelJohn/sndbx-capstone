@@ -5837,3 +5837,110 @@ params: dev.michael.john@gmail.com,true,1
 [2026-07-27 18:14:34:1434] [INFO]: System roles already present.
 [2026-07-27 18:14:34:1434] [INFO]: An active Superadmin already exists. Safe to continue application startup.
 [2026-07-27 18:14:34:1434] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-27 18:23:22:2322] [INFO]: 🔃 Initializing environment variables...
+[2026-07-27 18:23:23:2323] [INFO]: System roles already present.
+[2026-07-27 18:23:23:2323] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-27 18:23:23:2323] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-27 18:23:27:2327] [HTTP]: GET /api/v1/auth/me 304 - - 276.875 ms
+[2026-07-27 18:23:31:2331] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 20.237 ms
+[2026-07-27 18:30:34:3034] [HTTP]: GET /api/v1/auth/me 304 - - 28.441 ms
+[2026-07-27 18:30:34:3034] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 15.853 ms
+[2026-07-27 18:31:21:3121] [HTTP]: PUT /api/v1/sys/colleges/14 201 82 - 190.965 ms
+[2026-07-27 18:31:22:3122] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 200 492 - 13.584 ms
+[2026-07-27 18:31:31:3131] [HTTP]: GET /api/v1/sys/colleges/available-deans?search=dd 200 100 - 18.601 ms
+[2026-07-27 18:32:46:3246] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 117.617 ms
+[2026-07-27 18:33:22:3322] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 30.409 ms
+[2026-07-27 18:34:58:3458] [INFO]: 🔃 Initializing environment variables...
+[2026-07-27 18:34:59:3459] [INFO]: System roles already present.
+[2026-07-27 18:34:59:3459] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-27 18:34:59:3459] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-27 18:35:01:351] [HTTP]: GET /api/v1/auth/me 304 - - 28.539 ms
+[2026-07-27 18:35:03:353] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 39.029 ms
+[2026-07-27 18:35:12:3512] [HTTP]: GET /api/v1/sys/colleges/available-deans?search=mi 200 209 - 18.645 ms
+[2026-07-27 18:36:03:363] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 36.351 ms
+[2026-07-27 18:38:33:3833] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 346.041 ms
+[2026-07-27 18:42:04:424] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 17.639 ms
+[2026-07-27 18:42:06:426] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 13.076 ms
+[2026-07-27 18:42:08:428] [HTTP]: GET /api/v1/auth/me 304 - - 12.575 ms
+[2026-07-27 18:42:08:428] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 239.479 ms
+[2026-07-27 18:43:46:4346] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 22.234 ms
+[2026-07-27 18:43:48:4348] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 15.429 ms
+[2026-07-27 18:45:18:4518] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 20.094 ms
+[2026-07-27 18:45:30:4530] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 23.498 ms
+[2026-07-27 18:45:34:4534] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 8.688 ms
+[2026-07-27 18:45:39:4539] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 8.107 ms
+[2026-07-27 18:49:25:4925] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 21.418 ms
+[2026-07-27 18:49:29:4929] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 10.023 ms
+[2026-07-27 18:49:31:4931] [HTTP]: GET /api/v1/auth/me 304 - - 9.336 ms
+[2026-07-27 18:49:32:4932] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 262.493 ms
+[2026-07-27 18:49:39:4939] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 15.016 ms
+[2026-07-27 18:50:21:5021] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 18.213 ms
+[2026-07-27 18:50:28:5028] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 10.008 ms
+[2026-07-27 18:50:31:5031] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 14.384 ms
+[2026-07-27 18:50:37:5037] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 13.582 ms
+[2026-07-27 18:50:41:5041] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 12.790 ms
+[2026-07-27 18:51:52:5152] [HTTP]: GET /api/v1/auth/me 304 - - 19.995 ms
+[2026-07-27 18:51:52:5152] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 232.650 ms
+[2026-07-27 18:52:50:5250] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 16.489 ms
+[2026-07-27 18:52:51:5251] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 13.806 ms
+[2026-07-27 18:52:55:5255] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 11.744 ms
+[2026-07-27 18:53:12:5312] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 20.438 ms
+[2026-07-27 18:53:52:5352] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 18.173 ms
+[2026-07-27 18:57:26:5726] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 26.018 ms
+[2026-07-27 18:57:29:5729] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 13.515 ms
+[2026-07-27 18:57:35:5735] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 13.622 ms
+[2026-07-27 19:00:02:02] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 24.935 ms
+[2026-07-27 19:00:03:03] [HTTP]: GET /api/v1/auth/me 304 - - 8.413 ms
+[2026-07-27 19:00:04:04] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 238.241 ms
+[2026-07-27 19:01:39:139] [HTTP]: GET /api/v1/auth/me 304 - - 34.915 ms
+[2026-07-27 19:01:39:139] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 250.487 ms
+[2026-07-27 19:02:35:235] [HTTP]: GET /api/v1/auth/me 304 - - 32.185 ms
+[2026-07-27 19:02:35:235] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 296.765 ms
+[2026-07-27 19:03:14:314] [HTTP]: GET /api/v1/auth/me 304 - - 20.523 ms
+[2026-07-27 19:03:15:315] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 256.918 ms
+[2026-07-27 19:03:50:350] [HTTP]: GET /api/v1/auth/me 304 - - 33.518 ms
+[2026-07-27 19:03:51:351] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 259.797 ms
+[2026-07-27 19:04:34:434] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 22.025 ms
+[2026-07-27 19:04:36:436] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 11.208 ms
+[2026-07-27 19:04:44:444] [HTTP]: GET /api/v1/auth/me 304 - - 18.471 ms
+[2026-07-27 19:04:45:445] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 318.622 ms
+[2026-07-27 19:05:11:511] [HTTP]: GET /api/v1/auth/me 304 - - 22.847 ms
+[2026-07-27 19:05:11:511] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 253.505 ms
+[2026-07-27 19:07:07:77] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 20.669 ms
+[2026-07-27 19:07:20:720] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 20.616 ms
+[2026-07-27 19:07:28:728] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 19.865 ms
+[2026-07-27 19:07:31:731] [HTTP]: GET /api/v1/auth/me 304 - - 12.899 ms
+[2026-07-27 19:07:31:731] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 243.464 ms
+[2026-07-27 19:07:35:735] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 17.352 ms
+[2026-07-27 19:08:41:841] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 31.382 ms
+[2026-07-27 19:10:07:107] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 22.328 ms
+[2026-07-27 19:10:16:1016] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 8.799 ms
+[2026-07-27 19:10:18:1018] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 11.034 ms
+[2026-07-27 19:10:25:1025] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 24.227 ms
+[2026-07-27 19:12:59:1259] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 69.973 ms
+[2026-07-27 19:13:01:131] [HTTP]: GET /api/v1/auth/me 304 - - 9.197 ms
+[2026-07-27 19:13:02:132] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 240.284 ms
+[2026-07-27 19:13:33:1333] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 20.825 ms
+[2026-07-27 19:13:38:1338] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 9.664 ms
+[2026-07-27 19:13:41:1341] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 8.497 ms
+[2026-07-27 19:13:44:1344] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 12.381 ms
+[2026-07-27 19:16:24:1624] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 53.144 ms
+[2026-07-27 19:16:32:1632] [HTTP]: GET /api/v1/auth/me 304 - - 13.243 ms
+[2026-07-27 19:16:32:1632] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 256.930 ms
+[2026-07-27 19:19:37:1937] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 33.904 ms
+[2026-07-27 19:20:13:2013] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 56.691 ms
+[2026-07-27 19:20:50:2050] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 18.655 ms
+[2026-07-27 19:22:01:221] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 22.935 ms
+[2026-07-27 19:22:08:228] [HTTP]: GET /api/v1/auth/me 304 - - 14.312 ms
+[2026-07-27 19:22:08:228] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 327.523 ms
+[2026-07-27 19:22:49:2249] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 20.240 ms
+[2026-07-27 19:24:02:242] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 18.667 ms
+[2026-07-27 19:24:16:2416] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 21.254 ms
+[2026-07-27 19:24:17:2417] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 15.352 ms
+[2026-07-27 19:24:26:2426] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 11.639 ms
+[2026-07-27 19:25:57:2557] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 19.829 ms
+[2026-07-27 19:26:03:263] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 9.901 ms
+[2026-07-27 19:26:04:264] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 8.170 ms
+[2026-07-27 19:26:23:2623] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 38.159 ms
+[2026-07-27 19:27:35:2735] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 29.432 ms
+[2026-07-27 19:27:38:2738] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 26.342 ms
