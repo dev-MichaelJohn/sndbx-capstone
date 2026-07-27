@@ -5833,3 +5833,7 @@ params: dev.michael.john@gmail.com,true,1
 [2026-07-27 18:05:52:552] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 23.725 ms
 [2026-07-27 18:05:55:555] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 9.603 ms
 [2026-07-27 18:06:07:67] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 24.829 ms
+[2026-07-27 18:14:34:1434] [INFO]: 🔃 Initializing environment variables...
+[2026-07-27 18:14:34:1434] [INFO]: System roles already present.
+[2026-07-27 18:14:34:1434] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-27 18:14:34:1434] [INFO]: 🚀 Server is online @ http://localhost:5000

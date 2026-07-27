@@ -19,6 +19,8 @@ import {
   type UserType,
 } from "@/types/user.type.js";
 import z from "zod";
+import { emailService, type IEmailService } from "./email.service.js";
+import { GenerateWelcomeHtmlTemplate, GenerateWelcomeTextTemplate } from "@/utils/email.util.js";
 
 /** Result of {@link userService.createUser} — `credentials` has the password stripped. */
 type CreateUserResult = {
@@ -44,7 +46,7 @@ export interface IUserService {
  * and AccountRoles tables as a single atomic operation.
  */
 class userService implements IUserService {
-  constructor() {}
+  constructor(private emailService: IEmailService = emailService) {}
 
   private async accountHasRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
     const accountRecords = await GetRecords<"Accounts", AccountRecordWithRole>("Accounts", {
@@ -185,7 +187,15 @@ class userService implements IUserService {
     });
     if (!validation.success) throw validation.error;
 
-    return await db.transaction(async (tx) => {
+    let plainPassword = credentials.password;
+    let wasPasswordGenerated = false;
+
+    if (!plainPassword || plainPassword.trim().length === 0) {
+      plainPassword = this.generatePassword();
+      wasPasswordGenerated = true;
+    }
+
+    const result = await db.transaction(async (tx) => {
       const userDetails = await CreateRecord("PersonalDetails", personalDetails, tx);
       if (!userDetails)
         throw new AppError(
@@ -193,10 +203,7 @@ class userService implements IUserService {
           "Failed to create personal details record while registering user. User account was not created.",
         );
 
-      if (!credentials.password || credentials.password?.trim().length === 0)
-        credentials.password = this.generatePassword();
-
-      const hash = await bcrypt.hash(credentials.password, 10);
+      const hash = await bcrypt.hash(plainPassword, 10);
       const userCredentials: AccountInsert = {
         ...credentials,
         password: hash,
@@ -239,6 +246,36 @@ class userService implements IUserService {
         role: userRole,
       };
     });
+
+    if (wasPasswordGenerated && result.credentials.email) {
+      const fullName = [result.details.first_name, result.details.last_name]
+        .filter(Boolean)
+        .join(" ");
+
+      const emailPayload = {
+        recipientName: fullName || "User",
+        email: result.credentials.email,
+        generatedPassword: plainPassword,
+      };
+
+      try {
+        await this.emailService.sendEmail({
+          to: result.credentials.email,
+          options: {
+            subject: "PIT-FES Account Credentials & Security Notice",
+            text: GenerateWelcomeTextTemplate(emailPayload),
+            html: GenerateWelcomeHtmlTemplate(emailPayload),
+          },
+        });
+      } catch (err) {
+        throw new AppError(
+          500,
+          "Account created successfully, but failed to send the welcome email containing credentials.",
+        );
+      }
+    }
+
+    return result;
   }
 
   /**
