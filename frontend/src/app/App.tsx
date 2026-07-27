@@ -4,6 +4,9 @@ import { LoginCard } from "./auth/LoginCard";
 import { OTPCard } from "./auth/OTPCard";
 import { RequireRole } from "@/features/auth/RequireRole";
 import { SysDashboard } from "./sys/SysDashboard";
+import { OverviewPage } from "./sys/pages/OverviewPage";
+import { UsersPage } from "./sys/pages/UsersPage";
+import { InstitutionPage } from "./sys/pages/InstitutionPage";
 import { AdminDashboard } from "./admin/AdminDasboard";
 import { SupervisorDashboard } from "./supervisor/SupervisorDashboard";
 import { FacultyDashboard } from "./faculty/FacultyDashboard";
@@ -21,7 +24,11 @@ const App = () => {
       </Route>
 
       <Route element={<RequireRole allowed={["SYS_ADMIN"]} />}>
-        <Route path="sys/dashboard" element={<SysDashboard />} />
+        <Route element={<SysDashboard />}>
+          <Route path="sys/dashboard" element={<OverviewPage />} />
+          <Route path="sys/users" element={<UsersPage />} />
+          <Route path="sys/institution" element={<InstitutionPage />} />
+        </Route>
       </Route>
       <Route element={<RequireRole allowed={["SYS_ADMIN", "ADMIN"]} />}>
         <Route path="admin/dashboard" element={<AdminDashboard />} />

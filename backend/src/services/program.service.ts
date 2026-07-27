@@ -1,4 +1,4 @@
-import { Colleges, ProgramChairs, Programs } from "@/schemas/institution.schema.js";
+import { ProgramChairs, Programs } from "@/schemas/institution.schema.js";
 import {
   CreateProgram,
   CreateProgramChair,

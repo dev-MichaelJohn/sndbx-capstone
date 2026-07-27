@@ -11,7 +11,7 @@ const validateLogin = async (credentials: UserLoginType) => {
     >("/auth/login", credentials);
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, "Login failed."));
+    throw new Error(getErrorMessage(error, "Login failed."), { cause: error });
   }
 };
 
@@ -31,7 +31,7 @@ const validateOTP = async (credentials: VerifyOTPType) => {
     >("/auth/verify-otp", credentials);
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, "Verifying OTP failed."));
+    throw new Error(getErrorMessage(error, "Verifying OTP failed."), { cause: error });
   }
 };
 
@@ -50,6 +50,6 @@ export const fetchCurrentUser = async () => {
     const response = await apiClient.get<APIResponse<UserType>>("/auth/me");
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to fetch current user."));
+    throw new Error(getErrorMessage(error, "Failed to fetch current user."), { cause: error });
   }
 };

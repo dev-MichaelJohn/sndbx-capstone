@@ -3,11 +3,27 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useUser } from "@/features/auth/user.context";
 import { Landmark, SquareTerminal, Users } from "lucide-react";
-import { Navigate, Outlet } from "react-router";
+import { Toaster } from "react-hot-toast";
+import { Navigate, Outlet, useLocation } from "react-router";
 
 export const SysDashboard = () => {
   const { user } = useUser();
+  const location = useLocation();
   if (!user) return <Navigate to="/auth/login" />;
+
+  const navMain: SysSidebarData["navMain"] = [
+    { title: "Overview", url: "/sys/dashboard", icon: SquareTerminal, isActive: true },
+    { title: "Users", url: "/sys/users", icon: Users },
+    { title: "Institution", url: "/sys/institution", icon: Landmark },
+  ];
+
+  const activePageName =
+    navMain.find(
+      (item) =>
+        location.pathname === item.url ||
+        location.pathname.startsWith(item.url + "/") ||
+        item.items?.some((sub) => location.pathname === sub.url),
+    )?.title ?? "Overview";
 
   const data: SysSidebarData = {
     user: {
@@ -15,27 +31,16 @@ export const SysDashboard = () => {
       email: user.user.email,
       avatar: "",
     },
-    navMain: [
-      { title: "Overview", url: "/sys/dashboard", icon: SquareTerminal, isActive: true },
-      { title: "Users", url: "/sys/users", icon: Users },
-      {
-        title: "Institution",
-        url: "/sys/institution",
-        icon: Landmark,
-        items: [
-          { title: "Colleges", url: "/sys-admin/institution/colleges" },
-          { title: "Programs", url: "/sys-admin/institution/programs" },
-        ],
-      },
-    ],
+    navMain,
   };
 
   return (
     <SidebarProvider>
+      <Toaster />
       <AppSidebar data={data} />
       <SidebarInset>
-        <SiteHeader pageName="Overview" />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <SiteHeader pageName={activePageName} />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-3">
           <Outlet />
         </div>
       </SidebarInset>

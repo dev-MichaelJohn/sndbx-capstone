@@ -1,6 +1,6 @@
-import { ProgramChairs, Programs } from "@/schemas/institution.schema.js";
-import { createSearchSchema } from "@/utils/request.util.js";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
+import { ProgramChairs, Programs } from "../schemas/institution.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
 import z from "zod";
 import { AccountSchema, CreateUserReqSchema, PersonalDetailsSchema } from "./user.type.js";
 

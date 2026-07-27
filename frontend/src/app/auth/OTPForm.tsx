@@ -5,22 +5,19 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useAuthFlow } from "@/features/auth/auth.context";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { setBearerToken, useValidateOTP } from "@/features/auth/auth.service";
 import { useUser } from "@/features/auth/user.context";
 import { getHomeRouteForRoles } from "@/lib/role-route";
 
 export const OTPForm = () => {
   const { pendingAuth, setPendingAuth } = useAuthFlow();
-  if (!pendingAuth) return <Navigate to="/auth/login" replace></Navigate>;
-
   const { mutateAsync, isPending } = useValidateOTP();
   const navigate = useNavigate();
   const { setUser } = useUser();
-
   const form = useForm({
     defaultValues: {
-      email: pendingAuth.email,
+      email: pendingAuth?.email ?? "",
       code: "",
     },
     validators: {

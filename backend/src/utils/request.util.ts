@@ -1,8 +1,8 @@
-import * as schema from "@/schemas/index.schema.js";
+import * as schema from "../schemas/index.schema.js";
 import z from "zod";
-import { type TableNames } from "@/services/db.service.js";
+import { type TableNames } from "../types/db.type.js";
 import { getColumns } from "drizzle-orm";
-import { type Request } from "express";
+import type { Request } from "express";
 
 export const createSearchSchema = <T extends TableNames>(tablename: T) => {
   const table = schema[tablename];
