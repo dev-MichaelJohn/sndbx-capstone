@@ -13,6 +13,7 @@ import { FacultyDashboard } from "./faculty/FacultyDashboard";
 import { StudentDashboard } from "./student/StudentDasboard";
 import { RedirectIfAuthenticated } from "@/features/auth/RedirectIfAuthenticated";
 import { ProgramsPage } from "./sys/pages/ProgramsPage";
+import SemestersPage from "./sys/pages/SemestersPage";
 
 const App = () => {
   return (
@@ -32,6 +33,7 @@ const App = () => {
             <Route index element={<InstitutionPage />} />
             <Route path=":collegeId/programs" element={<ProgramsPage />} />
           </Route>
+          <Route path="sys/semesters" element={<SemestersPage />} />
         </Route>
       </Route>
       <Route element={<RequireRole allowed={["SYS_ADMIN", "ADMIN"]} />}>

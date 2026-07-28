@@ -18,79 +18,47 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldGroup } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldGroup } from "@/components/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatFullName } from "@/lib/nameFormatter";
 import { useForm } from "@tanstack/react-form";
-import {
-  UpdateCollegeRecord,
-  type CollegeWithDean,
-  type UpdateCollegeRecordType,
-} from "backend/types/college.types";
+import { CreateCollegeRecord, type CreateCollegeRecordType } from "backend/types/college.types";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { ExistingDeanSearch } from "./existing-dean-search";
-import { FormTextField } from "./form-text-field";
-import { useDeanSelection } from "@/features/sys/college.service";
-import { useUpdateCollege } from "@/features/sys/college.service";
-import type { DeanCandidate } from "backend/types/college.types";
-import { cn } from "@/lib/utils";
+import { FormTextField } from "@/components/form-text-field";
+import { useCreateCollege, useDeanSelection } from "@/features/sys/college.service";
+import { Label } from "@/components/ui/label";
 
-interface CollegeEditDialogProps {
+interface CollegeCreateDialogProps {
   icon: LucideIcon;
   triggerText: string;
-  defaultData: CollegeWithDean;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-  className?: string;
 }
 
 type DeanTabValue = "no-dean" | "existing" | "new";
 
-export const CollegeEditDialog = ({
-  icon: Icon,
-  triggerText,
-  defaultData,
-  variant = "ghost",
-  className,
-}: CollegeEditDialogProps) => {
+const initialFormData: CreateCollegeRecordType = {
+  college: {
+    name: "",
+    initialism: "",
+  },
+  dean: undefined,
+};
+
+export const CollegeCreateDialog = ({ icon: Icon, triggerText }: CollegeCreateDialogProps) => {
   const [open, setOpen] = useState(false);
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [pendingValue, setPendingValue] = useState<UpdateCollegeRecordType | null>(null);
-  const { mutateAsync, isPending } = useUpdateCollege();
+  const [pendingValue, setPendingValue] = useState<CreateCollegeRecordType | null>(null);
 
-  const defaultSelectedDean: DeanCandidate | null = defaultData.account_id
-    ? {
-        account_id: defaultData.account_id,
-        first_name: defaultData.first_name,
-        last_name: defaultData.last_name,
-        middle_name: defaultData.middle_name,
-        suffix: defaultData.suffix,
-        institutional_id: defaultData.institutional_id,
-        is_college_dean: true,
-      }
-    : null;
-
-  const dean = useDeanSelection(defaultSelectedDean);
-
-  const defaultFormData: UpdateCollegeRecordType = {
-    collegeId: defaultData.id,
-    college: {
-      name: defaultData.name,
-      initialism: defaultData.initialism,
-    },
-    dean: defaultData.account_id ? { type: "existing", id: defaultData.account_id } : undefined,
-  };
+  const { mutateAsync, isPending } = useCreateCollege();
+  const dean = useDeanSelection(null);
 
   const form = useForm({
-    defaultValues: defaultFormData,
-    validators: { onSubmit: UpdateCollegeRecord },
+    defaultValues: initialFormData,
+    validators: { onSubmit: CreateCollegeRecord },
     onSubmit: async ({ value }) => {
-      // Validation already passed at this point — hold here and let the
-      // AlertDialog confirm before anything actually reaches the server.
       setPendingValue(value);
       setConfirmSaveOpen(true);
     },
@@ -98,7 +66,7 @@ export const CollegeEditDialog = ({
 
   const resetEverything = () => {
     form.reset();
-    dean.reset();
+    dean.reset(null);
     setPendingValue(null);
     setConfirmSaveOpen(false);
     setConfirmDiscardOpen(false);
@@ -110,9 +78,6 @@ export const CollegeEditDialog = ({
       resetEverything();
       return;
     }
-    // Closing via Esc / overlay click / X button goes through the same
-    // dirty-check as the Cancel button, so an accidental click can't
-    // silently drop changes.
     attemptClose();
   };
 
@@ -133,27 +98,25 @@ export const CollegeEditDialog = ({
 
   const confirmSave = async () => {
     if (!pendingValue) return;
-    const toastId = toast.loading("Saving college changes...");
+    const toastId = toast.loading("Creating college record...");
     try {
       await mutateAsync(pendingValue);
-      toast.success("Changes saved successfully.", { id: toastId });
+      toast.success("College created successfully.", { id: toastId });
       setConfirmSaveOpen(false);
       setOpen(false);
       resetEverything();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Couldn't save changes. Please try again.",
+        error instanceof Error ? error.message : "Failed to create college. Please try again.",
         { id: toastId },
       );
       setConfirmSaveOpen(false);
     }
   };
 
-  // Human-readable summary of the dean-assignment consequence, shown in the
-  // confirmation dialog so reassigning a dean isn't a one-click surprise.
   const deanChangeSummary = (() => {
     if (!pendingValue?.dean) {
-      return "This college will be left without an assigned dean.";
+      return "This college will be created without an assigned dean.";
     }
     if (pendingValue.dean.type === "existing") {
       return dean.selected
@@ -162,8 +125,8 @@ export const CollegeEditDialog = ({
             middle_name: dean.selected.middle_name,
             last_name: dean.selected.last_name,
             suffix: dean.selected.suffix,
-          })} will be assigned as dean of this college.`
-        : "The selected faculty member will be assigned as dean of this college.";
+          })} will be assigned as the dean.`
+        : "The selected faculty member will be assigned as the dean.";
     }
     const { first_name, last_name } = pendingValue.dean.details.personalDetails;
     return `A new faculty record for ${first_name} ${last_name} will be created and assigned as dean.`;
@@ -173,33 +136,26 @@ export const CollegeEditDialog = ({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <Button
-            type="button"
-            variant={variant}
-            size="sm"
-            className={cn(
-              "w-full h-full min-h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-primary hover:bg-primary/10 hover:text-primary focus-visible:outline-none",
-              className,
-            )}
-          >
-            <Icon className="mr-2 size-3.5" />
-            {triggerText}
+          <Button size="sm" className="h-8 rounded-lg text-xs font-medium">
+            <Icon className="mr-1.5 size-3.5" />
+            <span className="leading-none text-sm">{triggerText}</span>
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit College</DialogTitle>
+            <DialogTitle>Create College</DialogTitle>
             <DialogDescription>
-              Update college information or reassign the college dean.
+              Add a new college record and optionally assign a dean.
             </DialogDescription>
           </DialogHeader>
+
           <FieldGroup>
             <form.Field
               name="college.name"
               children={(field) => (
                 <FormTextField
                   field={field}
-                  label="Name"
+                  label="College Name"
                   disabled={isPending}
                   placeholder="e.g. College of Technology and Engineering"
                 />
@@ -216,22 +172,6 @@ export const CollegeEditDialog = ({
                 />
               )}
             />
-            <Field>
-              <Label htmlFor="college-dean">College Dean</Label>
-              <Input
-                type="text"
-                id="college-dean"
-                value={
-                  formatFullName({
-                    first_name: defaultData.first_name,
-                    middle_name: defaultData.middle_name,
-                    last_name: defaultData.last_name,
-                    suffix: defaultData.suffix,
-                  }) ?? "-"
-                }
-                disabled
-              />
-            </Field>
 
             <form.Subscribe
               selector={(state): DeanTabValue => state.values.dean?.type ?? "no-dean"}
@@ -262,16 +202,16 @@ export const CollegeEditDialog = ({
                     }
                     dean.reset(v === "existing" ? dean.selected : null);
                   }}
-                  className="w-full"
+                  className="w-full mt-2"
                 >
                   <Label>Assign College Dean</Label>
-                  <TabsList className="w-full">
-                    <TabsTrigger value="no-dean">Keep Record</TabsTrigger>
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="no-dean">No Dean</TabsTrigger>
                     <TabsTrigger value="existing">Existing Faculty</TabsTrigger>
                     <TabsTrigger value="new">New Faculty</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="existing" className="space-y-2">
+                  <TabsContent value="existing" className="space-y-2 mt-3">
                     <ExistingDeanSearch
                       search={dean.search}
                       onSearchChange={dean.setSearch}
@@ -292,7 +232,7 @@ export const CollegeEditDialog = ({
                     />
                   </TabsContent>
 
-                  <TabsContent value="new" className="space-y-4">
+                  <TabsContent value="new" className="space-y-3 mt-3">
                     <form.Field
                       name="dean.details.credentials.email"
                       children={(field) =>
@@ -369,58 +309,52 @@ export const CollegeEditDialog = ({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
-              Discard changes
+              Cancel
             </Button>
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting, state.errors] as const}
-              children={([canSubmit, errors]) => {
-                console.log("canSubmit:", canSubmit, "errors:", errors);
-                return (
-                  <Button
-                    type="button"
-                    disabled={!canSubmit || isPending}
-                    onClick={() => {
-                      console.log("Save clicked");
-                      form.handleSubmit();
-                    }}
-                  >
-                    {isPending ? "Saving..." : "Save changes"}
-                  </Button>
-                );
-              }}
+              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Creating..." : "Create College"}
+                </Button>
+              )}
             />
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Save confirmation — the deliberate friction point before mutation */}
+      {/* Save Confirmation Modal */}
       <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm college changes?</AlertDialogTitle>
+            <AlertDialogTitle>Create new college?</AlertDialogTitle>
             <AlertDialogDescription>{deanChangeSummary}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
             <AlertDialogAction onClick={confirmSave} disabled={isPending}>
-              {isPending ? "Saving..." : "Yes, save changes"}
+              {isPending ? "Creating..." : "Yes, create college"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Discard confirmation — only triggered when the form is actually dirty */}
+      {/* Discard Confirmation Modal */}
       <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved edits to this college record. Closing now will lose them.
+              You have unsaved input in this form. Closing now will discard your entry.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDiscard}>Discard changes</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

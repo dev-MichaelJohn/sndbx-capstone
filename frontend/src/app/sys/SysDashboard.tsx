@@ -2,7 +2,7 @@ import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useUser } from "@/features/auth/user.context";
-import { Landmark, SquareTerminal, Users } from "lucide-react";
+import { Calendar, Landmark, SquareTerminal, Users } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { Navigate, Outlet, useLocation } from "react-router";
 
@@ -15,6 +15,7 @@ export const SysDashboard = () => {
     { title: "Overview", url: "/sys/dashboard", icon: SquareTerminal, isActive: true },
     { title: "Users", url: "/sys/users", icon: Users },
     { title: "Institution", url: "/sys/institution", icon: Landmark },
+    { title: "Semesters", url: "/sys/semesters", icon: Calendar },
   ];
 
   const activePageName =

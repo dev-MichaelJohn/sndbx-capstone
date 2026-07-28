@@ -6120,3 +6120,115 @@ params: dev.michael.john@gmail.com,true,1
 [2026-07-28 07:14:06:146] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 22.022 ms
 [2026-07-28 07:14:20:1420] [HTTP]: GET /api/v1/sys/colleges/24/programs?search= 200 192 - 537.916 ms
 [2026-07-28 07:25:51:2551] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 95.561 ms
+[2026-07-28 12:08:50:850] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 12:08:51:851] [INFO]: System roles already present.
+[2026-07-28 12:08:51:851] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 12:08:51:851] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 12:22:52:2252] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 12:22:52:2252] [INFO]: System roles already present.
+[2026-07-28 12:22:52:2252] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 12:22:52:2252] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 12:26:36:2636] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 342.684 ms
+[2026-07-28 12:26:40:2640] [HTTP]: GET /api/v1/auth/me 304 - - 77.057 ms
+[2026-07-28 12:26:40:2640] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 271.437 ms
+[2026-07-28 12:27:41:2741] [HTTP]: GET /api/v1/auth/me 304 - - 53.624 ms
+[2026-07-28 12:27:42:2742] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 238.460 ms
+[2026-07-28 12:27:43:2743] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 200 192 - 27.300 ms
+[2026-07-28 12:27:49:2749] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 16.290 ms
+[2026-07-28 12:27:50:2750] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 16.773 ms
+[2026-07-28 12:27:53:2753] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 17.472 ms
+[2026-07-28 12:27:55:2755] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 16.653 ms
+[2026-07-28 12:27:56:2756] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 16.084 ms
+[2026-07-28 12:27:58:2758] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 16.276 ms
+[2026-07-28 12:28:01:281] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 20.026 ms
+[2026-07-28 12:28:03:283] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 17.211 ms
+[2026-07-28 12:28:06:286] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 14.889 ms
+[2026-07-28 12:29:20:2920] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 28.502 ms
+[2026-07-28 12:29:21:2921] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 14.173 ms
+[2026-07-28 12:29:25:2925] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 23.328 ms
+[2026-07-28 12:29:26:2926] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 19.587 ms
+[2026-07-28 12:31:11:3111] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 24.777 ms
+[2026-07-28 12:31:13:3113] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 10.192 ms
+[2026-07-28 12:31:16:3116] [HTTP]: GET /api/v1/auth/me 304 - - 20.593 ms
+[2026-07-28 12:31:16:3116] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 236.253 ms
+[2026-07-28 12:33:56:3356] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 102.588 ms
+[2026-07-28 12:35:00:350] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 45.709 ms
+[2026-07-28 12:35:03:353] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 16.959 ms
+[2026-07-28 12:37:50:3750] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 63.741 ms
+[2026-07-28 12:40:23:4023] [HTTP]: GET /api/v1/auth/me 304 - - 40.283 ms
+[2026-07-28 12:40:24:4024] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 241.080 ms
+[2026-07-28 12:48:19:4819] [HTTP]: GET /api/v1/sys/semesters?search=&page=1&orderBy=id&orderDir=desc 304 - - 83.972 ms
+[2026-07-28 13:04:47:447] [HTTP]: GET /api/v1/auth/me 304 - - 302.796 ms
+[2026-07-28 13:04:47:447] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 200 192 - 17.820 ms
+[2026-07-28 13:05:00:50] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 48.051 ms
+[2026-07-28 13:05:03:53] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 439.018 ms
+[2026-07-28 13:06:18:618] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 18.535 ms
+[2026-07-28 13:06:20:620] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 7.727 ms
+[2026-07-28 13:08:16:816] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 21.087 ms
+[2026-07-28 13:08:53:853] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 25.860 ms
+[2026-07-28 13:08:54:854] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 12.321 ms
+[2026-07-28 13:08:57:857] [HTTP]: GET /api/v1/auth/me 304 - - 10.142 ms
+[2026-07-28 13:08:57:857] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 8.338 ms
+[2026-07-28 13:09:00:90] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc&school_year_start_from=2026&school_year_start_to=2026 200 192 - 18.788 ms
+[2026-07-28 13:09:19:919] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 34.366 ms
+[2026-07-28 13:09:22:922] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc&school_year_start_from=2026&school_year_start_to=2026 304 - - 14.744 ms
+[2026-07-28 13:09:34:934] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 32.096 ms
+[2026-07-28 13:09:37:937] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc&school_year_start_from=2026&school_year_start_to=2026 304 - - 9.574 ms
+[2026-07-28 13:09:43:943] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 12.447 ms
+[2026-07-28 13:10:03:103] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 73.340 ms
+[2026-07-28 13:10:13:1013] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 481.338 ms
+[2026-07-28 13:10:19:1019] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 19.141 ms
+[2026-07-28 13:10:23:1023] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 452.549 ms
+[2026-07-28 13:44:58:4458] [HTTP]: GET /api/v1/auth/me 304 - - 316.735 ms
+[2026-07-28 13:44:58:4458] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 14.871 ms
+[2026-07-28 13:45:04:454] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 480.011 ms
+[2026-07-28 13:45:05:455] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 15.076 ms
+[2026-07-28 13:45:11:4511] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 435.870 ms
+[2026-07-28 13:45:12:4512] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 15.409 ms
+[2026-07-28 13:45:15:4515] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 429.834 ms
+[2026-07-28 13:45:16:4516] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 11.542 ms
+[2026-07-28 13:45:18:4518] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 525.259 ms
+[2026-07-28 13:45:19:4519] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 13.589 ms
+[2026-07-28 13:45:22:4522] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 434.605 ms
+[2026-07-28 13:45:23:4523] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 11.718 ms
+[2026-07-28 13:47:06:476] [HTTP]: GET /api/v1/auth/me 304 - - 471.003 ms
+[2026-07-28 13:47:06:476] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 8.024 ms
+[2026-07-28 13:47:09:479] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 452.155 ms
+[2026-07-28 13:47:10:4710] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 12.771 ms
+[2026-07-28 13:47:50:4750] [HTTP]: POST /api/v1/sys/semesters 200 312 - 489.466 ms
+[2026-07-28 13:47:50:4750] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 200 418 - 17.708 ms
+[2026-07-28 13:51:01:511] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 17.203 ms
+[2026-07-28 13:51:02:512] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 12.221 ms
+[2026-07-28 13:51:17:5117] [HTTP]: GET /api/v1/auth/me 304 - - 40.083 ms
+[2026-07-28 13:51:17:5117] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 17.300 ms
+[2026-07-28 13:51:58:5158] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 70.212 ms
+[2026-07-28 13:51:59:5159] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 13.341 ms
+[2026-07-28 13:52:00:520] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 106.530 ms
+[2026-07-28 13:52:13:5213] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 33.069 ms
+[2026-07-28 13:52:14:5214] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 17.481 ms
+[2026-07-28 13:52:18:5218] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 22.102 ms
+[2026-07-28 13:52:49:5249] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 465.557 ms
+[2026-07-28 13:53:10:5310] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 22.515 ms
+[2026-07-28 13:53:16:5316] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 17.912 ms
+[2026-07-28 13:53:24:5324] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 21.112 ms
+[2026-07-28 13:53:26:5326] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 432.081 ms
+[2026-07-28 13:56:43:5643] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 13:56:43:5643] [INFO]: System roles already present.
+[2026-07-28 13:56:43:5643] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 13:56:43:5643] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 14:02:52:252] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 103.815 ms
+[2026-07-28 14:02:55:255] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 55.956 ms
+[2026-07-28 14:05:00:50] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 104.869 ms
+[2026-07-28 14:05:43:543] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 78.371 ms
+[2026-07-28 14:05:44:544] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 15.200 ms
+[2026-07-28 14:06:41:641] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 49.544 ms
+[2026-07-28 14:07:10:710] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 39.078 ms
+[2026-07-28 14:07:11:711] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 14.653 ms
+[2026-07-28 14:07:12:712] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 21.645 ms
+[2026-07-28 14:07:14:714] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 14.477 ms
+[2026-07-28 14:07:18:718] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 16.201 ms
+[2026-07-28 14:07:19:719] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 13.302 ms
+[2026-07-28 14:07:26:726] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 8.140 ms
+[2026-07-28 14:07:27:727] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 17.494 ms
+[2026-07-28 14:07:56:756] [HTTP]: GET /api/v1/auth/me 304 - - 104.181 ms
+[2026-07-28 14:07:57:757] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 577.668 ms

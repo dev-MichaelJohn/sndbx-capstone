@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DataTable, type DataTableColumn } from "../components/main-data-table";
+import { DataTable, type DataTableColumn } from "@/components/main-data-table";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -27,8 +27,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getProgramsViaCollegeID } from "@/features/sys/program.service";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ProgramCreateDialog } from "../components/program-create";
-import { ProgramEditDialog } from "../components/program-edit";
+import { ProgramCreateDialog } from "../components/program/program-create";
+import { ProgramEditDialog } from "../components/program/program-edit";
 
 const columns: Array<DataTableColumn<ProgramWithChairType>> = [
   {

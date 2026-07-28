@@ -27,7 +27,7 @@ import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { ExistingChairSearch } from "./existing-program-search";
-import { FormTextField } from "./form-text-field";
+import { FormTextField } from "@/components/form-text-field";
 import { useChairSelection, useCreateProgram } from "@/features/sys/program.service";
 import { Label } from "@/components/ui/label";
 

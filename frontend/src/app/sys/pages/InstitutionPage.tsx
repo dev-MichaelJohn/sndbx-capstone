@@ -14,14 +14,14 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { DataTable } from "../components/main-data-table";
-import type { DataTableColumn } from "../components/main-data-table";
+import { DataTable } from "@/components/main-data-table";
+import type { DataTableColumn } from "@/components/main-data-table";
 import type { CollegeWithDean } from "backend/types/college.types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatFullName } from "@/lib/nameFormatter";
-import { CollegeEditDialog } from "../components/college-edit";
-import { CollegeCreateDialog } from "../components/college-create";
-import { CollegeDeleteDialog } from "../components/college-delete";
+import { CollegeEditDialog } from "../components/college/college-edit";
+import { CollegeCreateDialog } from "../components/college/college-create";
+import { CollegeDeleteDialog } from "../components/college/college-delete";
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -119,7 +119,7 @@ export class semesterService implements ISemesterService {
 
   async createSemester(params: SemesterInsert) {
     const validation = await SemesterInsertSchema.safeParseAsync(params);
-    if (!validation.success) throw validation.data;
+    if (!validation.success) throw validation.error;
 
     const parsedData = validation.data;
 

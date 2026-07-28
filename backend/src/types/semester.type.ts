@@ -1,6 +1,6 @@
-import { Semesters } from "@/schemas/institution.schema.js";
-import { createSearchSchema } from "@/utils/request.util.js";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
+import { Semesters } from "../schemas/institution.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
 import { z } from "zod";
 
 const SemesterSchema = GenerateZodSchemas(Semesters, {
