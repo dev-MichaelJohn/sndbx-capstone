@@ -1,5 +1,6 @@
 import ProgramController from "@/controllers/program.controller.js";
 import { Router, type IRouter } from "express";
+import CourseRouter from "./course.route.js";
 
 const ProgramRouter: IRouter = Router({ mergeParams: true });
 
@@ -26,5 +27,7 @@ ProgramRouter.put("/:program_id", (req, res, next) => {
 ProgramRouter.delete("/:program_id", (req, res, next) => {
   ProgramController.deleteProgramRecord(req, res, next);
 });
+
+ProgramRouter.use("/:id/courses", CourseRouter);
 
 export default ProgramRouter;

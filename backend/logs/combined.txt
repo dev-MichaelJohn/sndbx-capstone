@@ -6260,3 +6260,82 @@ params: dev.michael.john@gmail.com,true,1
 [2026-07-28 20:14:27:1427] [INFO]: System roles already present.
 [2026-07-28 20:14:27:1427] [INFO]: An active Superadmin already exists. Safe to continue application startup.
 [2026-07-28 20:14:27:1427] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 21:59:09:599] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 21:59:10:5910] [INFO]: System roles already present.
+[2026-07-28 21:59:10:5910] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 21:59:10:5910] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 21:59:23:5923] [HTTP]: GET /api/v1/auth/me 304 - - 321.845 ms
+[2026-07-28 21:59:23:5923] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 20.073 ms
+[2026-07-28 22:00:05:05] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 273.326 ms
+[2026-07-28 22:01:00:10] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 37.142 ms
+[2026-07-28 22:01:09:19] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 19.713 ms
+[2026-07-28 22:01:51:151] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 21.559 ms
+[2026-07-28 22:04:37:437] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 61.339 ms
+[2026-07-28 22:05:39:539] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 129.226 ms
+[2026-07-28 22:06:01:61] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 44.170 ms
+[2026-07-28 22:07:45:745] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 85.108 ms
+[2026-07-28 22:13:40:1340] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 93.470 ms
+[2026-07-28 22:13:59:1359] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 40.091 ms
+[2026-07-28 22:42:32:4232] [HTTP]: GET /api/v1/auth/me 304 - - 304.471 ms
+[2026-07-28 22:42:32:4232] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 10.831 ms
+[2026-07-28 22:42:33:4233] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 6.941 ms
+[2026-07-28 22:42:35:4235] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 8.176 ms
+[2026-07-28 22:42:39:4239] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 6.763 ms
+[2026-07-28 22:42:46:4246] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 10.421 ms
+[2026-07-28 22:42:47:4247] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 10.277 ms
+[2026-07-28 22:42:49:4249] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 7.339 ms
+[2026-07-28 22:42:53:4253] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 7.750 ms
+[2026-07-28 22:44:18:4418] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 27.660 ms
+[2026-07-28 22:44:19:4419] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 5.357 ms
+[2026-07-28 22:45:20:4520] [HTTP]: GET /api/v1/auth/me 304 - - 362.816 ms
+[2026-07-28 22:45:21:4521] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 9.654 ms
+[2026-07-28 22:45:22:4522] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 6.276 ms
+[2026-07-28 22:45:24:4524] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 7.064 ms
+[2026-07-28 22:45:28:4528] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 8.380 ms
+[2026-07-28 22:46:26:4626] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 21.028 ms
+[2026-07-28 22:46:33:4633] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 13.027 ms
+[2026-07-28 22:46:35:4635] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 6.755 ms
+[2026-07-28 22:46:38:4638] [HTTP]: GET /api/v1/auth/me 304 - - 285.663 ms
+[2026-07-28 22:46:38:4638] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 8.152 ms
+[2026-07-28 22:46:39:4639] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 8.927 ms
+[2026-07-28 22:46:41:4641] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 21.199 ms
+[2026-07-28 22:46:45:4645] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 8.573 ms
+[2026-07-28 22:48:12:4812] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 22:48:13:4813] [INFO]: System roles already present.
+[2026-07-28 22:48:13:4813] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 22:48:13:4813] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 22:48:13:4813] [HTTP]: GET /api/v1/auth/me 304 - - 307.470 ms
+[2026-07-28 22:48:13:4813] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 14.405 ms
+[2026-07-28 22:48:14:4814] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 5.818 ms
+[2026-07-28 22:48:16:4816] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 8.555 ms
+[2026-07-28 22:48:20:4820] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 404 168 - 7.681 ms
+[2026-07-28 22:49:57:4957] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 22:49:58:4958] [INFO]: System roles already present.
+[2026-07-28 22:49:58:4958] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 22:49:58:4958] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 22:50:01:501] [HTTP]: GET /api/v1/auth/me 304 - - 305.987 ms
+[2026-07-28 22:50:03:503] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 31.176 ms
+[2026-07-28 22:50:06:506] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 483.348 ms
+[2026-07-28 22:50:09:509] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 24.403 ms
+[2026-07-28 22:50:12:5012] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 200 190 - 480.658 ms
+[2026-07-28 22:50:28:5028] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 45.061 ms
+[2026-07-28 22:50:33:5033] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 21.314 ms
+[2026-07-28 22:52:24:5224] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 271.376 ms
+[2026-07-28 22:52:27:5227] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 19.070 ms
+[2026-07-28 22:52:34:5234] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 19.152 ms
+[2026-07-28 22:53:06:536] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 112.439 ms
+[2026-07-28 22:53:37:5337] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 22.938 ms
+[2026-07-28 22:54:37:5437] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 30.739 ms
+[2026-07-28 22:54:40:5440] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 14.665 ms
+[2026-07-28 22:55:45:5545] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 20.488 ms
+[2026-07-28 22:55:46:5546] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 11.472 ms
+[2026-07-28 22:55:51:5551] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 13.087 ms
+[2026-07-28 22:56:17:5617] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 57.874 ms
+[2026-07-28 22:56:22:5622] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 17.228 ms
+[2026-07-28 22:56:37:5637] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 54.529 ms
+[2026-07-28 22:57:53:5753] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 23.116 ms
+[2026-07-28 22:57:55:5755] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 10.024 ms
+[2026-07-28 22:58:16:5816] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 61.588 ms
+[2026-07-28 22:58:20:5820] [HTTP]: GET /api/v1/sys/programs/6/courses?page=1&orderBy=id&orderDir=asc 200 190 - 17.083 ms
+[2026-07-28 22:58:24:5824] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 20.255 ms
+[2026-07-28 22:58:27:5827] [HTTP]: GET /api/v1/sys/programs/2/courses?page=1&orderBy=id&orderDir=asc 304 - - 21.285 ms

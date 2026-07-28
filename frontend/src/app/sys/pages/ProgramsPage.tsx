@@ -30,87 +30,6 @@ import { Input } from "@/components/ui/input";
 import { ProgramCreateDialog } from "../components/program/program-create";
 import { ProgramEditDialog } from "../components/program/program-edit";
 
-const columns: Array<DataTableColumn<ProgramWithChairType>> = [
-  {
-    header: "Code",
-    className: "w-24",
-    cell: (row) => (
-      <Badge variant="outline" className="font-mono text-sm">
-        {row.initialism}
-      </Badge>
-    ),
-  },
-  {
-    header: "Program Name",
-    className: "w-auto",
-    cell: (row) => row.name,
-  },
-  {
-    header: "Program Chair",
-    className: "w-auto",
-    cell: (row) => {
-      // Check if account_id or first_name exists to determine if a chair is assigned
-      const chairName = row.account_id
-        ? formatFullName({
-            first_name: row.first_name,
-            last_name: row.last_name,
-            middle_name: row.middle_name,
-            suffix: row.suffix,
-          })
-        : null;
-
-      return chairName ?? <span className="italic text-muted-foreground/60">Unassigned</span>;
-    },
-  },
-  {
-    header: "Actions",
-    className: "w-px whitespace-nowrap",
-    cell: (row) => (
-      <div className="flex justify-end">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end" className="w-40 p-1">
-            <DropdownMenuItem className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground">
-              <Eye className="mr-2 size-3.5" />
-              View Details
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem
-              className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
-              onSelect={(e) => e.preventDefault()}
-            >
-              <ProgramEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
-              onSelect={(e) => e.preventDefault()}
-            >
-              {/* Program Delete Dialog Component here */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full h-8 justify-start px-2 py-1.5 text-xs font-normal text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
-              >
-                <Trash2 className="mr-2 size-3.5 shrink-0" />
-                Delete
-              </Button>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    ),
-  },
-];
-
 export const ProgramsPage = () => {
   const { collegeId } = useParams<{ collegeId: string }>();
 
@@ -119,6 +38,90 @@ export const ProgramsPage = () => {
   const navigate = useNavigate();
 
   const numericCollegeId = Number(collegeId);
+
+  const columns: Array<DataTableColumn<ProgramWithChairType>> = [
+    {
+      header: "Code",
+      className: "w-24",
+      cell: (row) => (
+        <Badge variant="outline" className="font-mono text-sm">
+          {row.initialism}
+        </Badge>
+      ),
+    },
+    {
+      header: "Program Name",
+      className: "w-auto",
+      cell: (row) => row.name,
+    },
+    {
+      header: "Program Chair",
+      className: "w-auto",
+      cell: (row) => {
+        // Check if account_id or first_name exists to determine if a chair is assigned
+        const chairName = row.account_id
+          ? formatFullName({
+              first_name: row.first_name,
+              last_name: row.last_name,
+              middle_name: row.middle_name,
+              suffix: row.suffix,
+            })
+          : null;
+
+        return chairName ?? <span className="italic text-muted-foreground/60">Unassigned</span>;
+      },
+    },
+    {
+      header: "Actions",
+      className: "w-px whitespace-nowrap",
+      cell: (row) => (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-40 p-1">
+              <DropdownMenuItem
+                className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
+                onClick={() => navigate(`/sys/institution/${collegeId}/programs/${row.id}`)}
+              >
+                <Eye className="mr-2 size-3.5" />
+                View Details
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
+                onSelect={(e) => e.preventDefault()}
+              >
+                <ProgramEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
+                onSelect={(e) => e.preventDefault()}
+              >
+                {/* Program Delete Dialog Component here */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full h-8 justify-start px-2 py-1.5 text-xs font-normal text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 size-3.5 shrink-0" />
+                  Delete
+                </Button>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ];
 
   const {
     data: programResponse,
