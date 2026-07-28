@@ -4942,3 +4942,7 @@ params: dev.michael.john@gmail.com,true,1
 [2026-07-25 09:26:21:2621] [HTTP]: GET /api/v1/auth/me 304 - - 23.661 ms
 [2026-07-25 09:26:28:2628] [HTTP]: GET /api/v1/auth/me 304 - - 9.078 ms
 [2026-07-25 09:26:49:2649] [HTTP]: GET /api/v1/auth/me 304 - - 26.943 ms
+[2026-07-28 08:27:06:276] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 08:27:06:276] [INFO]: System roles already present.
+[2026-07-28 08:27:06:276] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 08:27:06:276] [INFO]: 🚀 Server is online @ http://localhost:5000
