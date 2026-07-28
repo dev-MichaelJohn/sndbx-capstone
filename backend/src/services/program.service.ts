@@ -166,8 +166,8 @@ class programService implements IProgramService {
   }
 
   async getPrograms(searhQuery: ProgramSearchQueryType) {
-    searhQuery.orderBy = "id";
-    searhQuery.orderDir = "asc";
+    searhQuery.orderBy = searhQuery.orderBy ?? "id";
+    searhQuery.orderDir = searhQuery.orderDir ?? "asc";
 
     const validation = await ProgramSearchQuery.safeParseAsync(searhQuery);
     if (!validation.success) throw validation.error;
