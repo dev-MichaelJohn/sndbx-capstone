@@ -6239,3 +6239,24 @@ params: dev.michael.john@gmail.com,true,1
 [2026-07-28 14:07:56:756] [HTTP]: GET /api/v1/auth/me 304 - - 104.181 ms
 [2026-07-28 14:07:57:757] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 577.668 ms
 >>>>>>> feature/sys-dashboard
+[2026-07-28 17:38:35:3835] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 17:52:37:5237] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 17:52:38:5238] [INFO]: System roles already present.
+[2026-07-28 17:52:38:5238] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 17:52:38:5238] [INFO]: 🚀 Server is online @ http://localhost:5000
+[2026-07-28 17:52:39:5239] [HTTP]: GET /api/v1/auth/me 304 - - 258.857 ms
+[2026-07-28 17:52:39:5239] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 22.744 ms
+[2026-07-28 17:52:42:5242] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 448.211 ms
+[2026-07-28 17:52:44:5244] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 23.681 ms
+[2026-07-28 17:52:46:5246] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 442.434 ms
+[2026-07-28 17:52:47:5247] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 14.612 ms
+[2026-07-28 17:52:50:5250] [HTTP]: GET /api/v1/sys/semesters?page=1&orderBy=created_at&orderDir=desc 304 - - 451.857 ms
+[2026-07-28 17:52:50:5250] [HTTP]: GET /api/v1/sys/colleges?page=1&search= 304 - - 16.602 ms
+[2026-07-28 17:52:58:5258] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 490.182 ms
+[2026-07-28 19:17:48:1748] [HTTP]: GET /api/v1/auth/me 304 - - 507.880 ms
+[2026-07-28 19:17:49:1749] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 17.000 ms
+[2026-07-28 19:19:01:191] [HTTP]: GET /api/v1/sys/colleges/14/programs?search= 304 - - 479.675 ms
+[2026-07-28 20:14:26:1426] [INFO]: 🔃 Initializing environment variables...
+[2026-07-28 20:14:27:1427] [INFO]: System roles already present.
+[2026-07-28 20:14:27:1427] [INFO]: An active Superadmin already exists. Safe to continue application startup.
+[2026-07-28 20:14:27:1427] [INFO]: 🚀 Server is online @ http://localhost:5000

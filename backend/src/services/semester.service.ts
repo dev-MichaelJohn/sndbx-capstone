@@ -155,8 +155,9 @@ export class semesterService implements ISemesterService {
     const validation = await z.number().int().positive().safeParseAsync(id);
     if (!validation.success) throw validation.error;
 
+    const parsedId = validation.data;
     return await db.transaction(async (tx) => {
-      const existing = await this.getSemester(id, tx);
+      const existing = await this.getSemester(parsedId, tx);
       const deleted = await SoftDeleteRecord<"Semesters">(
         "Semesters",
         existing.id,
