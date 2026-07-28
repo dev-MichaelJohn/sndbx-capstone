@@ -12,6 +12,11 @@ export const apiClient = axios.create({
   },
 });
 
+export interface BasicSearchProps {
+  search?: string;
+  page: number;
+}
+
 apiClient.interceptors.response.use(
   (response) => {
     const newToken = response.headers["x-access-token"];

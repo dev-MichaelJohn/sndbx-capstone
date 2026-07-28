@@ -31,6 +31,7 @@ export const AuthFlowProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuthFlow = () => {
   const context = useContext(AuthFlowContext);
   if (!context) throw new Error("useAuthFlow must be used within AuthFlowProvider.");

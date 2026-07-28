@@ -4,11 +4,16 @@ import { LoginCard } from "./auth/LoginCard";
 import { OTPCard } from "./auth/OTPCard";
 import { RequireRole } from "@/features/auth/RequireRole";
 import { SysDashboard } from "./sys/SysDashboard";
+import { OverviewPage } from "./sys/pages/OverviewPage";
+import { UsersPage } from "./sys/pages/UsersPage";
+import { InstitutionPage } from "./sys/pages/InstitutionPage";
 import { AdminDashboard } from "./admin/AdminDasboard";
 import { SupervisorDashboard } from "./supervisor/SupervisorDashboard";
 import { FacultyDashboard } from "./faculty/FacultyDashboard";
 import { StudentDashboard } from "./student/StudentDasboard";
 import { RedirectIfAuthenticated } from "@/features/auth/RedirectIfAuthenticated";
+import { ProgramsPage } from "./sys/pages/ProgramsPage";
+import SemestersPage from "./sys/pages/SemestersPage";
 
 const App = () => {
   return (
@@ -21,7 +26,15 @@ const App = () => {
       </Route>
 
       <Route element={<RequireRole allowed={["SYS_ADMIN"]} />}>
-        <Route path="sys/dashboard" element={<SysDashboard />} />
+        <Route element={<SysDashboard />}>
+          <Route path="sys/dashboard" element={<OverviewPage />} />
+          <Route path="sys/users" element={<UsersPage />} />
+          <Route path="sys/institution">
+            <Route index element={<InstitutionPage />} />
+            <Route path=":collegeId/programs" element={<ProgramsPage />} />
+          </Route>
+          <Route path="sys/semesters" element={<SemestersPage />} />
+        </Route>
       </Route>
       <Route element={<RequireRole allowed={["SYS_ADMIN", "ADMIN"]} />}>
         <Route path="admin/dashboard" element={<AdminDashboard />} />

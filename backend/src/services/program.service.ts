@@ -1,4 +1,4 @@
-import { Colleges, ProgramChairs, Programs } from "@/schemas/institution.schema.js";
+import { ProgramChairs, Programs } from "@/schemas/institution.schema.js";
 import {
   CreateProgram,
   CreateProgramChair,
@@ -166,8 +166,8 @@ class programService implements IProgramService {
   }
 
   async getPrograms(searhQuery: ProgramSearchQueryType) {
-    searhQuery.orderBy = "id";
-    searhQuery.orderDir = "asc";
+    searhQuery.orderBy = searhQuery.orderBy ?? "id";
+    searhQuery.orderDir = searhQuery.orderDir ?? "asc";
 
     const validation = await ProgramSearchQuery.safeParseAsync(searhQuery);
     if (!validation.success) throw validation.error;
@@ -261,7 +261,7 @@ class programService implements IProgramService {
   async searchAvailableChairCandidates(search: string | undefined, tx?: PgTransaction) {
     const chairs = await GetRecords<"Accounts", ChairCandidateType>("Accounts", {
       select: (Accounts) => ({
-        id: Accounts.id,
+        account_id: Accounts.id,
         first_name: PersonalDetails.first_name,
         last_name: PersonalDetails.last_name,
         middle_name: PersonalDetails.middle_name,

@@ -6,6 +6,6 @@ import type { PgAsyncTransaction } from "drizzle-orm/pg-core";
 
 const db = drizzle(env.DATABASE_URL!);
 export type PgDatabase = typeof db;
-export type PgTransaction = PgAsyncTransaction<NodePgQueryResultHKT, EmptyRelations>
+export type PgTransaction = PgAsyncTransaction<NodePgQueryResultHKT, EmptyRelations>;
 
 export default db;

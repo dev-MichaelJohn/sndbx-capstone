@@ -1,7 +1,7 @@
 import z from "zod";
-import { CollegeDeans, Colleges } from "@/schemas/institution.schema.js";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
-import { createSearchSchema } from "@/utils/request.util.js";
+import { CollegeDeans, Colleges } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
 import { AccountSchema, CreateUserReqSchema, PersonalDetailsSchema } from "./user.type.js";
 
 // ==========================================
@@ -76,7 +76,7 @@ export type CollegeWithDeanAndTotal = CollegeWithDean & {
 export const CreateCollegeDeanSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("existing"),
-    id: z.coerce.number().positive(),
+    id: z.number().positive(),
   }),
   z.object({
     type: z.literal("new"),
@@ -94,7 +94,7 @@ export const CreateCollegeRecord = z.object({
 export type CreateCollegeRecordType = z.infer<typeof CreateCollegeRecord>;
 
 export const UpdateCollegeRecord = z.object({
-  collegeId: z.coerce.number().int().positive().nonoptional(),
+  collegeId: z.number().int().positive().nonoptional(),
   college: CollegeSchema.update.optional(),
   dean: CreateCollegeDeanSchema.optional(),
 });

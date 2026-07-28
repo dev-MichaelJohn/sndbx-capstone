@@ -1,8 +1,8 @@
-import type { PgTransaction } from "@/configs/db.config.js";
-import db from "@/configs/db.config.js";
-import * as schema from "@/schemas/index.schema.js";
-import { AppError } from "@/utils/error.util.js";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
+import type { PgTransaction } from "../configs/db.config.js";
+import db from "../configs/db.config.js";
+import * as schema from "../schemas/index.schema.js";
+import { AppError } from "../utils/error.util.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
 import { eq, type InferInsertModel, type InferSelectModel, type SQL } from "drizzle-orm";
 import type { PgColumn, PgSelect, PgTable } from "drizzle-orm/pg-core";
 

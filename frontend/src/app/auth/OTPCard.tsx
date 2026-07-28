@@ -16,9 +16,8 @@ import toast from "react-hot-toast";
 
 export const OTPCard = () => {
   const { pendingAuth, setPendingAuth } = useAuthFlow();
-  if (!pendingAuth) return <Navigate to="/auth/login" replace></Navigate>;
-
   const login = useValidateLogin();
+  if (!pendingAuth) return <Navigate to="/auth/login" replace></Navigate>;
 
   const handleResend = async () => {
     let toastId: string | undefined;
@@ -47,7 +46,6 @@ export const OTPCard = () => {
       const message = error instanceof Error ? error.message : "Resend failed.";
       setPendingAuth((prev) => (prev ? { ...prev, isLoading: false } : null));
       toast.error(message, { id: toastId });
-    } finally {
     }
   };
 

@@ -1,6 +1,6 @@
-import { ProgramChairs, Programs } from "@/schemas/institution.schema.js";
-import { createSearchSchema } from "@/utils/request.util.js";
-import { GenerateZodSchemas } from "@/utils/schema.util.js";
+import { ProgramChairs, Programs } from "../schemas/institution.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
 import z from "zod";
 import { AccountSchema, CreateUserReqSchema, PersonalDetailsSchema } from "./user.type.js";
 
@@ -59,7 +59,7 @@ export type ProgramSearchQueryType = z.infer<typeof ProgramSearchQuery>;
 export const CreateProgramChair = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("existing"),
-    id: z.coerce.number().positive(),
+    id: z.number().positive(),
   }),
   z.object({
     type: z.literal("new"),
@@ -77,7 +77,7 @@ export const CreateProgram = z.object({
 export type CreateProgramType = z.infer<typeof CreateProgram>;
 
 export const UpdateProgram = z.object({
-  program_id: z.coerce.number().int().positive().nonoptional(),
+  program_id: z.number().int().positive().nonoptional(),
   program: ProgramSchema.insert.optional(),
   chair: CreateProgramChair.optional(),
 });
