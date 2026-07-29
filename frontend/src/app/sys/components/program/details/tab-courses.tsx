@@ -9,20 +9,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
 import type { CourseSelect } from "backend/types/course.type";
+import { CourseCreateDialog } from "../../course/course-create";
+import { CourseEditDialog } from "../../course/course-edit";
 
 interface ProgramCoursesTabProps {
   programId: number;
@@ -77,23 +69,7 @@ export const ProgramCoursesTab = ({ programId }: ProgramCoursesTabProps) => {
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-40 p-1">
-              <DropdownMenuItem
-                className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
-                onClick={() => console.log("View details", row.id)}
-              >
-                <Eye className="mr-2 size-3.5" />
-                View Details
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem
-                className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
-                onClick={() => console.log("Edit course", row.id)}
-              >
-                <Pencil className="mr-2 size-3.5" />
-                Edit
-              </DropdownMenuItem>
+              <CourseEditDialog course={row} />
 
               <DropdownMenuItem
                 className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
@@ -133,10 +109,7 @@ export const ProgramCoursesTab = ({ programId }: ProgramCoursesTabProps) => {
           />
         </div>
 
-        <Button size="sm" className="h-8 gap-1 rounded-lg text-xs">
-          <Plus className="size-3.5" />
-          <span>Add Course</span>
-        </Button>
+        <CourseCreateDialog icon={Plus} triggerText="Add Course" programId={programId} />
       </CardHeader>
 
       {/* ── Table Content ──────────────────────────────────────────────── */}

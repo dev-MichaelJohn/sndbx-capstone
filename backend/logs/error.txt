@@ -3807,3 +3807,12 @@ params: dev.michael.john@gmail.com,true,1
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
     at async authController.refresh (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:240:20)
     at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:290:28)
+[2026-07-29 07:31:06:316] [ERROR]: A record with program_id, name "2, Introduction to Computing" already exists. - Stack: DrizzleQueryError: Failed query: insert into "courses" ("id", "program_id", "name", "initialism", "created_at", "updated_at", "deleted_at") values (default, $1, $2, $3, default, default, default) returning "id", "program_id", "name", "initialism", "created_at", "updated_at", "deleted_at"
+params: 2,Introduction to Computing,IT 101
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:170:30)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
+    at async courseService.createCourse (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/course.service.ts:103:20)
+    at async courseController.createCourse (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/course.controller.ts:70:22)

@@ -31,6 +31,25 @@ export const getProgramsViaCollegeID = async (collegeId: number, search?: string
   }
 };
 
+const getProgramById = async (programId: number) => {
+  try {
+    const response = await apiClient<APIResponse<ProgramWithChairType>>(
+      `/sys/programs/${programId}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch program details."), { cause: error });
+  }
+};
+
+export const useProgram = (programId: number) => {
+  return useQuery({
+    queryKey: ["program", programId],
+    queryFn: () => getProgramById(programId),
+    enabled: !!programId && !isNaN(programId),
+  });
+};
+
 const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
   try {
     const response = await apiClient.post<APIResponse<ProgramWithChairType>>("/sys/programs/", {

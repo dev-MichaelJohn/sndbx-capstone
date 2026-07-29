@@ -115,6 +115,37 @@ export const Courses = pgTable(
   ],
 );
 
+export const CourseCurriculums = pgTable(
+  "course_curriculums",
+  {
+    id: serial("id").primaryKey(),
+    course_id: integer("course_id")
+      .notNull()
+      .references(() => Courses.id),
+    program_id: integer("program_id")
+      .notNull()
+      .references(() => Programs.id),
+    year_level: YearLevelEnum().notNull(),
+    semester_term: SemeterTermEnum().notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_course_curriculum")
+      .on(t.course_id, t.program_id, t.year_level, t.semester_term)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_course_curriculum_program_year_term").on(
+      t.program_id,
+      t.year_level,
+      t.semester_term,
+    ),
+  ],
+);
+
 export const Semesters = pgTable(
   "semesters",
   {
@@ -194,13 +225,13 @@ export const ProgramChairs = pgTable(
   ],
 );
 
-export const ClassCourses = pgTable(
-  "class_courses",
+export const CourseOfferings = pgTable(
+  "course_offerings",
   {
     id: serial("id").primaryKey(),
-    course_id: integer("course_id")
+    course_curriculum_id: integer("course_curriculum_id")
       .notNull()
-      .references(() => Courses.id),
+      .references(() => CourseCurriculums.id),
     class_id: integer("class_id")
       .notNull()
       .references(() => Classes.id),
@@ -218,10 +249,10 @@ export const ClassCourses = pgTable(
     deleted_at: timestamp("deleted_at"),
   },
   (t) => [
-    uniqueIndex("uidx_active_class_course_semester")
-      .on(t.class_id, t.course_id, t.semester_id)
+    uniqueIndex("uidx_active_course_offering")
+      .on(t.class_id, t.course_curriculum_id, t.semester_id)
       .where(sql`deleted_at IS NULL`),
-    index("idx_class_courses_faculty_id").on(t.faculty_id),
+    index("idx_course_offerings_faculty_id").on(t.faculty_id),
   ],
 );
 
@@ -232,9 +263,9 @@ export const StudentClasses = pgTable(
     student_account_id: integer("student_account_id")
       .notNull()
       .references(() => Accounts.id),
-    class_course_id: integer("class_course_id")
+    course_offering_id: integer("course_offering_id")
       .notNull()
-      .references(() => ClassCourses.id),
+      .references(() => CourseOfferings.id),
     created_at: timestamp("created_at").notNull().defaultNow(),
     updated_at: timestamp("updated_at")
       .notNull()
@@ -243,8 +274,8 @@ export const StudentClasses = pgTable(
     deleted_at: timestamp("deleted_at"),
   },
   (t) => [
-    uniqueIndex("uidx_active_student_class_course")
-      .on(t.student_account_id, t.class_course_id)
+    uniqueIndex("uidx_active_student_course_offering")
+      .on(t.student_account_id, t.course_offering_id)
       .where(sql`deleted_at IS NULL`),
   ],
 );
