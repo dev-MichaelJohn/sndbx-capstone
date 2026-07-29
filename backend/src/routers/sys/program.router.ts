@@ -2,6 +2,7 @@ import ProgramController from "@/controllers/program.controller.js";
 import { Router, type IRouter } from "express";
 import CourseRouter from "./course.route.js";
 import CurriculumRouter from "./curriculum.route.js";
+import ClassRouter from "./class.route.js";
 
 const ProgramRouter: IRouter = Router({ mergeParams: true });
 
@@ -31,5 +32,6 @@ ProgramRouter.delete("/:program_id", (req, res, next) => {
 
 ProgramRouter.use("/:id/courses", CourseRouter);
 ProgramRouter.use("/:id/curriculum", CurriculumRouter);
+ProgramRouter.use("/:id/classes", ClassRouter);
 
 export default ProgramRouter;
