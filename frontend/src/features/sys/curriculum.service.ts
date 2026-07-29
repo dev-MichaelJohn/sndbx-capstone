@@ -28,7 +28,10 @@ export const getCurriculums = async (params: CurriculumSearch & { program_id: nu
   }
 };
 
-export const useCurriculums = (params: Partial<CurriculumSearch> & { program_id: number }) => {
+export const useCurriculums = (
+  params: Partial<CurriculumSearch> & { program_id: number },
+  options?: { enabled?: boolean },
+) => {
   const fullParams: CurriculumSearch & { program_id: number } = {
     search: undefined,
     page: 1,
@@ -40,7 +43,7 @@ export const useCurriculums = (params: Partial<CurriculumSearch> & { program_id:
   return useQuery({
     queryKey: ["getCurriculums", fullParams],
     queryFn: () => getCurriculums(fullParams),
-    enabled: !!params.program_id, // Only run automatically when program_id is present
+    ...options,
   });
 };
 

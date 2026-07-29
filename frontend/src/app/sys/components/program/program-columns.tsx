@@ -15,6 +15,7 @@ import type { ProgramWithChairType } from "backend/types/program.type";
 
 import { formatFullName } from "@/lib/nameFormatter";
 import { ProgramEditDialog } from "./program-edit";
+import { ProgramDeleteDialog } from "./program-delete";
 
 // We use a factory function here so we can inject the collegeId from the page URL
 export const getProgramColumns = (
@@ -87,15 +88,7 @@ export const getProgramColumns = (
               className="cursor-pointer p-0 hover:bg-transparent focus:bg-transparent"
               onSelect={(e) => e.preventDefault()}
             >
-              {/* Replace this manual button with <ProgramDeleteDialog /> once implemented */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-full justify-start px-2 py-1.5 text-xs font-normal text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
-              >
-                <Trash2 className="mr-2 size-3.5 shrink-0" />
-                Delete
-              </Button>
+              <ProgramDeleteDialog icon={Trash2} triggerText="Delete" program={row} />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

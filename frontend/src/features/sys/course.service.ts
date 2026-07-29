@@ -24,7 +24,10 @@ export const getCourses = async (params: CourseSearch) => {
   }
 };
 
-export const useCourses = (params: Partial<CourseSearch> & { program_id?: number }) => {
+export const useCourses = (
+  params: Partial<CourseSearch> & { program_id?: number } = {},
+  options?: { enabled?: boolean },
+) => {
   const fullParams: CourseSearch = {
     search: undefined,
     page: 1,
@@ -36,6 +39,7 @@ export const useCourses = (params: Partial<CourseSearch> & { program_id?: number
   return useQuery({
     queryKey: ["getCourses", fullParams],
     queryFn: () => getCourses(fullParams),
+    ...options,
   });
 };
 
