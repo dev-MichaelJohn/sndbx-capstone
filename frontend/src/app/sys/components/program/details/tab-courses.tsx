@@ -15,6 +15,7 @@ import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Search, Trash2 } from 
 import type { CourseSelect } from "backend/types/course.type";
 import { CourseCreateDialog } from "../../course/course-create";
 import { CourseEditDialog } from "../../course/course-edit";
+import { CourseDeleteDialog } from "../../course/course-delete";
 
 interface ProgramCoursesTabProps {
   programId: number;
@@ -69,21 +70,18 @@ export const ProgramCoursesTab = ({ programId }: ProgramCoursesTabProps) => {
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-40 p-1">
-              <CourseEditDialog course={row} />
+              <DropdownMenuItem
+                className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
+                onSelect={(e) => e.preventDefault()}
+              >
+                <CourseEditDialog course={row} />
+              </DropdownMenuItem>
 
               <DropdownMenuItem
                 className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
                 onSelect={(e) => e.preventDefault()}
               >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full h-8 justify-start px-2 py-1.5 text-xs font-normal text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
-                  onClick={() => console.log("Delete course", row.id)}
-                >
-                  <Trash2 className="mr-2 size-3.5 shrink-0" />
-                  Delete
-                </Button>
+                <CourseDeleteDialog course={row} icon={Trash2} triggerText="Delete" />
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -9,10 +9,10 @@ import type {
 import { apiClient, getErrorMessage } from "../api.config";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const getCurriculums = async (params: CurriculumSearch & { program_id: number }) => {
+export const getCurriculums = async (params: CurriculumSearch) => {
   try {
     const { program_id, ...queryParams } = params;
-    const endpoint = `/sys/programs/${program_id}/curriculum`;
+    const endpoint = program_id ? `/sys/programs/${program_id}/curriculum` : "/sys/curriculum";
 
     const response = await apiClient.get<APIResponse<PaginatedData<CurriculumWithDetails[]>>>(
       endpoint,
@@ -29,10 +29,10 @@ export const getCurriculums = async (params: CurriculumSearch & { program_id: nu
 };
 
 export const useCurriculums = (
-  params: Partial<CurriculumSearch> & { program_id: number },
+  params: Partial<CurriculumSearch>,
   options?: { enabled?: boolean },
 ) => {
-  const fullParams: CurriculumSearch & { program_id: number } = {
+  const fullParams: CurriculumSearch = {
     search: undefined,
     page: 1,
     orderBy: "id",
@@ -46,7 +46,6 @@ export const useCurriculums = (
     ...options,
   });
 };
-
 // Fetch single curriculum by ID
 export const getCurriculum = async (id: number) => {
   try {

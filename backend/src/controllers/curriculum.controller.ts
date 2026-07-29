@@ -22,11 +22,13 @@ class curriculumController {
   async getCurriculums(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const programId = await this.extractId(id, "Program ID is required.");
+      let parsedId: number | undefined;
+
+      if (id) parsedId = await this.extractId(id, "Program ID is required.");
 
       const validation = await CurriculumSearchSchema.safeParseAsync({
         ...req.query,
-        program_id: programId,
+        ...(parsedId && { program_id: parsedId }),
       });
       if (!validation.success) throw validation.error;
       const searchQuery = validation.data;

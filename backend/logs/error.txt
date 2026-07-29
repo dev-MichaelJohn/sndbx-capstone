@@ -3816,3 +3816,576 @@ params: 2,Introduction to Computing,IT 101
     at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:169:12)
     at async courseService.createCourse (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/course.service.ts:103:20)
     at async courseController.createCourse (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/course.controller.ts:70:22)
+[2026-07-29 14:32:53:3253] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Program ID is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:17:8)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:25:36)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+[2026-07-29 14:32:54:3254] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Program ID is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:17:8)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:25:36)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+[2026-07-29 14:32:56:3256] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Program ID is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:17:8)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:25:36)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+[2026-07-29 14:33:01:331] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Program ID is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:17:8)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:25:36)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+[2026-07-29 14:33:04:334] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Program ID is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:17:8)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:25:36)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+[2026-07-29 14:33:05:335] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Program ID is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:17:8)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:25:36)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+[2026-07-29 14:33:07:337] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "received": "NaN",
+    "path": [],
+    "message": "Program ID is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.extractId (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:17:8)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:25:36)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+[2026-07-29 14:51:17:5117] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:51:18:5118] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:51:20:5120] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:53:39:5339] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:53:40:5340] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:55:50:5550] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:55:54:5554] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:55:55:5555] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:57:01:571] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 14:57:02:572] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:01:02:12] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:01:03:13] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:01:05:15] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:01:09:19] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:03:14:314] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:03:19:319] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:03:20:320] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:03:47:347] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:30:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:08:22:822] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:08:23:823] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:29:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:09:47:947] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:30:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 15:09:48:948] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "number",
+    "code": "invalid_type",
+    "path": [
+      "course_id"
+    ],
+    "message": "Invalid input: expected number, received string"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at curriculumController.getCurriculums (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/curriculum.controller.ts:30:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/sys/curriculum.route.ts:6:68)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)

@@ -35,23 +35,31 @@ export const getCurriculumColumns = ({
     accessorKey: "initialism",
     header: "Code",
     cell: ({ row }) => (
-      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold">
-        {row.original.initialism}
-      </span>
+      <div className="w-24">
+        <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold">
+          {row.original.initialism}
+        </span>
+      </div>
     ),
   },
   {
     accessorKey: "name",
     header: "Course Name",
-    cell: ({ row }) => <span className="text-muted-foreground">{row.original.name}</span>,
+    cell: ({ row }) => (
+      <div className="w-48">
+        <span className="text-muted-foreground">{row.original.name}</span>
+      </div>
+    ),
   },
   {
     accessorKey: "semester_term",
     header: "Semester",
     cell: ({ row }) => (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-xs font-medium">
-        {row.original.semester_term} Semester
-      </span>
+      <div className="w-24">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-xs font-medium">
+          {row.original.semester_term} Semester
+        </span>
+      </div>
     ),
   },
   {

@@ -46,7 +46,7 @@ export class curriculumService implements ICurriculumService {
     const validation = await CurriculumSearchSchema.safeParseAsync(searchQuery);
     if (!validation.success) throw validation.error;
 
-    const { program_id, year_level, semester_term, search, orderBy, orderDir, page } =
+    const { program_id, course_id, year_level, semester_term, search, orderBy, orderDir, page } =
       validation.data;
 
     const PAGE_SIZE = 10;
@@ -74,6 +74,7 @@ export class curriculumService implements ICurriculumService {
       where: () =>
         and(
           searchConditions,
+          course_id ? eq(CourseCurriculums.course_id, course_id) : undefined,
           program_id ? eq(CourseCurriculums.program_id, program_id) : undefined,
           year_level ? eq(CourseCurriculums.year_level, year_level) : undefined,
           semester_term ? eq(CourseCurriculums.semester_term, semester_term) : undefined,

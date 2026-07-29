@@ -24,20 +24,17 @@ export type CurriculumSelect = z.infer<typeof CurriculumSchema.select>;
 export type CurriculumInsert = z.infer<typeof CurriculumSchema.insert>;
 export type CurriculumUpdate = z.infer<typeof CurriculumSchema.update>;
 
-export const CurriculumWithDetailsSchema = CurriculumSchema.select
-  .partial({
-    program_id: true,
-  })
-  .extend({
-    ...CourseSchema.select.pick({
-      name: true,
-      initialism: true,
-    }).shape,
-  });
+export const CurriculumWithDetailsSchema = CurriculumSchema.select.extend({
+  ...CourseSchema.select.pick({
+    name: true,
+    initialism: true,
+  }).shape,
+});
 export type CurriculumWithDetails = z.infer<typeof CurriculumWithDetailsSchema>;
 
 export const CurriculumSearchSchema = createSearchSchema("CourseCurriculums").extend({
-  program_id: z.number().int().positive().optional(),
+  course_id: z.coerce.number().int().positive().optional(),
+  program_id: z.coerce.number().int().positive().optional(),
   year_level: z.enum(YearLevelEnum.enumValues).optional(),
   semester_term: z.enum(SemeterTermEnum.enumValues).optional(),
 });
