@@ -14,6 +14,7 @@ import { StudentDashboard } from "./student/StudentDasboard";
 import { RedirectIfAuthenticated } from "@/features/auth/RedirectIfAuthenticated";
 import { ProgramsPage } from "./sys/pages/ProgramsPage";
 import SemestersPage from "./sys/pages/SemestersPage";
+import { ProgramDetailsPage } from "./sys/components/program/program-details";
 
 const App = () => {
   return (
@@ -31,7 +32,10 @@ const App = () => {
           <Route path="sys/users" element={<UsersPage />} />
           <Route path="sys/institution">
             <Route index element={<InstitutionPage />} />
-            <Route path=":collegeId/programs" element={<ProgramsPage />} />
+            <Route path=":collegeId/programs">
+              <Route index element={<ProgramsPage />} />
+              <Route path=":programId" element={<ProgramDetailsPage />} />
+            </Route>
           </Route>
           <Route path="sys/semesters" element={<SemestersPage />} />
         </Route>
