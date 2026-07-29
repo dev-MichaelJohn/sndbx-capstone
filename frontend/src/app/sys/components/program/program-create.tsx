@@ -1,3 +1,6 @@
+import { useForm } from "@tanstack/react-form";
+import type { LucideIcon } from "lucide-react";
+import { formatFullName } from "@/lib/nameFormatter";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -20,16 +23,12 @@ import {
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatFullName } from "@/lib/nameFormatter";
-import { useForm } from "@tanstack/react-form";
-import { CreateProgram, type CreateProgramType } from "backend/types/program.type";
-import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
-import toast from "react-hot-toast";
-import { ExistingChairSearch } from "./existing-program-search";
-import { FormTextField } from "@/components/form-text-field";
-import { useChairSelection, useCreateProgram } from "@/features/sys/program.service";
 import { Label } from "@/components/ui/label";
+import { FormTextField } from "@/components/form-text-field";
+import { ExistingChairSearch } from "./existing-program-search";
+import { useChairSelection, useCreateProgram } from "@/features/sys/program.service";
+import { CreateProgram, type CreateProgramType } from "backend/types/program.type";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 interface ProgramCreateDialogProps {
   collegeId: number;
@@ -37,110 +36,71 @@ interface ProgramCreateDialogProps {
   triggerText: string;
 }
 
-type ChairTabValue = "no-chair" | "existing" | "new";
+const emptyChairDetails = {
+  credentials: { email: "" },
+  personalDetails: {
+    institutional_id: "",
+    first_name: "",
+    last_name: "",
+    middle_name: "",
+    suffix: "",
+  },
+};
 
 export const ProgramCreateDialog = ({
   collegeId,
   icon: Icon,
   triggerText,
 }: ProgramCreateDialogProps) => {
-  const [open, setOpen] = useState(false);
-  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
-  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [pendingValue, setPendingValue] = useState<CreateProgramType | null>(null);
-
   const { mutateAsync, isPending } = useCreateProgram();
   const chair = useChairSelection(null);
 
   const initialFormData: CreateProgramType = {
-    program: {
-      college_id: collegeId,
-      name: "",
-      initialism: "",
-    },
+    program: { college_id: collegeId, name: "", initialism: "" },
     chair: undefined,
   };
 
   const form = useForm({
     defaultValues: initialFormData,
     validators: { onSubmit: CreateProgram },
-    onSubmit: async ({ value }) => {
-      setPendingValue(value);
-      setConfirmSaveOpen(true);
-    },
+    onSubmit: (values) => dialog.handleFormSubmit(values),
   });
 
-  const resetEverything = () => {
-    form.reset();
-    chair.reset(null);
-    setPendingValue(null);
-    setConfirmSaveOpen(false);
-    setConfirmDiscardOpen(false);
-  };
+  const dialog = useEntityDialog<CreateProgramType>({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Creating program record...",
+    successText: "Program created successfully.",
+    onReset: () => chair.reset(null),
+  });
 
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setOpen(true);
-      resetEverything();
-      return;
-    }
-    attemptClose();
-  };
-
-  const attemptClose = () => {
-    if (form.state.isDirty) {
-      setConfirmDiscardOpen(true);
-      return;
-    }
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmDiscard = () => {
-    setConfirmDiscardOpen(false);
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmSave = async () => {
-    if (!pendingValue) return;
-    const toastId = toast.loading("Creating program record...");
-    try {
-      await mutateAsync(pendingValue);
-      toast.success("Program created successfully.", { id: toastId });
-      setConfirmSaveOpen(false);
-      setOpen(false);
-      resetEverything();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create program. Please try again.",
-        { id: toastId },
-      );
-      setConfirmSaveOpen(false);
+  const handleTabChange = (v: string) => {
+    if (v === "no-chair") {
+      form.setFieldValue("chair", undefined);
+      chair.reset(null);
+    } else if (v === "existing") {
+      form.setFieldValue("chair", { type: "existing", id: chair.selected?.account_id ?? 0 });
+    } else if (v === "new") {
+      form.setFieldValue("chair", { type: "new", details: emptyChairDetails });
+      chair.reset(null);
     }
   };
 
   const chairChangeSummary = (() => {
-    if (!pendingValue?.chair) {
+    if (!dialog.pendingValue?.chair)
       return "This program will be created without an assigned program chair.";
-    }
-    if (pendingValue.chair.type === "existing") {
+    if (dialog.pendingValue.chair.type === "existing") {
       return chair.selected
-        ? `${formatFullName({
-            first_name: chair.selected.first_name,
-            middle_name: chair.selected.middle_name,
-            last_name: chair.selected.last_name,
-            suffix: chair.selected.suffix,
-          })} will be assigned as the program chair.`
+        ? `${formatFullName(chair.selected)} will be assigned as the program chair.`
         : "The selected faculty member will be assigned as the program chair.";
     }
-    const { first_name, last_name } = pendingValue.chair.details.personalDetails;
+    const { first_name, last_name } = dialog.pendingValue.chair.details.personalDetails;
     return `A new faculty record for ${first_name} ${last_name} will be created and assigned as program chair.`;
   })();
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
         <DialogTrigger asChild>
           <Button type="button" className="rounded-lg p-4 flex items-center justify-center gap-1">
             <Icon className="size-3.5" />
@@ -179,38 +139,13 @@ export const ProgramCreateDialog = ({
               )}
             />
 
-            <form.Subscribe
-              selector={(state): ChairTabValue => state.values.chair?.type ?? "no-chair"}
-              children={(activeTab) => (
+            <form.Field
+              name="chair.type"
+              children={() => (
                 <Tabs
-                  value={activeTab}
+                  value={form.state.values.chair?.type ?? "no-chair"}
                   className="w-full mt-2"
-                  onValueChange={(v) => {
-                    if (v !== "no-chair" && v !== "existing" && v !== "new") return;
-
-                    if (v === "no-chair") {
-                      form.setFieldValue("chair", undefined);
-                      chair.reset(null);
-                    } else if (v === "existing") {
-                      const existingId = chair.selected?.account_id ?? 0;
-                      form.setFieldValue("chair", { type: "existing", id: existingId });
-                    } else {
-                      form.setFieldValue("chair", {
-                        type: "new",
-                        details: {
-                          credentials: { email: "" },
-                          personalDetails: {
-                            institutional_id: "",
-                            first_name: "",
-                            last_name: "",
-                            middle_name: "",
-                            suffix: "",
-                          },
-                        },
-                      });
-                      chair.reset(null);
-                    }
-                  }}
+                  onValueChange={handleTabChange}
                 >
                   <Label>Assign Program Chair</Label>
                   <TabsList className="w-full grid grid-cols-3">
@@ -227,12 +162,9 @@ export const ProgramCreateDialog = ({
                       isSearching={chair.isSearching}
                       selected={chair.selected}
                       onSelect={(candidate) => {
-                        const targetId = Number(candidate.account_id);
-
-                        // Set field value directly in TanStack Form state
                         form.setFieldValue("chair", {
                           type: "existing",
-                          id: targetId,
+                          id: Number(candidate.account_id),
                         });
                         chair.setSelected(candidate);
                       }}
@@ -246,70 +178,58 @@ export const ProgramCreateDialog = ({
                   <TabsContent value="new" className="space-y-3 mt-3">
                     <form.Field
                       name="chair.details.credentials.email"
-                      children={(field) =>
-                        field.state.value === undefined ? null : (
-                          <FormTextField
-                            field={field}
-                            label="Email"
-                            type="email"
-                            disabled={isPending}
-                            placeholder="chair@school.edu"
-                          />
-                        )
-                      }
+                      children={(field) => (
+                        <FormTextField
+                          field={field}
+                          label="Email"
+                          type="email"
+                          disabled={isPending}
+                          placeholder="chair@school.edu"
+                        />
+                      )}
                     />
                     <form.Field
                       name="chair.details.personalDetails.institutional_id"
-                      children={(field) =>
-                        field.state.value === undefined ? null : (
-                          <FormTextField
-                            field={field}
-                            label="Institutional ID"
-                            disabled={isPending}
-                            placeholder="e.g. 2021-00456"
-                          />
-                        )
-                      }
+                      children={(field) => (
+                        <FormTextField
+                          field={field}
+                          label="Institutional ID"
+                          disabled={isPending}
+                          placeholder="e.g. 2021-00456"
+                        />
+                      )}
                     />
                     <div className="grid grid-cols-2 gap-3">
                       <form.Field
                         name="chair.details.personalDetails.first_name"
-                        children={(field) =>
-                          field.state.value === undefined ? null : (
-                            <FormTextField field={field} label="First Name" disabled={isPending} />
-                          )
-                        }
+                        children={(field) => (
+                          <FormTextField field={field} label="First Name" disabled={isPending} />
+                        )}
                       />
                       <form.Field
                         name="chair.details.personalDetails.last_name"
-                        children={(field) =>
-                          field.state.value === undefined ? null : (
-                            <FormTextField field={field} label="Last Name" disabled={isPending} />
-                          )
-                        }
+                        children={(field) => (
+                          <FormTextField field={field} label="Last Name" disabled={isPending} />
+                        )}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <form.Field
                         name="chair.details.personalDetails.middle_name"
-                        children={(field) =>
-                          field.state.value === undefined ? null : (
-                            <FormTextField field={field} label="Middle Name" disabled={isPending} />
-                          )
-                        }
+                        children={(field) => (
+                          <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                        )}
                       />
                       <form.Field
                         name="chair.details.personalDetails.suffix"
-                        children={(field) =>
-                          field.state.value === undefined ? null : (
-                            <FormTextField
-                              field={field}
-                              label="Suffix"
-                              disabled={isPending}
-                              placeholder="Jr., Sr., III"
-                            />
-                          )
-                        }
+                        children={(field) => (
+                          <FormTextField
+                            field={field}
+                            label="Suffix"
+                            disabled={isPending}
+                            placeholder="Jr., Sr., III"
+                          />
+                        )}
                       />
                     </div>
                   </TabsContent>
@@ -319,11 +239,16 @@ export const ProgramCreateDialog = ({
           </FieldGroup>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              selector={(state) => [state.canSubmit] as const}
               children={([canSubmit]) => (
                 <Button
                   type="button"
@@ -338,8 +263,7 @@ export const ProgramCreateDialog = ({
         </DialogContent>
       </Dialog>
 
-      {/* Save Confirmation Modal */}
-      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Create new program?</AlertDialogTitle>
@@ -347,15 +271,14 @@ export const ProgramCreateDialog = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSave} disabled={isPending}>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
               {isPending ? "Creating..." : "Yes, create program"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Discard Confirmation Modal */}
-      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
@@ -365,7 +288,7 @@ export const ProgramCreateDialog = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

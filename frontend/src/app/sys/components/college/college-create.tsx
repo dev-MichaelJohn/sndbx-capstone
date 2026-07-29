@@ -24,12 +24,11 @@ import { formatFullName } from "@/lib/nameFormatter";
 import { useForm } from "@tanstack/react-form";
 import { CreateCollegeRecord, type CreateCollegeRecordType } from "backend/types/college.types";
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
-import toast from "react-hot-toast";
 import { ExistingDeanSearch } from "./existing-dean-search";
 import { FormTextField } from "@/components/form-text-field";
 import { useCreateCollege, useDeanSelection } from "@/features/sys/college.service";
 import { Label } from "@/components/ui/label";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 interface CollegeCreateDialogProps {
   icon: LucideIcon;
@@ -47,72 +46,34 @@ const initialFormData: CreateCollegeRecordType = {
 };
 
 export const CollegeCreateDialog = ({ icon: Icon, triggerText }: CollegeCreateDialogProps) => {
-  const [open, setOpen] = useState(false);
-  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
-  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [pendingValue, setPendingValue] = useState<CreateCollegeRecordType | null>(null);
-
   const { mutateAsync, isPending } = useCreateCollege();
   const dean = useDeanSelection(null);
 
   const form = useForm({
     defaultValues: initialFormData,
     validators: { onSubmit: CreateCollegeRecord },
-    onSubmit: async ({ value }) => {
-      setPendingValue(value);
-      setConfirmSaveOpen(true);
-    },
+    onSubmit: ({ value }) => handleFormSubmit({ value }),
   });
 
-  const resetEverything = () => {
-    form.reset();
-    dean.reset(null);
-    setPendingValue(null);
-    setConfirmSaveOpen(false);
-    setConfirmDiscardOpen(false);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setOpen(true);
-      resetEverything();
-      return;
-    }
-    attemptClose();
-  };
-
-  const attemptClose = () => {
-    if (form.state.isDirty) {
-      setConfirmDiscardOpen(true);
-      return;
-    }
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmDiscard = () => {
-    setConfirmDiscardOpen(false);
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmSave = async () => {
-    if (!pendingValue) return;
-    const toastId = toast.loading("Creating college record...");
-    try {
-      await mutateAsync(pendingValue);
-      toast.success("College created successfully.", { id: toastId });
-      setConfirmSaveOpen(false);
-      setOpen(false);
-      resetEverything();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create college. Please try again.",
-        { id: toastId },
-      );
-      setConfirmSaveOpen(false);
-    }
-  };
+  const {
+    open,
+    confirmSaveOpen,
+    setConfirmSaveOpen,
+    confirmDiscardOpen,
+    setConfirmDiscardOpen,
+    pendingValue,
+    handleOpenChange,
+    attemptClose,
+    confirmDiscard,
+    confirmSave,
+    handleFormSubmit,
+  } = useEntityDialog({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Creating college record...",
+    successText: "College created successfully.",
+    onReset: () => dean.reset(null),
+  });
 
   const deanChangeSummary = (() => {
     if (!pendingValue?.dean) {

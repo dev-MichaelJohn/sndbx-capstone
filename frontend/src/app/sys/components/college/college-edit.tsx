@@ -30,14 +30,12 @@ import {
   type UpdateCollegeRecordType,
 } from "backend/types/college.types";
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
-import toast from "react-hot-toast";
 import { ExistingDeanSearch } from "./existing-dean-search";
 import { FormTextField } from "@/components/form-text-field";
-import { useDeanSelection } from "@/features/sys/college.service";
-import { useUpdateCollege } from "@/features/sys/college.service";
+import { useDeanSelection, useUpdateCollege } from "@/features/sys/college.service";
 import type { DeanCandidate } from "backend/types/college.types";
 import { cn } from "@/lib/utils";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 interface CollegeEditDialogProps {
   icon: LucideIcon;
@@ -56,10 +54,6 @@ export const CollegeEditDialog = ({
   variant = "ghost",
   className,
 }: CollegeEditDialogProps) => {
-  const [open, setOpen] = useState(false);
-  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
-  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [pendingValue, setPendingValue] = useState<UpdateCollegeRecordType | null>(null);
   const { mutateAsync, isPending } = useUpdateCollege();
 
   const defaultSelectedDean: DeanCandidate | null = defaultData.account_id
@@ -88,66 +82,28 @@ export const CollegeEditDialog = ({
   const form = useForm({
     defaultValues: defaultFormData,
     validators: { onSubmit: UpdateCollegeRecord },
-    onSubmit: async ({ value }) => {
-      // Validation already passed at this point — hold here and let the
-      // AlertDialog confirm before anything actually reaches the server.
-      setPendingValue(value);
-      setConfirmSaveOpen(true);
-    },
+    onSubmit: ({ value }) => handleFormSubmit({ value }),
   });
 
-  const resetEverything = () => {
-    form.reset();
-    dean.reset();
-    setPendingValue(null);
-    setConfirmSaveOpen(false);
-    setConfirmDiscardOpen(false);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setOpen(true);
-      resetEverything();
-      return;
-    }
-    // Closing via Esc / overlay click / X button goes through the same
-    // dirty-check as the Cancel button, so an accidental click can't
-    // silently drop changes.
-    attemptClose();
-  };
-
-  const attemptClose = () => {
-    if (form.state.isDirty) {
-      setConfirmDiscardOpen(true);
-      return;
-    }
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmDiscard = () => {
-    setConfirmDiscardOpen(false);
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmSave = async () => {
-    if (!pendingValue) return;
-    const toastId = toast.loading("Saving college changes...");
-    try {
-      await mutateAsync(pendingValue);
-      toast.success("Changes saved successfully.", { id: toastId });
-      setConfirmSaveOpen(false);
-      setOpen(false);
-      resetEverything();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Couldn't save changes. Please try again.",
-        { id: toastId },
-      );
-      setConfirmSaveOpen(false);
-    }
-  };
+  const {
+    open,
+    confirmSaveOpen,
+    setConfirmSaveOpen,
+    confirmDiscardOpen,
+    setConfirmDiscardOpen,
+    pendingValue,
+    handleOpenChange,
+    attemptClose,
+    confirmDiscard,
+    confirmSave,
+    handleFormSubmit,
+  } = useEntityDialog({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Saving college changes...",
+    successText: "Changes saved successfully.",
+    onReset: () => dean.reset(),
+  });
 
   // Human-readable summary of the dean-assignment consequence, shown in the
   // confirmation dialog so reassigning a dean isn't a one-click surprise.
