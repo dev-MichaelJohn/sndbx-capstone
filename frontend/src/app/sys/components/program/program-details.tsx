@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 
 import { useProgramCourseCount } from "@/features/sys/course.service";
+import { useProgramClassCount } from "@/features/sys/class.service";
 import { useProgram } from "@/features/sys/program.service";
 
 import { ProgramHeader } from "./details/details-header";
@@ -15,6 +16,7 @@ export const ProgramDetailsPage = () => {
 
   // Live data connections
   const courseCount = useProgramCourseCount(parsedProgramId);
+  const classCount = useProgramClassCount(parsedProgramId);
   const {
     data: programData,
     isLoading: isProgramLoading,
@@ -59,7 +61,7 @@ export const ProgramDetailsPage = () => {
 
         <ProgramMetrics
           totalCourses={courseCount ?? 0}
-          totalClasses={12}
+          totalClasses={classCount ?? 0}
           totalFaculty={18}
           totalStudents={380}
         />

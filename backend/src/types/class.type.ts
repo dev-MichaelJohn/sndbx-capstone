@@ -1,4 +1,3 @@
-// types/class.type.ts
 import z from "zod";
 import { Classes, YearLevelEnum, SectionEnum } from "../schemas/institution.schema.js";
 import { GenerateZodSchemas } from "../utils/schema.util.js";

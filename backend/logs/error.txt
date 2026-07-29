@@ -4389,3 +4389,12 @@ params: 2,Introduction to Computing,IT 101
     at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
     at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
     at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+[2026-07-29 20:04:56:456] [ERROR]: A record with program_id, year_level, section "2, I, A" already exists. - Stack: DrizzleQueryError: Failed query: insert into "classes" ("id", "program_id", "year_level", "section", "created_at", "updated_at", "deleted_at") values (default, $1, $2, $3, default, default, default) returning "id", "program_id", "year_level", "section", "created_at", "updated_at", "deleted_at"
+params: 2,I,A
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async CreateRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:162:16)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/class.service.ts:110:22)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async classService.createClass (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/class.service.ts:101:12)
+    at async classController.createClass (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/class.controller.ts:69:22)
