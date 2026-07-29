@@ -33,11 +33,13 @@ const YEAR_LEVELS: Array<{ key: "I" | "II" | "III" | "IV" | "V"; label: string }
 export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
   const [search, setSearch] = useState("");
   const [semesterFilter, setSemesterFilter] = useState<string>("ALL");
+  const [yearLevelFilter, setYearLevelFilter] = useState<string>("ALL");
 
   const { data: paginatedData, isLoading } = useCurriculums({
     program_id: programId,
     search: search || undefined,
     semester_term: semesterFilter !== "ALL" ? (semesterFilter as any) : undefined,
+    year_level: yearLevelFilter !== "ALL" ? (yearLevelFilter as any) : undefined,
     page: 1,
   });
 
@@ -68,8 +70,22 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
             />
           </div>
 
+          <Select value={yearLevelFilter} onValueChange={setYearLevelFilter}>
+            <SelectTrigger className="h-8 w-40 rounded-lg text-xs">
+              <SelectValue placeholder="All Year Levels" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Year Levels</SelectItem>
+              <SelectItem value="I">1st Year</SelectItem>
+              <SelectItem value="II">2nd Year</SelectItem>
+              <SelectItem value="III">3rd Year</SelectItem>
+              <SelectItem value="IV">4th Year</SelectItem>
+              <SelectItem value="V">5th Year</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={semesterFilter} onValueChange={setSemesterFilter}>
-            <SelectTrigger className="h-8 w-75 rounded-lg text-xs">
+            <SelectTrigger className="h-8 w-40 rounded-lg text-xs">
               <SelectValue placeholder="All Semesters" />
             </SelectTrigger>
             <SelectContent>
