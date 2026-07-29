@@ -1,9 +1,9 @@
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { useRef } from "react";
 import { useForm } from "@tanstack/react-form";
 import type { LucideIcon } from "lucide-react";
 import { CourseSchema, type CourseInsert } from "backend/types/course.type";
 import { useCreateCourse } from "@/features/sys/course.service";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
@@ -39,11 +39,6 @@ export const CourseCreateDialog = ({
   icon: Icon,
   triggerText = "Add Course",
 }: CourseCreateDialogProps) => {
-  const [open, setOpen] = useState(false);
-  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
-  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [pendingValue, setPendingValue] = useState<CourseInsert | null>(null);
-
   const { mutateAsync, isPending } = useCreateCourse();
 
   const initialFormData: CourseInsert = {
@@ -52,69 +47,33 @@ export const CourseCreateDialog = ({
     name: "",
   };
 
+  const handleFormSubmitRef = useRef<any>(null);
+
   const form = useForm({
     defaultValues: initialFormData,
     validators: {
       onSubmit: CourseSchema.insert,
     },
-    onSubmit: async ({ value }) => {
-      setPendingValue(value);
-      setConfirmSaveOpen(true);
-    },
+    onSubmit: (args) => handleFormSubmitRef.current?.(args),
   });
 
-  const resetEverything = () => {
-    form.reset();
-    setPendingValue(null);
-    setConfirmSaveOpen(false);
-    setConfirmDiscardOpen(false);
-  };
+  const dialog = useEntityDialog<CourseInsert>({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Creating course record...",
+    successText: "Course created successfully.",
+  });
 
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setOpen(true);
-      resetEverything();
-      return;
-    }
-    attemptClose();
-  };
+  handleFormSubmitRef.current = dialog.handleFormSubmit;
 
-  const attemptClose = () => {
-    if (form.state.isDirty) {
-      setConfirmDiscardOpen(true);
-      return;
-    }
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmDiscard = () => {
-    setConfirmDiscardOpen(false);
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmSave = async () => {
-    if (!pendingValue) return;
-    const toastId = toast.loading("Creating course record...");
-    try {
-      await mutateAsync(pendingValue);
-      toast.success("Course created successfully.", { id: toastId });
-      setConfirmSaveOpen(false);
-      setOpen(false);
-      resetEverything();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create course. Please try again.",
-        { id: toastId },
-      );
-      setConfirmSaveOpen(false);
-    }
-  };
+  const courseSummary = (() => {
+    if (!dialog.pendingValue) return "";
+    return `This will add standard course entry "${dialog.pendingValue.initialism}" (${dialog.pendingValue.name}) to the program curriculum.`;
+  })();
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
         <DialogTrigger asChild>
           <Button type="button" className="rounded-lg p-4 flex items-center justify-center gap-1">
             {Icon && <Icon className="size-3.5" />}
@@ -155,11 +114,16 @@ export const CourseCreateDialog = ({
           </FieldGroup>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              selector={(state) => [state.canSubmit] as const}
               children={([canSubmit]) => (
                 <Button
                   type="button"
@@ -175,18 +139,15 @@ export const CourseCreateDialog = ({
       </Dialog>
 
       {/* Save Confirmation Modal */}
-      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Create new course?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will add standard course entry "{pendingValue?.initialism}" ({pendingValue?.name}
-              ) to the program curriculum.
-            </AlertDialogDescription>
+            <AlertDialogDescription>{courseSummary}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSave} disabled={isPending}>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
               {isPending ? "Creating..." : "Yes, create course"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -194,7 +155,7 @@ export const CourseCreateDialog = ({
       </AlertDialog>
 
       {/* Discard Confirmation Modal */}
-      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
@@ -204,7 +165,7 @@ export const CourseCreateDialog = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

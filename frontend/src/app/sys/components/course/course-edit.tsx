@@ -1,8 +1,8 @@
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { useRef } from "react";
 import { useForm } from "@tanstack/react-form";
 import { CourseSchema, type CourseSelect, type CourseUpdate } from "backend/types/course.type";
 import { useUpdateCourse } from "@/features/sys/course.service";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
@@ -34,11 +34,6 @@ interface CourseEditDialogProps {
 }
 
 export const CourseEditDialog = ({ course }: CourseEditDialogProps) => {
-  const [open, setOpen] = useState(false);
-  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
-  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [pendingValue, setPendingValue] = useState<CourseUpdate | null>(null);
-
   const { mutateAsync, isPending } = useUpdateCourse();
 
   const initialFormData: CourseUpdate = {
@@ -46,72 +41,38 @@ export const CourseEditDialog = ({ course }: CourseEditDialogProps) => {
     name: course.name,
   };
 
+  const handleFormSubmitRef = useRef<any>(null);
+
   const form = useForm({
     defaultValues: initialFormData,
     validators: {
       onSubmit: CourseSchema.update,
     },
-    onSubmit: async ({ value }) => {
-      setPendingValue(value);
-      setConfirmSaveOpen(true);
-    },
+    onSubmit: (args) => handleFormSubmitRef.current?.(args),
   });
 
-  const resetEverything = () => {
-    form.reset();
-    setPendingValue(null);
-    setConfirmSaveOpen(false);
-    setConfirmDiscardOpen(false);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setOpen(true);
-      resetEverything();
-      return;
-    }
-    attemptClose();
-  };
-
-  const attemptClose = () => {
-    if (form.state.isDirty) {
-      setConfirmDiscardOpen(true);
-      return;
-    }
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmDiscard = () => {
-    setConfirmDiscardOpen(false);
-    setOpen(false);
-    resetEverything();
-  };
-
-  const confirmSave = async () => {
-    if (!pendingValue) return;
-    const toastId = toast.loading("Updating course record...");
-    try {
-      await mutateAsync({
+  const dialog = useEntityDialog<CourseUpdate>({
+    form,
+    mutationFn: (values) =>
+      mutateAsync({
         course_id: course.id,
-        ...pendingValue,
-      });
-      toast.success("Course updated successfully.", { id: toastId });
-      setConfirmSaveOpen(false);
-      setOpen(false);
-      resetEverything();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update course. Please try again.",
-        { id: toastId },
-      );
-      setConfirmSaveOpen(false);
-    }
-  };
+        ...values,
+      }),
+    loadingText: "Updating course record...",
+    successText: "Course updated successfully.",
+    onReset: () => form.reset(initialFormData),
+  });
+
+  handleFormSubmitRef.current = dialog.handleFormSubmit;
+
+  const courseSummary = (() => {
+    if (!dialog.pendingValue) return "";
+    return `This will update details for "${course.initialism}" to "${dialog.pendingValue.initialism}" (${dialog.pendingValue.name}).`;
+  })();
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
         <DialogTrigger asChild>
           <Button
             variant="ghost"
@@ -168,7 +129,12 @@ export const CourseEditDialog = ({ course }: CourseEditDialogProps) => {
           </FieldGroup>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <form.Subscribe
@@ -188,18 +154,15 @@ export const CourseEditDialog = ({ course }: CourseEditDialogProps) => {
       </Dialog>
 
       {/* Save Confirmation Modal */}
-      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Save changes to course?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will update details for "{course.initialism}" to "{pendingValue?.initialism}" (
-              {pendingValue?.name}).
-            </AlertDialogDescription>
+            <AlertDialogDescription>{courseSummary}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSave} disabled={isPending}>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
               {isPending ? "Saving..." : "Yes, save changes"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -207,7 +170,7 @@ export const CourseEditDialog = ({ course }: CourseEditDialogProps) => {
       </AlertDialog>
 
       {/* Discard Confirmation Modal */}
-      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
@@ -217,7 +180,7 @@ export const CourseEditDialog = ({ course }: CourseEditDialogProps) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
