@@ -7,6 +7,7 @@ import CollegeRouter from "./college.route.js";
 import ProgramRouter from "./program.router.js";
 import SemesterRouter from "./semester.router.js";
 import CourseRouter from "./course.route.js";
+import CurriculumRouter from "./curriculum.route.js";
 
 const SysRouter: IRouter = Router();
 
@@ -19,6 +20,7 @@ SysRouter.use("/programs", ProgramRouter);
 SysRouter.use("/programs", ProgramRouter);
 SysRouter.use("/semesters", SemesterRouter);
 SysRouter.use("/courses", CourseRouter);
+SysRouter.use("/curriculum", CurriculumRouter);
 
 SysRouter.get("/", (_req: Request, res: Response, _next: NextFunction) => {
   const response = createAPIResponse(200, "Welcome to Super Admin Routes!.");

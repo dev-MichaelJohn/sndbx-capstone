@@ -13,7 +13,6 @@ export const getCourses = async (params: CourseSearch) => {
   try {
     const { program_id, ...queryParams } = params;
 
-    // Use program-specific endpoint if program_id is present, otherwise fallback to global courses endpoint
     const endpoint = program_id ? `/sys/programs/${program_id}/courses` : "/sys/courses";
 
     const response = await apiClient.get<APIResponse<PaginatedData<CourseSelect[]>>>(endpoint, {
@@ -37,7 +36,6 @@ export const useCourses = (params: Partial<CourseSearch> & { program_id?: number
   return useQuery({
     queryKey: ["getCourses", fullParams],
     queryFn: () => getCourses(fullParams),
-    enabled: !!params.program_id, // Only run automatically when program_id is present
   });
 };
 

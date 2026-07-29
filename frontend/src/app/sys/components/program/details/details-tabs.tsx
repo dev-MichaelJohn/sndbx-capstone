@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { ProgramCoursesTab } from "./tab-courses";
+import { CurriculumTab } from "./tab-curriculum";
 
 interface ProgramTabsProps {
   programId: number;
@@ -34,9 +35,7 @@ export const ProgramTabs = ({ programId }: ProgramTabsProps) => {
       </TabsContent>
 
       <TabsContent value="curriculum" className="m-0">
-        <Card className="overflow-hidden rounded-xl p-6 text-xs text-muted-foreground shadow-xs">
-          Curriculum tab component goes here.
-        </Card>
+        <CurriculumTab programId={programId} />
       </TabsContent>
 
       <TabsContent value="classes" className="m-0">

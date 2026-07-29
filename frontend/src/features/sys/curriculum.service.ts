@@ -1,0 +1,145 @@
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type {
+  CurriculumInsert,
+  CurriculumSearch,
+  CurriculumSelect,
+  CurriculumUpdate,
+  CurriculumWithDetails,
+} from "backend/types/curriculum.type";
+import { apiClient, getErrorMessage } from "../api.config";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+export const getCurriculums = async (params: CurriculumSearch & { program_id: number }) => {
+  try {
+    const { program_id, ...queryParams } = params;
+    const endpoint = `/sys/programs/${program_id}/curriculum`;
+
+    const response = await apiClient.get<APIResponse<PaginatedData<CurriculumWithDetails[]>>>(
+      endpoint,
+      {
+        params: queryParams,
+      },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch curriculum records."), {
+      cause: error,
+    });
+  }
+};
+
+export const useCurriculums = (params: Partial<CurriculumSearch> & { program_id: number }) => {
+  const fullParams: CurriculumSearch & { program_id: number } = {
+    search: undefined,
+    page: 1,
+    orderBy: "id",
+    orderDir: "asc",
+    ...params,
+  };
+
+  return useQuery({
+    queryKey: ["getCurriculums", fullParams],
+    queryFn: () => getCurriculums(fullParams),
+    enabled: !!params.program_id, // Only run automatically when program_id is present
+  });
+};
+
+// Fetch single curriculum by ID
+export const getCurriculum = async (id: number) => {
+  try {
+    const response = await apiClient.get<APIResponse<CurriculumWithDetails>>(
+      `/sys/curriculum/${id}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch curriculum details."), {
+      cause: error,
+    });
+  }
+};
+
+export const useCurriculum = (id: number) => {
+  return useQuery({
+    queryKey: ["getCurriculum", id],
+    queryFn: () => getCurriculum(id),
+    enabled: !!id,
+  });
+};
+
+// Create curriculum record
+const createCurriculumRecord = async (payload: CurriculumInsert) => {
+  try {
+    const response = await apiClient.post<APIResponse<CurriculumSelect>>(
+      `/sys/programs/${payload.program_id}/curriculum`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to create curriculum record."), {
+      cause: error,
+    });
+  }
+};
+
+export const useCreateCurriculum = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCurriculumRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getCurriculums"] });
+    },
+  });
+};
+
+// Update curriculum record
+const updateCurriculumRecord = async ({
+  curriculum_id,
+  ...payload
+}: CurriculumUpdate & { curriculum_id: number }) => {
+  try {
+    const response = await apiClient.put<APIResponse<CurriculumSelect>>(
+      `/sys/curriculum/${curriculum_id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update curriculum record."), {
+      cause: error,
+    });
+  }
+};
+
+export const useUpdateCurriculum = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCurriculumRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getCurriculums"] });
+    },
+  });
+};
+
+// Delete curriculum record
+const deleteCurriculumRecord = async (curriculumId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/sys/curriculum/${curriculumId}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete curriculum record."), {
+      cause: error,
+    });
+  }
+};
+
+export const useDeleteCurriculum = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCurriculumRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getCurriculums"] });
+    },
+  });
+};

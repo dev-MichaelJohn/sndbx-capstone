@@ -3,7 +3,7 @@ import { CourseCurriculums } from "../schemas/institution.schema.js";
 import { GenerateZodSchemas } from "../utils/schema.util.js";
 import { CourseSchema } from "./course.type.js";
 import { YearLevelEnum, SemeterTermEnum } from "../schemas/institution.schema.js";
-import { createSearchSchema } from "@/utils/request.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
 
 export const CurriculumSchema = GenerateZodSchemas(CourseCurriculums, {
   course_id: (schema) =>

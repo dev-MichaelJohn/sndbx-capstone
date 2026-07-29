@@ -10,7 +10,7 @@ CurriculumRouter.get("/:id", (req, res, next) =>
 CurriculumRouter.post("/", (req, res, next) =>
   CurriculumController.createCurriculum(req, res, next),
 );
-CurriculumRouter.patch("/:id", (req, res, next) =>
+CurriculumRouter.put("/:id", (req, res, next) =>
   CurriculumController.updateCurriculum(req, res, next),
 );
 CurriculumRouter.delete("/:id", (req, res, next) =>
