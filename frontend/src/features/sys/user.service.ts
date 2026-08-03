@@ -66,6 +66,12 @@ export const useFacultyList = (params: Partial<Omit<UserSearchType, "role">> = {
   });
 };
 
+export const useStudentList = (params: Partial<Omit<UserSearchType, "role">> = {}) => {
+  return useUsers({
+    role: "STUDENT",
+    ...params,
+  });
+};
 /**
  * Mutation hook for creating a new user account.
  * Automatically invalidates active user queries on success.

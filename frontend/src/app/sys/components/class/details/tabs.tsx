@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Users } from "lucide-react";
 import { CourseOfferingsTab } from "./tab-course-offering";
+import { ClassStudentsTab } from "./tab-class-student.tsx";
 
 interface ClassTabsProps {
   classId: number;
@@ -31,6 +32,10 @@ export const ClassTabs = ({ classId }: ClassTabsProps) => {
 
       <TabsContent value="offerings" className="mt-0">
         <CourseOfferingsTab classId={classId} />
+      </TabsContent>
+
+      <TabsContent value="students" className="mt-0">
+        <ClassStudentsTab classId={classId} />
       </TabsContent>
     </Tabs>
   );
