@@ -1,4 +1,9 @@
-import type { AccountSelect, UserLoginType, UserType } from "backend/types/user.type";
+import type {
+  AccountSelect,
+  PersonalDetailsSelect,
+  SystemRole,
+  UserLoginType,
+} from "backend/types/user.type";
 import { type APIResponse } from "backend/utils/response.util";
 import { apiClient, getErrorMessage } from "@/features/api.config";
 import { useMutation } from "@tanstack/react-query";
@@ -26,7 +31,10 @@ const validateOTP = async (credentials: VerifyOTPType) => {
     const response = await apiClient.post<
       APIResponse<{
         token: string;
-        info: UserType;
+        user: Pick<AccountSelect, "id" | "email"> & {
+          personalDetails: PersonalDetailsSelect;
+          roles: SystemRole[];
+        };
       }>
     >("/auth/verify-otp", credentials);
     return response.data;
@@ -47,7 +55,14 @@ export const setBearerToken = (token: string) => {
 
 export const fetchCurrentUser = async () => {
   try {
-    const response = await apiClient.get<APIResponse<UserType>>("/auth/me");
+    const response = await apiClient.get<
+      APIResponse<
+        Pick<AccountSelect, "id" | "email"> & {
+          personalDetails: PersonalDetailsSelect;
+          roles: SystemRole[];
+        }
+      >
+    >("/auth/me");
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch current user."), { cause: error });

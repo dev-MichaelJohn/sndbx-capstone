@@ -29,7 +29,7 @@ export const SysDashboard = () => {
   const data: SysSidebarData = {
     user: {
       name: `${user.personalDetails.first_name} ${user.personalDetails.last_name}`,
-      email: user.user.email,
+      email: user.email,
       avatar: "",
     },
     navMain,

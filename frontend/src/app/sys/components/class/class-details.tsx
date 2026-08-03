@@ -91,12 +91,11 @@ export const ClassDetailsPage = () => {
 
   // Formats to "BSIT 3A"
   const className = `${programCode} ${numericYear}${classData.section}`;
-  const classCode = `SECTION ${classData.section}`;
 
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <ClassHeader name={className} code={classCode} onBack={handleBack} />
+        <ClassHeader name={className} onBack={handleBack} />
 
         <ClassMetrics totalOfferings={offeringCount ?? 0} totalStudents={studentCount ?? 0} />
 

@@ -1,10 +1,11 @@
 import { GetRecords } from "@/services/db.service.js";
 import type { Permission } from "@/types/seeder.type.js";
-import { UserSchema } from "@/types/user.type.js";
+import { AccountSchema, PersonalDetailsSchema } from "@/types/user.type.js";
 import { AppError } from "@/utils/error.util.js";
 import type { RequestHandler } from "express";
-import { Permissions, RolePermissions, Roles } from "@/schemas/auth.schema.js";
+import { Permissions, RolePermissions, Roles, SystemRoles } from "@/schemas/auth.schema.js";
 import { and, eq, getColumns, inArray, isNull } from "drizzle-orm";
+import z from "zod";
 
 export const requirePermission = (...requiredPermissions: Permission[]): RequestHandler => {
   return async (req, _res, next) => {
@@ -12,7 +13,13 @@ export const requirePermission = (...requiredPermissions: Permission[]): Request
       const user = req.user;
       if (!user) throw new AppError(401, "Authentication required.");
 
-      const validation = await UserSchema.safeParseAsync(user);
+      const validation = await AccountSchema.select
+        .pick({ id: true, email: true })
+        .extend({
+          personalDetails: PersonalDetailsSchema.select,
+          roles: z.array(z.enum(SystemRoles.enumValues)),
+        })
+        .safeParseAsync(user);
       if (!validation.success) throw validation.error;
       const parsed = validation.data;
 

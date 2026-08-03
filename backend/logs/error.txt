@@ -4714,3 +4714,537 @@ params: 2,I,A
 [2026-08-03 18:22:58:2258] [ERROR]: Missing required permission(s): class-student:read - Stack: AppError: Missing required permission(s): class-student:read
     at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:48:15)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 18:26:26:2626] [ERROR]: FATAL SYSTEM ERROR: Roles validation failed. Failed query: select "id", "system_role", "description", "created_at", "deleted_at" from "roles"
+params: 
+[2026-08-03 18:26:40:2640] [ERROR]: FATAL SYSTEM ERROR: Roles validation failed. Failed query: select "id", "system_role", "description", "created_at", "deleted_at" from "roles"
+params: 
+[2026-08-03 18:31:15:3115] [ERROR]: Refresh token has been revoked or expired. - Stack: AppError: Refresh token has been revoked or expired.
+    at tokenService.verifyToken (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/token.service.ts:230:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async authController.refresh (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:240:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:290:28)
+[2026-08-03 18:35:56:3556] [ERROR]: Session expired or access token invalid. Please log in again. - Stack: AppError: Session expired or access token invalid. Please log in again.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:284:21)
+    at allFailed (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:110:18)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:183:28)
+    at strategy.fail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:314:9)
+    at JwtStrategy.authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:96:21)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:378:16)
+    at authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:379:7)
+    at authController.verifyJWT (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:5)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+[2026-08-03 18:36:07:367] [ERROR]: Session expired or access token invalid. Please log in again. - Stack: AppError: Session expired or access token invalid. Please log in again.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:284:21)
+    at allFailed (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:110:18)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:183:28)
+    at strategy.fail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:314:9)
+    at JwtStrategy.authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:96:21)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:378:16)
+    at authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:379:7)
+    at authController.verifyJWT (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:5)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+[2026-08-03 18:39:06:396] [ERROR]: Session expired or access token invalid. Please log in again. - Stack: AppError: Session expired or access token invalid. Please log in again.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:284:21)
+    at allFailed (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:110:18)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:183:28)
+    at strategy.fail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:314:9)
+    at JwtStrategy.authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:96:21)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:378:16)
+    at authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:379:7)
+    at authController.verifyJWT (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:5)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+[2026-08-03 18:41:08:418] [ERROR]: Session expired or access token invalid. Please log in again. - Stack: AppError: Session expired or access token invalid. Please log in again.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:284:21)
+    at allFailed (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:110:18)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:183:28)
+    at strategy.fail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:314:9)
+    at JwtStrategy.authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:96:21)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:378:16)
+    at authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:379:7)
+    at authController.verifyJWT (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:5)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+[2026-08-03 18:41:44:4144] [ERROR]: Invalid email or password. - Stack: AppError: Invalid email or password.
+    at authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:63:25)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-08-03 18:58:15:5815] [ERROR]: Session expired or access token invalid. Please log in again. - Stack: AppError: Session expired or access token invalid. Please log in again.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:289:21)
+    at allFailed (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:110:18)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:183:28)
+    at strategy.fail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:314:9)
+    at JwtStrategy.authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport-jwt@4.0.1/node_modules/passport-jwt/lib/strategy.js:96:21)
+    at attempt (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:378:16)
+    at authenticate (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/passport@0.7.0/node_modules/passport/lib/middleware/authenticate.js:379:7)
+    at authController.verifyJWT (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:311:5)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+[2026-08-03 18:59:36:5936] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 18:59:57:5957] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:01:09:19] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:03:05:35] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:03:20:320] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:03:23:323] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:03:26:326] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:03:35:335] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:04:07:47] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:04:15:415] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:05:30:530] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:06:51:651] [ERROR]: Authentication required. - Stack: AppError: Authentication required.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:13:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:291:5)
+    at Function.handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:186:3)
+[2026-08-03 19:06:52:652] [ERROR]: Authentication required. - Stack: AppError: Authentication required.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:13:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:291:5)
+    at Function.handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:186:3)
+[2026-08-03 19:06:54:654] [ERROR]: Authentication required. - Stack: AppError: Authentication required.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:13:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:291:5)
+    at Function.handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:186:3)
+[2026-08-03 19:06:59:659] [ERROR]: Authentication required. - Stack: AppError: Authentication required.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:13:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:291:5)
+    at Function.handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:186:3)
+[2026-08-03 19:06:59:659] [ERROR]: Authentication required. - Stack: AppError: Authentication required.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:13:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:291:5)
+    at Function.handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:186:3)
+[2026-08-03 19:07:00:70] [ERROR]: Authentication required. - Stack: AppError: Authentication required.
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:13:24)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+    at processParams (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:582:12)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:291:5)
+    at Function.handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:186:3)
+[2026-08-03 19:07:03:73] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:08:43:843] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:10:34:1034] [ERROR]: Token expired. Please log in again - Stack: AppError: Token expired. Please log in again
+    at authController.me (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:316:28)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/auth.router.ts:9:18)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:306:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 19:13:00:130] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:13:01:131] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:13:04:134] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:13:08:138] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:16:02:162] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:16:04:164] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:16:06:166] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:16:10:1610] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "expected": "object",
+    "code": "invalid_type",
+    "path": [
+      "user"
+    ],
+    "message": "Invalid input: expected object, received undefined"
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:15:43)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+    at handle (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at /home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/index.js:295:15
+[2026-08-03 19:23:20:2320] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:22:2322] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:25:2325] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:26:2326] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:28:2328] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:33:2333] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:34:2334] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:36:2336] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:23:40:2340] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:24:30:2430] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:24:31:2431] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:24:33:2433] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 19:24:37:2437] [ERROR]: Invalid element at key "personalDetails": expected a Zod schema - Stack: Error: Invalid element at key "personalDetails": expected a Zod schema
+    at normalizeDef (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:747:19)
+    at file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:870:43
+    at get value (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js:34:31)
+    at inst._zod.parse (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js:976:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:47:30)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:26:10)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)

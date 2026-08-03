@@ -24,8 +24,7 @@ import z from "zod";
  * module scope so {@link IAuthController} can reference it. */
 type RefreshTokenResponseData = {
   token: string;
-  info: {
-    user: Pick<AccountSelect, "id" | "email">;
+  user: Pick<AccountSelect, "id" | "email"> & {
     personalDetails: PersonalDetailsSelect;
     roles: Array<SystemRole>;
   };
@@ -257,7 +256,12 @@ class authController {
 
     return createAPIResponse<RefreshTokenResponseData>(201, "New token issued.", {
       token: `bearer ${newToken}`,
-      info,
+      user: {
+        id: info.user.id,
+        email: info.user.email,
+        personalDetails: info.personalDetails,
+        roles: info.roles,
+      },
     });
   };
 
@@ -293,9 +297,14 @@ class authController {
             }
 
             res.setHeader("x-access-token", result.data.token);
-            req.user = result.data.info;
+            req.user = result.data.user;
           } else {
-            req.user = user;
+            req.user = {
+              id: user.user.id,
+              email: user.user.email,
+              personalDetails: user.personalDetails,
+              roles: user.roles,
+            };
           }
 
           next();

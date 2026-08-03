@@ -34,10 +34,10 @@ export const OTPForm = () => {
         setBearerToken(data.token);
 
         // TODO: this should re-route the user to the appropriate dashboard
-        setUser(data.info);
+        setUser(data.user);
         setPendingAuth(null);
         toast.success(message, { id: toastId });
-        navigate(getHomeRouteForRoles(data.info.roles), { replace: true });
+        navigate(getHomeRouteForRoles(data.user.roles), { replace: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Login failed.";
         toast.error(message, { id: toastId });

@@ -1,9 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { UserType } from "backend/types/user.type";
+import type { AccountSelect, PersonalDetailsSelect, SystemRole } from "backend/types/user.type";
 import { createContext, useContext, type ReactNode } from "react";
 import { fetchCurrentUser } from "./auth.service";
 
-type CurrentUser = UserType | null;
+type CurrentUser =
+  | (Pick<AccountSelect, "id" | "email"> & {
+      personalDetails: PersonalDetailsSelect;
+      roles: SystemRole[];
+    })
+  | null;
 
 type UserContextType = {
   user: CurrentUser;
