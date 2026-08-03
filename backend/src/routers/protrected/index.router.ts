@@ -24,7 +24,7 @@ ProtectedRouter.use("/semesters", SemesterRouter);
 ProtectedRouter.use("/courses", CourseRouter);
 ProtectedRouter.use("/curriculum", CurriculumRouter);
 ProtectedRouter.use("/classes", ClassRouter);
-ProtectedRouter.use("/offerings", CourseOfferingRouter);
+ProtectedRouter.use("/course-offerings", CourseOfferingRouter);
 ProtectedRouter.use("/class-students", ClassStudentRouter);
 ProtectedRouter.use("/student-classes", StudentClassRouter);
 

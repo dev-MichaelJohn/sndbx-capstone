@@ -14,7 +14,7 @@ export const getCurriculums = async (params: CurriculumSearch) => {
     const { program_id, ...queryParams } = params;
     const endpoint = program_id
       ? `/protected/programs/${program_id}/curriculum`
-      : "/sys/curriculum";
+      : "/protected/curriculum";
 
     const response = await apiClient.get<APIResponse<PaginatedData<CurriculumWithDetails[]>>>(
       endpoint,

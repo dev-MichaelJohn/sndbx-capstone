@@ -15,6 +15,7 @@ import { RedirectIfAuthenticated } from "@/features/auth/RedirectIfAuthenticated
 import { ProgramsPage } from "./sys/pages/ProgramsPage";
 import SemestersPage from "./sys/pages/SemestersPage";
 import { ProgramDetailsPage } from "./sys/components/program/program-details";
+import { ClassDetailsPage } from "./sys/components/class/class-details";
 
 const App = () => {
   return (
@@ -34,7 +35,10 @@ const App = () => {
             <Route index element={<InstitutionPage />} />
             <Route path=":collegeId/programs">
               <Route index element={<ProgramsPage />} />
-              <Route path=":programId" element={<ProgramDetailsPage />} />
+              <Route path=":programId">
+                <Route index element={<ProgramDetailsPage />} />
+                <Route path="classes/:classId" element={<ClassDetailsPage />}></Route>
+              </Route>
             </Route>
           </Route>
           <Route path="sys/semesters" element={<SemestersPage />} />

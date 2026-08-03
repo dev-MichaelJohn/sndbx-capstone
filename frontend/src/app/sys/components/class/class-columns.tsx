@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import type { ClassSelect } from "backend/types/class.type";
+import { ClassManageItem } from "./class-manage";
 
 interface GetClassColumnsProps {
   onDelete: (id: number, identifier: string) => void;
@@ -56,6 +57,7 @@ export const getClassColumns = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">
+              <ClassManageItem classId={item.id} />
               <ClassEditDialog classData={item} />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive cursor-pointer"

@@ -19,9 +19,9 @@ export type CourseOfferingInsert = z.infer<typeof CourseOfferingSchema.insert>;
 export type CourseOfferingUpdate = z.infer<typeof CourseOfferingSchema.update>;
 
 export const CourseOfferingSearchSchema = createSearchSchema("CourseOfferings").extend({
-  class_id: z.number().int().positive().optional(),
-  semester_id: z.number().int().positive().optional(),
-  faculty_id: z.number().int().positive().optional(),
+  class_id: z.coerce.number().int().positive().optional(),
+  semester_id: z.coerce.number().int().positive().optional(),
+  faculty_id: z.coerce.number().int().positive().optional(),
 });
 
 export type CourseOfferingSearch = z.infer<typeof CourseOfferingSearchSchema>;

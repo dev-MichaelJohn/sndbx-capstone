@@ -13,7 +13,9 @@ export const getCourses = async (params: CourseSearch) => {
   try {
     const { program_id, ...queryParams } = params;
 
-    const endpoint = program_id ? `/protected/programs/${program_id}/courses` : "/sys/courses";
+    const endpoint = program_id
+      ? `/protected/programs/${program_id}/courses`
+      : "/protected/courses";
 
     const response = await apiClient.get<APIResponse<PaginatedData<CourseSelect[]>>>(endpoint, {
       params: queryParams,
