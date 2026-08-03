@@ -5,7 +5,7 @@ import { logger } from "@/utils/logger.util.js";
 export async function seederFunction() {
   // 1. Handle Roles Seeding
   try {
-    const rolesResult = await SeederService.seedRoles();
+    const rolesResult = await SeederService.seedRolesAndPermissions();
     logger.info(rolesResult.message);
   } catch (error: any) {
     // 409 means roles are already there, which is fine. Crash on any other error (like a 500).
@@ -19,7 +19,11 @@ export async function seederFunction() {
   try {
     await SeederService.seedSuperAdmin({
       credentials: { email: env.GMAIL_APP_USER, password: "!SuperAdmin123" },
-      personalDetails: { first_name: "Michael John", last_name: "Larido", institutional_id: "SYS-00-0000-001" }
+      personalDetails: {
+        first_name: "Michael John",
+        last_name: "Larido",
+        institutional_id: "SYS-00-0000-001",
+      },
     });
     logger.info("Superadmin created successfully. Continuing application setup...");
   } catch (error: any) {
