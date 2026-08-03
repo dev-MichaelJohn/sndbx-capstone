@@ -1,12 +1,20 @@
 import { AccountRoles, Accounts, PersonalDetails, Roles } from "@/schemas/auth.schema.js";
-import { and, eq, getColumns, isNull } from "drizzle-orm";
-import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
+import { and, asc, desc, eq, getColumns, ilike, isNull, or, sql } from "drizzle-orm";
+import {
+  CreateRecord,
+  GetRecord,
+  GetRecords,
+  SoftDeleteRecord,
+  UpdateRecord,
+} from "./db.service.js";
 import bcrypt from "bcryptjs";
 import { AppError } from "@/utils/error.util.js";
 import crypto from "node:crypto";
 import db, { type PgTransaction } from "@/configs/db.config.js";
 import {
   CreateUserReqSchema,
+  UpdateUserReqSchema,
+  UserSearchSchema,
   type AccountRecordWithRole,
   type AccountSelect,
   type SystemRole,
@@ -14,13 +22,23 @@ import {
   type AccountRoleSelect,
   type AccountInsert,
   type CreateUserReqType,
+  type UpdateUserReqType,
+  type UserSearchType,
+  type UserWithDetails,
   AccountSchema,
   type RoleSelect,
   type UserType,
 } from "@/types/user.type.js";
 import z from "zod";
-import EmailService, { emailService, type IEmailService } from "./email.service.js";
-import { GenerateWelcomeHtmlTemplate, GenerateWelcomeTextTemplate } from "@/utils/email.util.js";
+import EmailService, { type IEmailService } from "./email.service.js";
+import {
+  GenerateWelcomeHtmlTemplate,
+  GenerateWelcomeTextTemplate,
+  GenerateAccountUpdateHtmlTemplate,
+  GenerateAccountUpdateTextTemplate,
+  type UserUpdateEmailData,
+} from "@/utils/email.util.js";
+import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
 
 /** Result of {@link userService.createUser} — `credentials` has the password stripped. */
 type CreateUserResult = {
@@ -31,22 +49,28 @@ type CreateUserResult = {
 
 /** Public surface of {@link userService}, for dependency injection/mocking. */
 export interface IUserService {
+  getUsers(searchQuery: UserSearchType): Promise<PaginatedData<UserWithDetails[]>>;
   getUser(credentials: Pick<AccountSelect, "id" | "email">): Promise<UserType>;
   createUser(info: CreateUserReqType): Promise<CreateUserResult>;
   createUserRecordViaExistingTx(
     info: CreateUserReqType,
     tx: PgTransaction,
   ): Promise<CreateUserResult>;
+  updateUser(id: number, data: UpdateUserReqType): Promise<UserType>;
+  deleteUser(id: number): Promise<void>;
   grantRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void>;
   revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void>;
 }
 
 /**
- * Handles user account creation, spanning the PersonalDetails, Accounts,
- * and AccountRoles tables as a single atomic operation.
+ * Handles user account CRUD, spanning the PersonalDetails, Accounts,
+ * and AccountRoles tables. All multi-step operations run as single
+ * atomic transactions.
  */
 class userService implements IUserService {
   constructor(private emailService: IEmailService = EmailService) {}
+
+  // ─── Private helpers: Security & Formatting ──────────────────────────────────
 
   private async accountHasRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
     const accountRecords = await GetRecords<"Accounts", AccountRecordWithRole>("Accounts", {
@@ -97,11 +121,8 @@ class userService implements IUserService {
 
     for (let i = passwordArray.length - 1; i > 0; i--) {
       const j = crypto.randomInt(0, i + 1);
-
-      // Non-null assertions added to array indexing
       const charI = passwordArray[i]!;
       const charJ = passwordArray[j]!;
-
       passwordArray[i] = charJ;
       passwordArray[j] = charI;
     }
@@ -109,15 +130,383 @@ class userService implements IUserService {
     return passwordArray.join("");
   }
 
+  private buildChangedFields(
+    oldValues: Record<string, string | null | undefined>,
+    newValues: Record<string, string | null | undefined>,
+    labelMap: Record<string, string>,
+  ): UserUpdateEmailData["updatedFields"] {
+    return Object.entries(newValues)
+      .filter(([key, val]) => val !== undefined && val !== oldValues[key])
+      .map(([key, val]) => ({
+        label: labelMap[key] ?? key,
+        oldValue: oldValues[key] ?? "—",
+        newValue: val ?? "—",
+      }));
+  }
+
+  // ─── Private helpers: User Query Processing ──────────────────────────────────
+
+  private async validateAndParseSearchQuery(searchQuery: UserSearchType) {
+    searchQuery.orderBy = searchQuery.orderBy ?? "id";
+    searchQuery.orderDir = searchQuery.orderDir ?? "asc";
+
+    const validation = await UserSearchSchema.safeParseAsync(searchQuery);
+    if (!validation.success) throw validation.error;
+    return validation.data;
+  }
+
+  private buildUserSearchCondition(search?: string) {
+    return search
+      ? or(
+          ilike(PersonalDetails.first_name, `%${search}%`),
+          ilike(PersonalDetails.last_name, `%${search}%`),
+          ilike(PersonalDetails.institutional_id, `%${search}%`),
+        )
+      : undefined;
+  }
+
+  private collapseUserRoles(
+    rows: Array<
+      Omit<AccountSelect, "password"> & {
+        institutional_id: string;
+        first_name: string;
+        last_name: string;
+        middle_name: string | null;
+        suffix: string | null;
+        system_role: SystemRole | null;
+        totalItems: number;
+      }
+    >,
+  ): UserWithDetails[] {
+    const accountMap = new Map<number, UserWithDetails>();
+    for (const row of rows) {
+      const { system_role, totalItems, ...rest } = row;
+      if (!accountMap.has(rest.id)) {
+        accountMap.set(rest.id, { ...rest, roles: [] });
+      }
+      if (system_role) {
+        accountMap.get(rest.id)!.roles.push(system_role);
+      }
+    }
+    return Array.from(accountMap.values());
+  }
+
+  // ─── Private helpers: User Creation Sub-routines ─────────────────────────────
+
+  private async insertUserDetailsTx(
+    personalDetails: CreateUserReqType["personalDetails"],
+    tx: PgTransaction,
+  ) {
+    const userDetails = await CreateRecord("PersonalDetails", personalDetails, tx);
+    if (!userDetails) {
+      throw new AppError(
+        500,
+        "Failed to create personal details record while registering user. User account was not created.",
+      );
+    }
+    return userDetails;
+  }
+
+  private async insertAccountRecordTx(
+    credentials: CreateUserReqType["credentials"],
+    plainPassword: string,
+    personalDetailsId: number,
+    tx: PgTransaction,
+  ) {
+    const hash = await bcrypt.hash(plainPassword, 10);
+    const userCredentials: AccountInsert = {
+      ...credentials,
+      password: hash,
+      personal_details_id: personalDetailsId,
+    };
+    const userAccount = await CreateRecord("Accounts", userCredentials, tx);
+    if (!userAccount) {
+      throw new AppError(
+        500,
+        "Failed to create account record while registering user. Personal details record was rolled back.",
+      );
+    }
+    return userAccount;
+  }
+
+  private async mapAccountRoleTx(accountId: number, role: SystemRole, tx: PgTransaction) {
+    const systemRole = await GetRecord("Roles", {
+      where: (Roles) => eq(Roles.system_role, role),
+      tx,
+    });
+    if (!systemRole) {
+      throw new AppError(
+        400,
+        "Given role has not been found. Changes during account creation were rolled back.",
+      );
+    }
+
+    const userRole = await CreateRecord(
+      "AccountRoles",
+      { account_id: accountId, role_id: systemRole.id },
+      tx,
+    );
+    if (!userRole) {
+      throw new AppError(
+        400,
+        "Failed to map account record to a role. Changes during account creation were rolled back.",
+      );
+    }
+    return userRole;
+  }
+
+  private async sendWelcomeEmailIfNeeded(
+    wasPasswordGenerated: boolean,
+    email: string | null,
+    details: PersonalDetailsSelect,
+    plainPassword: string,
+  ) {
+    if (!wasPasswordGenerated || !email) return;
+
+    const fullName = [details.first_name, details.last_name].filter(Boolean).join(" ");
+    const emailPayload = {
+      recipientName: fullName || "User",
+      email,
+      generatedPassword: plainPassword,
+    };
+
+    try {
+      await this.emailService.sendEmail({
+        to: email,
+        options: {
+          subject: "PIT-FES Account Credentials & Security Notice",
+          text: GenerateWelcomeTextTemplate(emailPayload),
+          html: GenerateWelcomeHtmlTemplate(emailPayload),
+        },
+      });
+    } catch {
+      throw new AppError(
+        500,
+        "Account created successfully, but failed to send the welcome email containing credentials.",
+      );
+    }
+  }
+
+  // ─── Private helpers: User Update Sub-routines ───────────────────────────────
+
+  private async executeAccountUpdatesTx(
+    parsedId: number,
+    validationData: UpdateUserReqType,
+    tx: PgTransaction,
+  ) {
+    const existingAccount = await GetRecord<"Accounts">("Accounts", {
+      where: (Accounts) => and(eq(Accounts.id, parsedId), isNull(Accounts.deleted_at)),
+      tx,
+    });
+    if (!existingAccount) throw new AppError(404, "No user account found.");
+
+    const existingDetails = await GetRecord<"PersonalDetails">("PersonalDetails", {
+      where: (PersonalDetails) =>
+        and(
+          eq(PersonalDetails.id, existingAccount.personal_details_id),
+          isNull(PersonalDetails.deleted_at),
+        ),
+      tx,
+    });
+    if (!existingDetails) throw new AppError(404, "No user details found.");
+
+    const { credentials, personalDetails } = validationData;
+    const hasCredentials = credentials && Object.keys(credentials).length > 0;
+    const hasPersonalDetails = personalDetails && Object.keys(personalDetails).length > 0;
+
+    let updatedAccount = existingAccount;
+    let updatedDetails = existingDetails;
+
+    if (hasCredentials) {
+      const result = await UpdateRecord<"Accounts">(
+        "Accounts",
+        parsedId,
+        credentials,
+        Accounts.id,
+        tx,
+      );
+      if (!result) throw new AppError(500, "Failed to update account record.");
+      updatedAccount = result;
+    }
+
+    if (hasPersonalDetails) {
+      const result = await UpdateRecord<"PersonalDetails">(
+        "PersonalDetails",
+        existingDetails.id,
+        personalDetails,
+        PersonalDetails.id,
+        tx,
+      );
+      if (!result) throw new AppError(500, "Failed to update personal details record.");
+      updatedDetails = result;
+    }
+
+    return { updatedAccount, updatedDetails, existingAccount, existingDetails };
+  }
+
+  private collectChangedFields(
+    updatedAccount: AccountSelect,
+    updatedDetails: PersonalDetailsSelect,
+    existingAccount: AccountSelect,
+    existingDetails: PersonalDetailsSelect,
+  ) {
+    const credentialLabelMap: Record<string, string> = { email: "Email" };
+    const detailsLabelMap: Record<string, string> = {
+      institutional_id: "Institutional ID",
+      first_name: "First Name",
+      last_name: "Last Name",
+      middle_name: "Middle Name",
+      suffix: "Suffix",
+    };
+
+    return [
+      ...this.buildChangedFields(
+        { email: existingAccount.email },
+        { email: updatedAccount.email },
+        credentialLabelMap,
+      ),
+      ...this.buildChangedFields(
+        {
+          institutional_id: existingDetails.institutional_id,
+          first_name: existingDetails.first_name,
+          last_name: existingDetails.last_name,
+          middle_name: existingDetails.middle_name,
+          suffix: existingDetails.suffix,
+        },
+        {
+          institutional_id: updatedDetails.institutional_id,
+          first_name: updatedDetails.first_name,
+          last_name: updatedDetails.last_name,
+          middle_name: updatedDetails.middle_name,
+          suffix: updatedDetails.suffix,
+        },
+        detailsLabelMap,
+      ),
+    ];
+  }
+
+  private async sendUpdateNotificationsIfNeeded(
+    changedFields: ReturnType<typeof this.collectChangedFields>,
+    updatedDetails: PersonalDetailsSelect,
+    updatedAccount: AccountSelect,
+    existingAccount: AccountSelect,
+  ) {
+    if (changedFields.length === 0) return;
+
+    const fullName = [updatedDetails.first_name, updatedDetails.last_name]
+      .filter(Boolean)
+      .join(" ");
+    const emailPayload: UserUpdateEmailData = {
+      recipientName: fullName || "User",
+      updatedFields: changedFields,
+      updatedAt: new Date(),
+    };
+
+    const emailOptions = {
+      subject: "PIT-FES Account Update Notice",
+      text: GenerateAccountUpdateTextTemplate(emailPayload),
+      html: GenerateAccountUpdateHtmlTemplate(emailPayload),
+    };
+
+    try {
+      await this.emailService.sendEmail({
+        to: updatedAccount.email,
+        options: emailOptions,
+      });
+
+      if (existingAccount.email !== updatedAccount.email) {
+        await this.emailService.sendEmail({
+          to: existingAccount.email,
+          options: {
+            ...emailOptions,
+            subject: "PIT-FES Account Update Notice — Your Email Has Changed",
+          },
+        });
+      }
+    } catch {
+      throw new AppError(
+        500,
+        "Account updated successfully, but failed to send the update notification email.",
+      );
+    }
+  }
+
+  // ─── Public methods ──────────────────────────────────────────────────────────
+
+  async getUsers(searchQuery: UserSearchType): Promise<PaginatedData<UserWithDetails[]>> {
+    const { search, role, page, orderBy, orderDir } =
+      await this.validateAndParseSearchQuery(searchQuery);
+
+    const PAGE_SIZE = 10;
+    const columns = getColumns(Accounts);
+    const orderColumn = columns[orderBy as keyof typeof columns] ?? Accounts.id;
+    const orderFn = orderDir === "asc" ? asc : desc;
+    const searchCondition = this.buildUserSearchCondition(search);
+
+    const rows = await GetRecords<
+      "Accounts",
+      Omit<AccountSelect, "password"> & {
+        institutional_id: string;
+        first_name: string;
+        last_name: string;
+        middle_name: string | null;
+        suffix: string | null;
+        system_role: SystemRole | null;
+        totalItems: number;
+      }
+    >("Accounts", {
+      select: (Accounts) => ({
+        ...Object.fromEntries(
+          Object.entries(getColumns(Accounts)).filter(([k]) => k !== "password"),
+        ),
+        institutional_id: PersonalDetails.institutional_id,
+        first_name: PersonalDetails.first_name,
+        last_name: PersonalDetails.last_name,
+        middle_name: PersonalDetails.middle_name,
+        suffix: PersonalDetails.suffix,
+        system_role: Roles.system_role,
+        totalItems: sql<number>`count(*) over()::int`.as("totalItems"),
+      }),
+      join: (query) =>
+        query
+          .innerJoin(
+            PersonalDetails,
+            and(
+              eq(PersonalDetails.id, Accounts.personal_details_id),
+              isNull(PersonalDetails.deleted_at),
+            ),
+          )
+          .leftJoin(
+            AccountRoles,
+            and(eq(AccountRoles.account_id, Accounts.id), isNull(AccountRoles.deleted_at)),
+          )
+          .leftJoin(Roles, and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at)))
+          .orderBy(orderFn(orderColumn))
+          .limit(PAGE_SIZE)
+          .offset((page - 1) * PAGE_SIZE),
+      where: () =>
+        and(
+          isNull(Accounts.deleted_at),
+          searchCondition,
+          role ? eq(Roles.system_role, role) : undefined,
+        ),
+    });
+
+    const totalItems = rows[0]?.totalItems ?? 0;
+    const data = this.collapseUserRoles(rows);
+
+    return createPaginatedData<UserWithDetails[]>({
+      data,
+      currentPage: page,
+      pageSize: PAGE_SIZE,
+      totalItems,
+    });
+  }
+
   async getUser(credentials: Pick<AccountSelect, "id" | "email">) {
     const validation = await AccountSchema.select
-      .pick({
-        id: true,
-        email: true,
-      })
-      .extend({
-        id: z.coerce.number().int().positive().nonoptional(),
-      })
+      .pick({ id: true, email: true })
+      .extend({ id: z.coerce.number().int().positive().nonoptional() })
       .safeParseAsync(credentials);
     if (!validation.success) throw validation.error;
 
@@ -150,31 +539,12 @@ class userService implements IUserService {
     );
     if (roleRecords.length === 0) throw new AppError(404, "No role associated with this account.");
 
-    const roles = roleRecords.map((role) => role.system_role);
+    const roles = roleRecords.map((r) => r.system_role);
     const { password, ...user } = existingUser;
 
-    return {
-      user,
-      personalDetails,
-      roles,
-    };
+    return { user, personalDetails, roles };
   }
 
-  /**
-   * Creates a new user account: inserts personal details, hashes the
-   * password and creates the account record, then maps the account to the
-   * given system role. All steps run in a single transaction — if any step
-   * fails, all prior inserts in this call are rolled back.
-   *
-   * @param credentials - login credentials (email/password), excluding `personal_details_id`
-   * @param personalDetails - the account holder's personal details
-   * @param role - the system role to assign to the new account
-   * @returns the created account record as `credentials` (password stripped,
-   *   including its generated id), the created personal-details record as
-   *   `details`, and the role-mapping record as `role`
-   * @throws {AppError} 500 if the personal details or account record fails to create
-   * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
-   */
   async createUser({
     credentials,
     personalDetails,
@@ -196,49 +566,14 @@ class userService implements IUserService {
     }
 
     const result = await db.transaction(async (tx) => {
-      const userDetails = await CreateRecord("PersonalDetails", personalDetails, tx);
-      if (!userDetails)
-        throw new AppError(
-          500,
-          "Failed to create personal details record while registering user. User account was not created.",
-        );
-
-      const hash = await bcrypt.hash(plainPassword, 10);
-      const userCredentials: AccountInsert = {
-        ...credentials,
-        password: hash,
-        personal_details_id: userDetails?.id,
-      };
-      const userAccount = await CreateRecord("Accounts", userCredentials, tx);
-      if (!userAccount)
-        throw new AppError(
-          500,
-          "Failed to create account record while registering user. Personal details record was rolled back.",
-        );
-
-      const systemRole = await GetRecord("Roles", {
-        where: (Roles) => eq(Roles.system_role, role),
-        tx,
-      });
-      if (!systemRole)
-        throw new AppError(
-          400,
-          "Given role has not been found. Changes during account creation were rolled back.",
-        );
-
-      const userRole = await CreateRecord(
-        "AccountRoles",
-        {
-          account_id: userAccount.id,
-          role_id: systemRole.id,
-        },
+      const userDetails = await this.insertUserDetailsTx(personalDetails, tx);
+      const userAccount = await this.insertAccountRecordTx(
+        credentials,
+        plainPassword,
+        userDetails.id,
         tx,
       );
-      if (!userRole)
-        throw new AppError(
-          400,
-          "Failed to map account record to a role. Changes during account creation were rolled back.",
-        );
+      const userRole = await this.mapAccountRoleTx(userAccount.id, role, tx);
 
       return {
         credentials: this.stripPassword(userAccount),
@@ -247,54 +582,16 @@ class userService implements IUserService {
       };
     });
 
-    if (wasPasswordGenerated && result.credentials.email) {
-      const fullName = [result.details.first_name, result.details.last_name]
-        .filter(Boolean)
-        .join(" ");
-
-      const emailPayload = {
-        recipientName: fullName || "User",
-        email: result.credentials.email,
-        generatedPassword: plainPassword,
-      };
-
-      try {
-        await this.emailService.sendEmail({
-          to: result.credentials.email,
-          options: {
-            subject: "PIT-FES Account Credentials & Security Notice",
-            text: GenerateWelcomeTextTemplate(emailPayload),
-            html: GenerateWelcomeHtmlTemplate(emailPayload),
-          },
-        });
-      } catch (err) {
-        throw new AppError(
-          500,
-          "Account created successfully, but failed to send the welcome email containing credentials.",
-        );
-      }
-    }
+    await this.sendWelcomeEmailIfNeeded(
+      wasPasswordGenerated,
+      result.credentials.email,
+      result.details,
+      plainPassword,
+    );
 
     return result;
   }
 
-  /**
-   * Same steps as {@link createUser} — inserts personal details, hashes the
-   * password, creates the account record, and maps it to the given system
-   * role — but runs within a transaction the caller already owns instead of
-   * opening its own. Used when user creation is one step of a larger atomic
-   * operation (e.g. creating a college along with a brand-new dean account).
-   *
-   * @param credentials - login credentials (email/password), excluding `personal_details_id`
-   * @param personalDetails - the account holder's personal details
-   * @param role - the system role to assign to the new account
-   * @param tx - the transaction to run the inserts within
-   * @returns the created account record as `credentials` (password stripped,
-   *   including its generated id), the created personal-details record as
-   *   `details`, and the role-mapping record as `role`
-   * @throws {AppError} 500 if the personal details or account record fails to create
-   * @throws {AppError} 400 if the given role doesn't exist, or the account-role mapping fails
-   */
   async createUserRecordViaExistingTx(
     { credentials, personalDetails, role }: CreateUserReqType,
     tx: PgTransaction,
@@ -304,58 +601,20 @@ class userService implements IUserService {
       personalDetails,
       role,
     });
-
     if (!validation.success) throw validation.error;
-    const userDetails = await CreateRecord<"PersonalDetails">(
-      "PersonalDetails",
-      personalDetails,
-      tx,
-    );
-    if (!userDetails)
-      throw new AppError(
-        500,
-        "Failed to create personal details record while registering user. User account was not created.",
-      );
 
-    if (!credentials.password || credentials.password?.trim().length === 0)
+    if (!credentials.password || credentials.password.trim().length === 0) {
       credentials.password = this.generatePassword();
+    }
 
-    const hash = await bcrypt.hash(credentials.password, 10);
-    const userCredentials: AccountInsert = {
-      ...credentials,
-      password: hash,
-      personal_details_id: userDetails?.id,
-    };
-    const userAccount = await CreateRecord("Accounts", userCredentials, tx);
-    if (!userAccount)
-      throw new AppError(
-        500,
-        "Failed to create account record while registering user. Personal details record was rolled back.",
-      );
-
-    const systemRole = await GetRecord("Roles", {
-      where: (Roles) => eq(Roles.system_role, role),
-      tx,
-    });
-    if (!systemRole)
-      throw new AppError(
-        400,
-        "Given role has not been found. Changes during account creation were rolled back.",
-      );
-
-    const userRole = await CreateRecord(
-      "AccountRoles",
-      {
-        account_id: userAccount.id,
-        role_id: systemRole.id,
-      },
+    const userDetails = await this.insertUserDetailsTx(personalDetails, tx);
+    const userAccount = await this.insertAccountRecordTx(
+      credentials,
+      credentials.password,
+      userDetails.id,
       tx,
     );
-    if (!userRole)
-      throw new AppError(
-        400,
-        "Failed to map account record to a role. Changes during account creation were rolled back.",
-      );
+    const userRole = await this.mapAccountRoleTx(userAccount.id, role, tx);
 
     return {
       credentials: this.stripPassword(userAccount),
@@ -364,16 +623,121 @@ class userService implements IUserService {
     };
   }
 
-  /**
-   * Grants a system role to an account, if it doesn't already have it.
-   * No-ops if the account already holds the given role.
-   *
-   * @param accountId - the account to grant the role to
-   * @param role - the system role to grant
-   * @param tx - optional transaction to run the insert within
-   * @throws {AppError} 404 if the given role has not been found
-   * @throws {AppError} 500 if the role grant fails
-   */
+  async updateUser(id: number, data: UpdateUserReqType): Promise<UserType> {
+    const idValidation = await z.coerce.number().int().positive().safeParseAsync(id);
+    if (!idValidation.success) throw idValidation.error;
+
+    const parsedId = idValidation.data;
+    const validation = await UpdateUserReqSchema.safeParseAsync(data);
+    if (!validation.success) throw validation.error;
+
+    const { credentials, personalDetails } = validation.data;
+    const hasCredentials = credentials && Object.keys(credentials).length > 0;
+    const hasPersonalDetails = personalDetails && Object.keys(personalDetails).length > 0;
+
+    if (!hasCredentials && !hasPersonalDetails) {
+      throw new AppError(400, "No update parameters were provided.");
+    }
+
+    const result = await db.transaction(async (tx) => {
+      return await this.executeAccountUpdatesTx(parsedId, validation.data, tx);
+    });
+
+    const { updatedAccount, updatedDetails, existingAccount, existingDetails } = result;
+    const changedFields = this.collectChangedFields(
+      updatedAccount,
+      updatedDetails,
+      existingAccount,
+      existingDetails,
+    );
+
+    await this.sendUpdateNotificationsIfNeeded(
+      changedFields,
+      updatedDetails,
+      updatedAccount,
+      existingAccount,
+    );
+
+    const roleRecords = await GetRecords<"AccountRoles", Pick<RoleSelect, "system_role">>(
+      "AccountRoles",
+      {
+        select: () => ({ system_role: Roles.system_role }),
+        where: (AccountRoles) =>
+          and(eq(AccountRoles.account_id, parsedId), isNull(AccountRoles.deleted_at)),
+        join: (query) =>
+          query.innerJoin(Roles, and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at))),
+      },
+    );
+
+    const { password, ...user } = updatedAccount;
+
+    return {
+      user,
+      personalDetails: updatedDetails,
+      roles: roleRecords.map((r) => r.system_role),
+    };
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    const validation = await z.coerce.number().int().positive().safeParseAsync(id);
+    if (!validation.success) throw validation.error;
+
+    const parsedId = validation.data;
+
+    return await db.transaction(async (tx) => {
+      const existingAccount = await GetRecord<"Accounts">("Accounts", {
+        where: (Accounts) => and(eq(Accounts.id, parsedId), isNull(Accounts.deleted_at)),
+        tx,
+      });
+      if (!existingAccount) throw new AppError(404, "No user account found.");
+
+      const existingDetails = await GetRecord<"PersonalDetails">("PersonalDetails", {
+        where: (PersonalDetails) =>
+          and(
+            eq(PersonalDetails.id, existingAccount.personal_details_id),
+            isNull(PersonalDetails.deleted_at),
+          ),
+        tx,
+      });
+      if (!existingDetails) throw new AppError(404, "No user details found.");
+
+      const roleRows = await GetRecords<"AccountRoles">("AccountRoles", {
+        where: (AccountRoles) =>
+          and(eq(AccountRoles.account_id, parsedId), isNull(AccountRoles.deleted_at)),
+        tx,
+      });
+
+      for (const roleRow of roleRows) {
+        const deleted = await SoftDeleteRecord<"AccountRoles">(
+          "AccountRoles",
+          roleRow.id,
+          AccountRoles.id,
+          tx,
+        );
+        if (!deleted)
+          throw new AppError(500, "Failed to remove account role records during user deletion.");
+      }
+
+      const deletedDetails = await SoftDeleteRecord<"PersonalDetails">(
+        "PersonalDetails",
+        existingDetails.id,
+        PersonalDetails.id,
+        tx,
+      );
+      if (!deletedDetails)
+        throw new AppError(500, "Failed to remove personal details record during user deletion.");
+
+      const deletedAccount = await SoftDeleteRecord<"Accounts">(
+        "Accounts",
+        parsedId,
+        Accounts.id,
+        tx,
+      );
+      if (!deletedAccount)
+        throw new AppError(500, "Failed to remove user account record during user deletion.");
+    });
+  }
+
   async grantRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
     if (!(await this.accountHasRole(accountId, role, tx))) {
       const systemRole = await GetRecord("Roles", {
@@ -384,25 +748,13 @@ class userService implements IUserService {
 
       const newRole = await CreateRecord(
         "AccountRoles",
-        {
-          account_id: accountId,
-          role_id: systemRole.id,
-        },
+        { account_id: accountId, role_id: systemRole.id },
         tx,
       );
       if (!newRole) throw new AppError(500, "Failed to grant new role.");
     }
   }
 
-  /**
-   * Revokes a system role from an account, if it currently has it.
-   * No-ops if the account doesn't hold the given role.
-   *
-   * @param accountId - the account to revoke the role from
-   * @param role - the system role to revoke
-   * @param tx - optional transaction to run the soft-delete within
-   * @throws {AppError} 500 if the role revocation fails
-   */
   async revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
     if (await this.accountHasRole(accountId, role, tx)) {
       const revokedRole = await SoftDeleteRecord(

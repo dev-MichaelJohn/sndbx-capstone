@@ -7,6 +7,7 @@ import {
   Roles,
   SystemRoles,
 } from "../schemas/auth.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
 
 // ==========================================
 // 1. Base Entity Schemas & Inferred Types
@@ -85,9 +86,46 @@ export const CreateUserReqSchema = z.object({
 });
 export type CreateUserReqType = z.infer<typeof CreateUserReqSchema>;
 
+/**
+ * Validates the payload for an admin-driven account update.
+ * Credentials (email) and personal details are updated separately
+ * in their own atomic steps within the service. Password and role
+ * changes are excluded — those go through OTP or internal flows.
+ */
+export const UpdateUserReqSchema = z.object({
+  credentials: AccountSchema.update.pick({ email: true }).optional(),
+  personalDetails: PersonalDetailsSchema.update
+    .pick({
+      institutional_id: true,
+      first_name: true,
+      last_name: true,
+      middle_name: true,
+      suffix: true,
+    })
+    .optional(),
+});
+export type UpdateUserReqType = z.infer<typeof UpdateUserReqSchema>;
+
+/** Paginated search query for the getUsers list endpoint. */
+export const UserSearchSchema = createSearchSchema("Accounts").extend({
+  search: z.string().trim().optional(),
+  role: SystemRoleSchema.optional(),
+});
+export type UserSearchType = z.infer<typeof UserSearchSchema>;
+
 /** An account's insertable fields joined with its currently assigned system role. */
 export type AccountRecordWithRole = AccountInsert & {
   system_role: SystemRole;
+};
+
+/** Shape returned by getUsers — account + personal details + roles, no password. */
+export type UserWithDetails = Omit<AccountSelect, "password"> & {
+  institutional_id: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+  suffix: string | null;
+  roles: SystemRole[];
 };
 
 export const UserSchema = z.object({
