@@ -4,9 +4,15 @@ import UserService, { type IUserService } from "./user.service.js";
 import { AppError } from "@/utils/error.util.js";
 import { AccountRoles, Roles, SystemRoles } from "@/schemas/auth.schema.js";
 import { logger } from "@/utils/logger.util.js";
-import { CreateUserReqSchema } from "@/types/user.type.js";
+import { CreateUserReqSchema, type RoleSelect } from "@/types/user.type.js";
 import type z from "zod";
 import { and, eq, isNull } from "drizzle-orm";
+import {
+  PERMISSIONS,
+  ROLE_PERMISSION_MATRIX,
+  type Permission,
+  type RoleName,
+} from "@/types/seeder.type.js";
 
 /** Payload for seeding the initial super admin account — same shape as
  * a normal user-creation request, minus `role` (always forced to `SYS_ADMIN`). */
@@ -17,7 +23,7 @@ export type SuperAdminType = z.infer<typeof SuperAdminSchema>;
 
 /** Public surface of {@link SeederService}, for dependency injection/mocking. */
 export interface ISeederService {
-  seedRoles(): Promise<{ message: string }>;
+  seedRolesAndPermissions(): Promise<{ message: string }>;
   seedSuperAdmin(
     userData: SuperAdminType,
   ): Promise<Awaited<ReturnType<IUserService["createUser"]>>>;
@@ -60,19 +66,38 @@ class seederService implements ISeederService {
    * @throws {AppError} 409 if roles have already been seeded
    * @throws {AppError} 500 if the seeding transaction fails
    */
-  async seedRoles() {
+  async seedRolesAndPermissions() {
     if (!(await this.isRolesEmpty())) {
       throw new AppError(409, "System roles are already seeded.");
     }
 
     try {
       await this.client.transaction(async (tx) => {
+        const roleRecords = {} as Record<RoleName, { id: number }>;
         for (const role of SystemRoles.enumValues) {
-          await CreateRecord("Roles", { system_role: role }, tx);
+          const created = await CreateRecord("Roles", { system_role: role }, tx);
+          roleRecords[role as RoleName] = { id: created.id };
+        }
+
+        const permissionRecords = {} as Record<Permission, { id: number }>;
+        for (const permission of Object.values(PERMISSIONS)) {
+          const created = await CreateRecord("Permissions", { permission_key: permission }, tx);
+          permissionRecords[permission] = { id: created.id };
+        }
+
+        for (const [roleName, permissions] of Object.entries(ROLE_PERMISSION_MATRIX) as [
+          RoleName,
+          Permission[],
+        ][]) {
+          const role = roleRecords[roleName];
+          for (const permission of permissions) {
+            const key = permissionRecords[permission];
+            await CreateRecord("RolePermissions", { role_id: role.id, permission_id: key.id }, tx);
+          }
         }
       });
 
-      return { message: "System roles seeded successfully!" };
+      return { message: "Roles, permissions, and role-permissions seeded successfully!" };
     } catch (error) {
       logger.error(`Seeding transaction failed: ${error instanceof Error ? error.message : error}`);
       throw new AppError(500, "An unexpected database error occurred during seeding roles.");

@@ -106,6 +106,42 @@ export const Roles = pgTable(
   ],
 );
 
+export const Permissions = pgTable(
+  "permissions",
+  {
+    id: serial("id").primaryKey(),
+    permission_key: varchar("permission_key", { length: 64 }).notNull(),
+    description: varchar("description", { length: 128 }),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_permissions_permission_key")
+      .on(t.permission_key)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const RolePermissions = pgTable(
+  "role_permissions",
+  {
+    id: serial("id").primaryKey(),
+    role_id: integer("role_id")
+      .notNull()
+      .references(() => Roles.id),
+    permission_id: integer("permission_id")
+      .notNull()
+      .references(() => Permissions.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_role_permissions_role_id_permission_id")
+      .on(t.role_id, t.permission_id)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
 export const AccountRoles = pgTable(
   "account_roles",
   {
