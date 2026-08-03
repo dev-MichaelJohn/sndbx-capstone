@@ -21,8 +21,8 @@ class studentClassController {
 
   async getStudentClasses(req: Request, res: Response, next: NextFunction) {
     try {
-      // When nested under /:id/student-classes, scope to that offering
       const { id } = req.params;
+
       const courseOfferingId = id
         ? await this.extractId(id, "Course offering ID is required.")
         : undefined;
@@ -62,15 +62,15 @@ class studentClassController {
     }
   }
 
-  async createStudentClass(req: Request, res: Response, next: NextFunction) {
+  async enrollStudentIrregular(req: Request, res: Response, next: NextFunction) {
     try {
       const { body } = req;
       if (!body) throw new AppError(400, "Request body cannot be empty.");
 
-      const result = await this.studentClassService.createStudentClass(body);
+      const result = await this.studentClassService.enrollStudentIrregular(body);
       const response = createAPIResponse<typeof result>(
         200,
-        "Student enrolled successfully",
+        "Irregular student enrolled in course offering successfully",
         result,
       );
       res.status(response.status).json(response);
@@ -79,15 +79,15 @@ class studentClassController {
     }
   }
 
-  async deleteStudentClass(req: Request, res: Response, next: NextFunction) {
+  async dropStudentFromOffering(req: Request, res: Response, next: NextFunction) {
     try {
       const { studentClassId } = req.params;
       const parsedId = await this.extractId(studentClassId, "Student class ID is required.");
 
-      await this.studentClassService.deleteStudentClass(parsedId);
+      await this.studentClassService.dropStudentFromOffering(parsedId);
       const response = createAPIResponse<null>(
         200,
-        "Student dropped from class successfully",
+        "Student dropped from course offering successfully",
         null,
       );
       res.status(response.status).json(response);

@@ -33,7 +33,7 @@ CourseOfferingRouter.delete(
 );
 CourseOfferingRouter.use(
   "/:id/student-classes",
-  requirePermission(PERMISSIONS.STUDENT_READ),
+  requirePermission(PERMISSIONS.STUDENT_CLASS_READ),
   StudentClassRouter,
 );
 

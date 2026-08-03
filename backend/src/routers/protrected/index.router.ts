@@ -10,6 +10,7 @@ import CurriculumRouter from "./curriculum.route.js";
 import ClassRouter from "./class.route.js";
 import CourseOfferingRouter from "./offerings.route.js";
 import StudentClassRouter from "./student-class.route.js";
+import ClassStudentRouter from "./class-student.route.js";
 
 const ProtectedRouter: IRouter = Router();
 
@@ -24,6 +25,7 @@ ProtectedRouter.use("/courses", CourseRouter);
 ProtectedRouter.use("/curriculum", CurriculumRouter);
 ProtectedRouter.use("/classes", ClassRouter);
 ProtectedRouter.use("/offerings", CourseOfferingRouter);
+ProtectedRouter.use("/class-students", ClassStudentRouter);
 ProtectedRouter.use("/student-classes", StudentClassRouter);
 
 ProtectedRouter.get("/", (_req: Request, res: Response, _next: NextFunction) => {

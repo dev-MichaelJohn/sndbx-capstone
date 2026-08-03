@@ -3,14 +3,17 @@ import {
   CourseOfferings,
   CourseCurriculums,
   Courses,
+  Classes,
+  Programs,
 } from "@/schemas/institution.schema.js";
-import { AccountRoles, Accounts, PersonalDetails, Roles } from "@/schemas/auth.schema.js";
+import { Accounts, AccountRoles, Roles, PersonalDetails } from "@/schemas/auth.schema.js";
 import {
   StudentClassSchema,
   StudentClassSearchSchema,
   type StudentClassInsert,
   type StudentClassSearch,
   type StudentClassSelect,
+  type StudentClassWithDetails,
 } from "@/types/student-class.type.js";
 import { and, asc, desc, eq, getColumns, isNull, sql } from "drizzle-orm";
 import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
@@ -20,25 +23,38 @@ import { AppError } from "@/utils/error.util.js";
 import z from "zod";
 import db from "@/configs/db.config.js";
 
-export type StudentClassWithDetails = StudentClassSelect & {
-  course_name: string;
-  course_initialism: string;
-  year_level: string;
-  semester_term: string;
-  student_name: string;
-};
-
 export interface IStudentClassService {
   getStudentClasses(
     searchQuery: StudentClassSearch,
   ): Promise<PaginatedData<StudentClassWithDetails[]>>;
   getStudentClass(id: number, tx?: PgTransaction): Promise<StudentClassWithDetails>;
-  createStudentClass(data: StudentClassInsert): Promise<StudentClassSelect>;
-  deleteStudentClass(id: number): Promise<void>;
+  enrollStudentIrregular(data: StudentClassInsert): Promise<StudentClassSelect>;
+  dropStudentFromOffering(id: number): Promise<void>;
 }
 
 export class studentClassService implements IStudentClassService {
   constructor() {}
+
+  private async validateStudent(studentAccountId: number, tx: PgTransaction) {
+    const student = await GetRecord<"Accounts">("Accounts", {
+      select: (Accounts) => ({ id: Accounts.id }),
+      join: (query) =>
+        query
+          .innerJoin(AccountRoles, eq(AccountRoles.account_id, Accounts.id))
+          .innerJoin(Roles, eq(Roles.id, AccountRoles.role_id)),
+      where: (Accounts) =>
+        and(
+          eq(Accounts.id, studentAccountId),
+          isNull(Accounts.deleted_at),
+          isNull(AccountRoles.deleted_at),
+          isNull(Roles.deleted_at),
+          eq(Roles.system_role, "STUDENT"),
+        ),
+      tx,
+    });
+    if (!student) throw new AppError(404, "Selected account is not a valid active student.");
+    return student;
+  }
 
   async getStudentClasses(searchQuery: StudentClassSearch) {
     searchQuery.orderBy = searchQuery.orderBy ?? "id";
@@ -60,19 +76,25 @@ export class studentClassService implements IStudentClassService {
     >("StudentClasses", {
       select: (StudentClasses) => ({
         ...getColumns(StudentClasses),
+        institutional_id: PersonalDetails.institutional_id,
+        student_name:
+          sql<string>`concat(${PersonalDetails.last_name}, ', ', ${PersonalDetails.first_name}, ' ', COALESCE(${PersonalDetails.middle_name}, ''))`.as(
+            "student_name",
+          ),
         course_name: Courses.name,
         course_initialism: Courses.initialism,
         year_level: CourseCurriculums.year_level,
         semester_term: CourseCurriculums.semester_term,
-        student_name: sql<string>`concat(
-          ${PersonalDetails.first_name}, ' ',
-          ${PersonalDetails.last_name}
-        )`.as("student_name"),
+        program_name: Programs.name,
+        class_year_level: Classes.year_level,
+        class_section: Classes.section,
         totalItems: sql<number>`count(*) over()::int`.as("totalItems"),
       }),
       join: (query) =>
         query
           .innerJoin(CourseOfferings, eq(CourseOfferings.id, StudentClasses.course_offering_id))
+          .innerJoin(Classes, eq(Classes.id, CourseOfferings.class_id))
+          .innerJoin(Programs, eq(Programs.id, Classes.program_id))
           .innerJoin(
             CourseCurriculums,
             eq(CourseCurriculums.id, CourseOfferings.course_curriculum_id),
@@ -115,18 +137,24 @@ export class studentClassService implements IStudentClassService {
     const data = await GetRecord<"StudentClasses", StudentClassWithDetails>("StudentClasses", {
       select: (StudentClasses) => ({
         ...getColumns(StudentClasses),
+        institutional_id: PersonalDetails.institutional_id,
+        student_name:
+          sql<string>`concat(${PersonalDetails.last_name}, ', ', ${PersonalDetails.first_name}, ' ', COALESCE(${PersonalDetails.middle_name}, ''))`.as(
+            "student_name",
+          ),
         course_name: Courses.name,
         course_initialism: Courses.initialism,
         year_level: CourseCurriculums.year_level,
         semester_term: CourseCurriculums.semester_term,
-        student_name: sql<string>`concat(
-          ${PersonalDetails.first_name}, ' ',
-          ${PersonalDetails.last_name}
-        )`.as("student_name"),
+        program_name: Programs.name,
+        class_year_level: Classes.year_level,
+        class_section: Classes.section,
       }),
       join: (query) =>
         query
           .innerJoin(CourseOfferings, eq(CourseOfferings.id, StudentClasses.course_offering_id))
+          .innerJoin(Classes, eq(Classes.id, CourseOfferings.class_id))
+          .innerJoin(Programs, eq(Programs.id, Classes.program_id))
           .innerJoin(
             CourseCurriculums,
             eq(CourseCurriculums.id, CourseOfferings.course_curriculum_id),
@@ -142,34 +170,20 @@ export class studentClassService implements IStudentClassService {
     return data;
   }
 
-  async createStudentClass(data: StudentClassInsert) {
+  async enrollStudentIrregular(data: StudentClassInsert) {
     const validation = await StudentClassSchema.insert.safeParseAsync(data);
     if (!validation.success) throw validation.error;
 
     const parsedData = validation.data;
 
     return await db.transaction(async (tx) => {
-      // Verify account exists, is not deleted, and carries the STUDENT role
-      const student = await GetRecord<"Accounts">("Accounts", {
-        select: (Accounts) => ({ id: Accounts.id }),
-        join: (query) =>
-          query
-            .innerJoin(AccountRoles, eq(AccountRoles.account_id, Accounts.id))
-            .innerJoin(Roles, eq(Roles.id, AccountRoles.role_id)),
-        where: (Accounts) =>
-          and(
-            eq(Accounts.id, parsedData.student_account_id),
-            isNull(Accounts.deleted_at),
-            isNull(AccountRoles.deleted_at),
-            isNull(Roles.deleted_at),
-            eq(Roles.system_role, "STUDENT"),
-          ),
-        tx,
-      });
-      if (!student) throw new AppError(404, "Selected account is not a valid active student.");
+      await this.validateStudent(parsedData.student_account_id, tx);
 
       const offering = await GetRecord<"CourseOfferings">("CourseOfferings", {
-        select: (CourseOfferings) => ({ id: CourseOfferings.id }),
+        select: (CourseOfferings) => ({
+          id: CourseOfferings.id,
+          class_id: CourseOfferings.class_id,
+        }),
         where: (CourseOfferings) =>
           and(
             eq(CourseOfferings.id, parsedData.course_offering_id),
@@ -179,14 +193,38 @@ export class studentClassService implements IStudentClassService {
       });
       if (!offering) throw new AppError(404, "Selected course offering was not found.");
 
+      // Upsert ClassStudents — auto-add to class if not yet a member
+      const classMembership = await GetRecord<"ClassStudents">("ClassStudents", {
+        select: (ClassStudents) => ({ id: ClassStudents.id }),
+        where: (ClassStudents) =>
+          and(
+            eq(ClassStudents.class_id, offering.class_id),
+            eq(ClassStudents.student_account_id, parsedData.student_account_id),
+            isNull(ClassStudents.deleted_at),
+          ),
+        tx,
+      });
+
+      if (!classMembership) {
+        const newMembership = await CreateRecord<"ClassStudents">(
+          "ClassStudents",
+          {
+            class_id: offering.class_id,
+            student_account_id: parsedData.student_account_id,
+          },
+          tx,
+        );
+        if (!newMembership) throw new AppError(500, "Failed to add student to class.");
+      }
+
       const result = await CreateRecord<"StudentClasses">("StudentClasses", parsedData, tx);
-      if (!result) throw new AppError(500, "Failed to enroll student.");
+      if (!result) throw new AppError(500, "Failed to enroll student in course offering.");
 
       return result;
     });
   }
 
-  async deleteStudentClass(id: number) {
+  async dropStudentFromOffering(id: number) {
     const validation = await z.number().int().positive().safeParseAsync(id);
     if (!validation.success) throw validation.error;
 
@@ -200,7 +238,7 @@ export class studentClassService implements IStudentClassService {
         StudentClasses.id,
         tx,
       );
-      if (!deleted) throw new AppError(500, "Failed to drop student from class.");
+      if (!deleted) throw new AppError(500, "Failed to drop student from course offering.");
     });
   }
 }

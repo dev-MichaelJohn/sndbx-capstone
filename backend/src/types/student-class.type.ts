@@ -21,3 +21,15 @@ export const StudentClassSearchSchema = createSearchSchema("StudentClasses").ext
 });
 
 export type StudentClassSearch = z.infer<typeof StudentClassSearchSchema>;
+
+export type StudentClassWithDetails = StudentClassSelect & {
+  institutional_id: string;
+  student_name: string;
+  course_name: string;
+  course_initialism: string;
+  year_level: string;
+  semester_term: string;
+  program_name: string;
+  class_year_level: string;
+  class_section: string;
+};
