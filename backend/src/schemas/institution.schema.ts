@@ -256,6 +256,28 @@ export const CourseOfferings = pgTable(
   ],
 );
 
+export const ClassStudents = pgTable(
+  "class_students",
+  {
+    id: serial("id").primaryKey(),
+    class_id: integer("class_id")
+      .notNull()
+      .references(() => Classes.id),
+    student_account_id: integer("student_account_id")
+      .notNull()
+      .references(() => Accounts.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_class_student")
+      .on(t.class_id, t.student_account_id)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_class_students_class_id").on(t.class_id),
+    index("idx_class_students_student_account_id").on(t.student_account_id),
+  ],
+);
+
 export const StudentClasses = pgTable(
   "student_classes",
   {
