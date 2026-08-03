@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import CourseOfferingController from "@/controllers/offerings.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
+import StudentClassRouter from "./student-class.route.js";
 
 const CourseOfferingRouter: IRouter = Router({ mergeParams: true });
 
@@ -29,6 +30,11 @@ CourseOfferingRouter.delete(
   "/:offeringId",
   requirePermission(PERMISSIONS.COURSE_OFFERING_DELETE),
   (req, res, next) => CourseOfferingController.deleteCourseOffering(req, res, next),
+);
+CourseOfferingRouter.use(
+  "/:id/student-classes",
+  requirePermission(PERMISSIONS.STUDENT_READ),
+  StudentClassRouter,
 );
 
 export default CourseOfferingRouter;

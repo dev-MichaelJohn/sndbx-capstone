@@ -8,6 +8,8 @@ import SemesterRouter from "./semester.router.js";
 import CourseRouter from "./course.route.js";
 import CurriculumRouter from "./curriculum.route.js";
 import ClassRouter from "./class.route.js";
+import CourseOfferingRouter from "./offerings.route.js";
+import StudentClassRouter from "./student-class.route.js";
 
 const ProtectedRouter: IRouter = Router();
 
@@ -21,6 +23,8 @@ ProtectedRouter.use("/semesters", SemesterRouter);
 ProtectedRouter.use("/courses", CourseRouter);
 ProtectedRouter.use("/curriculum", CurriculumRouter);
 ProtectedRouter.use("/classes", ClassRouter);
+ProtectedRouter.use("/offerings", CourseOfferingRouter);
+ProtectedRouter.use("/student-classes", StudentClassRouter);
 
 ProtectedRouter.get("/", (_req: Request, res: Response, _next: NextFunction) => {
   const response = createAPIResponse(200, "Welcome to Super Admin Routes!.");
