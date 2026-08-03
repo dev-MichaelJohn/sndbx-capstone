@@ -6,7 +6,7 @@ import type { RequestHandler } from "express";
 import { Permissions, RolePermissions, Roles } from "@/schemas/auth.schema.js";
 import { and, eq, getColumns, inArray, isNull } from "drizzle-orm";
 
-export const requirePermission = (requiredPermissions: Permission[]): RequestHandler => {
+export const requirePermission = (...requiredPermissions: Permission[]): RequestHandler => {
   return async (req, _res, next) => {
     try {
       const user = req.user;
