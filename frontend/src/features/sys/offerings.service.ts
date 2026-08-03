@@ -1,10 +1,10 @@
 import type { APIResponse, PaginatedData } from "backend/utils/response.util";
 import type {
-  CourseOfferingInsert,
   CourseOfferingSearch,
   CourseOfferingSelect,
-  CourseOfferingUpdate,
   CourseOfferingWithDetails,
+  CreateCourseOfferingParams,
+  UpdateCourseOfferingParams,
 } from "backend/types/offerings.type";
 import { apiClient, getErrorMessage } from "../api.config";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -50,9 +50,9 @@ export const useClassOfferingCount = (classId: number) => {
 };
 
 // Create new course offering
-const createCourseOffering = async (payload: CourseOfferingInsert) => {
+const createCourseOffering = async (payload: CreateCourseOfferingParams) => {
   try {
-    const response = await apiClient.post<APIResponse<CourseOfferingSelect>>(
+    const response = await apiClient.post<APIResponse<{ courseOffering: CourseOfferingSelect }>>(
       "/protected/course-offerings",
       payload,
     );
@@ -74,16 +74,10 @@ export const useCreateCourseOffering = () => {
 };
 
 // Update course offering
-const updateCourseOffering = async ({
-  id,
-  payload,
-}: {
-  id: number;
-  payload: CourseOfferingUpdate;
-}) => {
+const updateCourseOffering = async (payload: UpdateCourseOfferingParams) => {
   try {
-    const response = await apiClient.patch<APIResponse<CourseOfferingSelect>>(
-      `/protected/course-offerings/${id}`,
+    const response = await apiClient.put<APIResponse<{ courseOffering: CourseOfferingSelect }>>(
+      `/protected/course-offerings/${payload.course_offering_id}`,
       payload,
     );
     return response.data.data;

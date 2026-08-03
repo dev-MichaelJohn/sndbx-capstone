@@ -1,18 +1,16 @@
-import {
-  CourseOfferings,
-  CourseCurriculums,
-  Courses,
-  Classes,
-  Semesters,
-} from "@/schemas/institution.schema.js";
+import { CourseOfferings, CourseCurriculums, Courses } from "@/schemas/institution.schema.js";
+import { AccountRoles, Roles } from "@/schemas/auth.schema.js";
 import {
   CourseOfferingSchema,
   CourseOfferingSearchSchema,
+  CreateFacultySchema,
   type CourseOfferingInsert,
   type CourseOfferingSearch,
   type CourseOfferingSelect,
-  type CourseOfferingUpdate,
   type CourseOfferingWithDetails,
+  type CreateCourseOfferingParams,
+  type CreateFaculty,
+  type UpdateCourseOfferingParams,
 } from "@/types/offerings.type.js";
 import { and, asc, desc, eq, getColumns, isNull, sql } from "drizzle-orm";
 import {
@@ -27,21 +25,59 @@ import type { PgTransaction } from "@/configs/db.config.js";
 import { AppError } from "@/utils/error.util.js";
 import z from "zod";
 import db from "@/configs/db.config.js";
+import UserService, { type IUserService } from "./user.service.js";
 
 export interface ICourseOfferingService {
   getCourseOfferings(
     searchQuery: CourseOfferingSearch,
   ): Promise<PaginatedData<CourseOfferingWithDetails[]>>;
   getCourseOffering(id: number, tx?: PgTransaction): Promise<CourseOfferingWithDetails>;
-  createCourseOffering(data: CourseOfferingInsert): Promise<CourseOfferingSelect>;
+  createCourseOffering(
+    params: CreateCourseOfferingParams,
+  ): Promise<{ courseOffering: CourseOfferingSelect }>;
   updateCourseOffering(
-    data: CourseOfferingUpdate & { course_offering_id: number },
-  ): Promise<CourseOfferingSelect>;
+    params: UpdateCourseOfferingParams,
+  ): Promise<{ courseOffering: CourseOfferingSelect }>;
   deleteCourseOffering(id: number): Promise<void>;
 }
 
 export class courseOfferingService implements ICourseOfferingService {
-  constructor() {}
+  constructor(private userService: IUserService = UserService) {}
+
+  /**
+   * Validates and normalizes the optional faculty input payload into a discriminated union.
+   */
+  private async parseFacultyInfo(info?: CreateFaculty) {
+    if (!info || Object.keys(info).length === 0) return undefined;
+    const parsed = await CreateFacultySchema.safeParseAsync(info);
+    if (!parsed.success) throw parsed.error;
+    return parsed.data;
+  }
+
+  /**
+   * Validates that an existing account is active and eligible to be assigned as faculty.
+   */
+  private async validateFacultyCandidate(accountId: number, tx?: PgTransaction) {
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.id, accountId), isNull(Accounts.deleted_at)),
+      ...(tx && { tx }),
+    });
+    if (!account) throw new AppError(404, "Faculty account not found.");
+
+    const roleRecords = await GetRecords<"AccountRoles", { system_role: string }>("AccountRoles", {
+      select: () => ({ system_role: Roles.system_role }),
+      where: (AccountRoles) =>
+        and(eq(AccountRoles.account_id, accountId), isNull(AccountRoles.deleted_at)),
+      join: (query) =>
+        query.innerJoin(Roles, and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at))),
+      ...(tx && { tx }),
+    });
+
+    const disallowedRoles = ["STUDENT"];
+    if (roleRecords.some((r) => disallowedRoles.includes(r.system_role))) {
+      throw new AppError(400, "This account's role is not eligible to be assigned as faculty.");
+    }
+  }
 
   private async validateEligibility(
     courseCurriculumId: number,
@@ -171,82 +207,125 @@ export class courseOfferingService implements ICourseOfferingService {
     return data;
   }
 
-  async createCourseOffering(data: CourseOfferingInsert) {
-    const validation = await CourseOfferingSchema.insert.safeParseAsync(data);
-    if (!validation.success) throw validation.error;
-
-    const parsedData = validation.data;
+  async createCourseOffering({ offering, faculty }: CreateCourseOfferingParams) {
+    const facultyInfo = await this.parseFacultyInfo(faculty);
 
     return await db.transaction(async (tx) => {
       await this.validateEligibility(
-        parsedData.course_curriculum_id,
-        parsedData.class_id,
-        parsedData.semester_id,
+        offering.course_curriculum_id,
+        offering.class_id,
+        offering.semester_id,
         tx,
       );
 
-      const faculty = await GetRecord<"Accounts">("Accounts", {
-        select: (Accounts) => ({ ...getColumns(Accounts) }),
-        where: (Accounts) =>
-          and(eq(Accounts.id, parsedData.faculty_id), isNull(Accounts.deleted_at)),
-        tx,
-      });
-      if (!faculty) throw new AppError(404, "Selected faculty member was not found.");
+      let facultyId: number | undefined;
 
-      const result = await CreateRecord<"CourseOfferings">("CourseOfferings", parsedData, tx);
+      if (facultyInfo) {
+        if (facultyInfo.type === "existing") {
+          await this.validateFacultyCandidate(facultyInfo.id, tx);
+          facultyId = facultyInfo.id;
+        } else {
+          const { credentials, personalDetails } = facultyInfo.details;
+          const accountRecord = await this.userService.createUserRecordViaExistingTx(
+            {
+              credentials,
+              personalDetails,
+              role: "FACULTY",
+            },
+            tx,
+          );
+          if (!accountRecord) {
+            throw new AppError(
+              500,
+              "Failed to create faculty account. Changes during course offering creation were rolled back.",
+            );
+          }
+          facultyId = accountRecord.credentials.id;
+        }
+      }
+
+      if (!facultyId) {
+        throw new AppError(400, "Faculty details or an existing faculty ID must be provided.");
+      }
+
+      const offeringData: CourseOfferingInsert = {
+        ...offering,
+        faculty_id: facultyId,
+      };
+
+      const validation = await CourseOfferingSchema.insert.safeParseAsync(offeringData);
+      if (!validation.success) throw validation.error;
+
+      const result = await CreateRecord<"CourseOfferings">("CourseOfferings", validation.data, tx);
       if (!result) throw new AppError(500, "Failed to create course offering.");
 
-      return result;
+      return { courseOffering: result };
     });
   }
 
-  async updateCourseOffering(data: CourseOfferingUpdate & { course_offering_id: number }) {
-    const validation = await CourseOfferingSchema.update
-      .extend({
-        course_offering_id: z.number().int().positive(),
-      })
-      .safeParseAsync(data);
-    if (!validation.success) throw validation.error;
-
-    const { course_offering_id, ...parsedData } = validation.data;
+  async updateCourseOffering({
+    course_offering_id,
+    offering,
+    faculty,
+  }: UpdateCourseOfferingParams) {
+    const facultyInfo = await this.parseFacultyInfo(faculty);
 
     return await db.transaction(async (tx) => {
       const existing = await this.getCourseOffering(course_offering_id, tx);
 
-      // Only re-check eligibility if any of the three linked fields changed —
-      // reuse existing values for whichever weren't part of this update.
       const touchesEligibility =
-        parsedData.course_curriculum_id !== undefined ||
-        parsedData.class_id !== undefined ||
-        parsedData.semester_id !== undefined;
+        offering?.course_curriculum_id !== undefined ||
+        offering?.class_id !== undefined ||
+        offering?.semester_id !== undefined;
 
       if (touchesEligibility) {
-        const courseCurriculumId = parsedData.course_curriculum_id ?? existing.course_curriculum_id;
-        const classId = parsedData.class_id ?? existing.class_id;
-        const semesterId = parsedData.semester_id ?? existing.semester_id;
+        const courseCurriculumId = offering?.course_curriculum_id ?? existing.course_curriculum_id;
+        const classId = offering?.class_id ?? existing.class_id;
+        const semesterId = offering?.semester_id ?? existing.semester_id;
         await this.validateEligibility(courseCurriculumId, classId, semesterId, tx);
       }
 
-      if (parsedData.faculty_id !== undefined) {
-        const facultyId = parsedData.faculty_id;
-        const faculty = await GetRecord<"Accounts">("Accounts", {
-          select: (Accounts) => ({ ...getColumns(Accounts) }),
-          where: (Accounts) => and(eq(Accounts.id, facultyId), isNull(Accounts.deleted_at)),
-          tx,
-        });
-        if (!faculty) throw new AppError(404, "Selected faculty member was not found.");
+      let facultyId: number | undefined;
+
+      if (facultyInfo) {
+        if (facultyInfo.type === "existing") {
+          await this.validateFacultyCandidate(facultyInfo.id, tx);
+          facultyId = facultyInfo.id;
+        } else {
+          const { credentials, personalDetails } = facultyInfo.details;
+          const accountRecord = await this.userService.createUserRecordViaExistingTx(
+            {
+              credentials,
+              personalDetails,
+              role: "FACULTY",
+            },
+            tx,
+          );
+          if (!accountRecord) {
+            throw new AppError(
+              500,
+              "Failed to create faculty account. Changes during course offering update were rolled back.",
+            );
+          }
+          facultyId = accountRecord.credentials.id;
+        }
       }
+
+      const updateData = {
+        ...offering,
+        ...(facultyId !== undefined && { faculty_id: facultyId }),
+      };
 
       const updated = await UpdateRecord<"CourseOfferings">(
         "CourseOfferings",
         existing.id,
-        parsedData,
+        updateData,
         CourseOfferings.id,
         tx,
       );
       if (!updated) throw new AppError(500, "Failed to update course offering.");
 
-      return updated;
+      return { courseOffering: updated };
     });
   }
 

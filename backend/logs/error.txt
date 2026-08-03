@@ -5278,3 +5278,39 @@ params: dev.michael.john@gmail.com,1
     at async GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:83:20)
     at async authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:57:18)
     at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)
+[2026-08-03 21:45:47:4547] [ERROR]: FATAL SYSTEM ERROR: Roles validation failed. Failed query: select "id", "system_role", "description", "created_at", "deleted_at" from "roles"
+params: 
+[2026-08-03 21:46:21:4621] [ERROR]: Refresh token has been revoked or expired. - Stack: AppError: Refresh token has been revoked or expired.
+    at tokenService.verifyToken (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/token.service.ts:230:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async authController.refresh (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:239:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:294:28)
+[2026-08-03 21:46:29:4629] [ERROR]: Refresh token has been revoked or expired. - Stack: AppError: Refresh token has been revoked or expired.
+    at tokenService.verifyToken (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/token.service.ts:230:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async authController.refresh (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:239:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:294:28)
+[2026-08-03 22:53:55:5355] [ERROR]: Validation failed. - Stack: ZodError: [
+  {
+    "origin": "string",
+    "code": "too_small",
+    "minimum": 2,
+    "inclusive": true,
+    "path": [
+      "details",
+      "personalDetails",
+      "last_name"
+    ],
+    "message": "Last name is required."
+  }
+]
+    at new ZodError (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js:40:39)
+    at Module.<anonymous> (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js:53:20)
+    at inst.safeParseAsync (file:///home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js:76:57)
+    at courseOfferingService.parseFacultyInfo (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/offerings.service.ts:52:46)
+    at courseOfferingService.createCourseOffering (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/offerings.service.ts:211:36)
+    at courseOfferingController.createCourseOffering (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/offerings.controller.ts:74:55)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/protrected/offerings.route.ts:22:48)
+    at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
+    at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:58:7)

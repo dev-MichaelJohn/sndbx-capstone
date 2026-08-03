@@ -2,6 +2,7 @@ import z from "zod";
 import { CourseOfferings } from "../schemas/institution.schema.js";
 import { GenerateZodSchemas } from "../utils/schema.util.js";
 import { createSearchSchema } from "../utils/request.util.js";
+import { CreateUserReqSchema } from "./user.type.js";
 
 export const CourseOfferingSchema = GenerateZodSchemas(CourseOfferings, {
   course_curriculum_id: (schema) =>
@@ -37,3 +38,30 @@ export const CourseOfferingWithDetailsSchema = CourseOfferingSchema.select.exten
 });
 
 export type CourseOfferingWithDetails = z.infer<typeof CourseOfferingWithDetailsSchema>;
+
+// Discriminated union matching CreateCollegeDeanSchema pattern
+export const CreateFacultySchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("existing"),
+    id: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal("new"),
+    details: CreateUserReqSchema.omit({
+      role: true,
+    }),
+  }),
+]);
+
+export type CreateFaculty = z.infer<typeof CreateFacultySchema>;
+
+export type CreateCourseOfferingParams = {
+  offering: Omit<CourseOfferingInsert, "faculty_id">;
+  faculty?: CreateFaculty;
+};
+
+export type UpdateCourseOfferingParams = {
+  course_offering_id: number;
+  offering?: Partial<Omit<CourseOfferingUpdate, "faculty_id">>;
+  faculty?: CreateFaculty;
+};

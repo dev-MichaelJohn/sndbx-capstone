@@ -37,7 +37,7 @@ class courseOfferingController {
       const result = await this.courseOfferingService.getCourseOfferings(searchQuery);
       const response = createAPIResponse<typeof result>(
         200,
-        "Course offering records retrieved successfully",
+        "Course offering records retrieved successfully.",
         result,
       );
       res.status(response.status).json(response);
@@ -54,7 +54,7 @@ class courseOfferingController {
       const result = await this.courseOfferingService.getCourseOffering(parsedId);
       const response = createAPIResponse<typeof result>(
         200,
-        "Course offering retrieved successfully",
+        "Course offering retrieved successfully.",
         result,
       );
       res.status(response.status).json(response);
@@ -68,10 +68,16 @@ class courseOfferingController {
       const { body } = req;
       if (!body) throw new AppError(400, "Request body cannot be empty.");
 
-      const result = await this.courseOfferingService.createCourseOffering(body);
+      const { offering, faculty } = body;
+      if (!offering) throw new AppError(400, "Course offering details are required.");
+
+      const result = await this.courseOfferingService.createCourseOffering({
+        offering,
+        faculty,
+      });
       const response = createAPIResponse<typeof result>(
-        200,
-        "Course offering created successfully",
+        201,
+        "Course offering record was successfully created.",
         result,
       );
       res.status(response.status).json(response);
@@ -87,13 +93,16 @@ class courseOfferingController {
       const { body } = req;
       if (!body) throw new AppError(400, "Request body cannot be empty.");
 
+      const { offering, faculty } = body;
+
       const result = await this.courseOfferingService.updateCourseOffering({
         course_offering_id: parsedId,
-        ...body,
+        offering,
+        faculty,
       });
       const response = createAPIResponse<typeof result>(
         200,
-        "Course offering updated successfully",
+        "Course offering record was successfully updated.",
         result,
       );
       res.status(response.status).json(response);
@@ -108,7 +117,11 @@ class courseOfferingController {
       const parsedId = await this.extractId(offeringId, "Course offering ID is required.");
 
       await this.courseOfferingService.deleteCourseOffering(parsedId);
-      const response = createAPIResponse<null>(200, "Course offering deleted successfully", null);
+      const response = createAPIResponse<null>(
+        200,
+        "Course offering record was successfully deleted.",
+        null,
+      );
       res.status(response.status).json(response);
     } catch (error) {
       next(error);

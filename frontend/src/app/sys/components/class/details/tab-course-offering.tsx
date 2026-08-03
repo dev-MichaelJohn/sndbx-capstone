@@ -1,18 +1,9 @@
 import { useState } from "react";
-import {
-  useCourseOfferings,
-  useCreateCourseOffering,
-  useUpdateCourseOffering,
-  useDeleteCourseOffering,
-} from "@/features/sys/offerings.service";
-import type {
-  CourseOfferingInsert,
-  CourseOfferingUpdate,
-  CourseOfferingWithDetails,
-} from "backend/types/offerings.type";
+import { useCourseOfferings, useDeleteCourseOffering } from "@/features/sys/offerings.service";
+import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 import { getCourseOfferingColumns } from "../../offerings/offering-column";
-import { OfferingDialog } from "../../offerings/offering-create";
-import { UpdateOfferingDialog } from "../../offerings/offering-edit";
+import { OfferingCreateDialog } from "../../offerings/offering-create";
+import { OfferingEditDialog } from "../../offerings/offering-edit";
 import { DataTable } from "@/components/data-table";
 
 import { Button } from "@/components/ui/button";
@@ -23,15 +14,16 @@ import toast from "react-hot-toast";
 
 interface CourseOfferingsTabProps {
   classId: number;
+  programId?: number;
 }
 
-export const CourseOfferingsTab = ({ classId }: CourseOfferingsTabProps) => {
+export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabProps) => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
   // Dialog & Active Selection States
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedOffering, setSelectedOffering] = useState<CourseOfferingWithDetails | null>(null);
 
   // Queries & Mutations
@@ -41,41 +33,12 @@ export const CourseOfferingsTab = ({ classId }: CourseOfferingsTabProps) => {
     page,
   });
 
-  const createMutation = useCreateCourseOffering();
-  const updateMutation = useUpdateCourseOffering();
   const deleteMutation = useDeleteCourseOffering();
 
-  // Create Handlers
-  const handleCreate = async (formData: CourseOfferingInsert) => {
-    try {
-      await createMutation.mutateAsync(formData);
-      toast.success("Course offering created successfully.");
-      setCreateDialogOpen(false);
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
-  };
-
-  // Edit & Update Handlers
+  // Edit Handler
   const handleEdit = (offering: CourseOfferingWithDetails) => {
     setSelectedOffering(offering);
-    setUpdateDialogOpen(true);
-  };
-
-  const handleUpdate = async (formData: CourseOfferingUpdate) => {
-    if (!selectedOffering) return;
-
-    try {
-      await updateMutation.mutateAsync({
-        id: selectedOffering.id,
-        payload: formData,
-      });
-      toast.success("Course offering updated successfully.");
-      setUpdateDialogOpen(false);
-      setSelectedOffering(null);
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
+    setEditDialogOpen(true);
   };
 
   // Delete Handler
@@ -181,24 +144,22 @@ export const CourseOfferingsTab = ({ classId }: CourseOfferingsTabProps) => {
       </CardContent>
 
       {/* Creation Modal */}
-      <OfferingDialog
+      <OfferingCreateDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         classId={classId}
-        onSubmit={handleCreate}
-        isLoading={createMutation.isPending}
+        programId={programId}
       />
 
-      {/* Update Modal */}
-      <UpdateOfferingDialog
-        open={updateDialogOpen}
+      {/* Edit Modal */}
+      <OfferingEditDialog
+        open={editDialogOpen}
         onOpenChange={(open) => {
-          setUpdateDialogOpen(open);
+          setEditDialogOpen(open);
           if (!open) setSelectedOffering(null);
         }}
         offering={selectedOffering}
-        onSubmit={handleUpdate}
-        isLoading={updateMutation.isPending}
+        programId={programId}
       />
     </Card>
   );
