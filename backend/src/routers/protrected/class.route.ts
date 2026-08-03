@@ -3,6 +3,7 @@ import ClassController from "@/controllers/class.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import CourseOfferingRouter from "./offerings.route.js";
+import ClassStudentRouter from "./class-student.route.js";
 
 const ClassRouter: IRouter = Router({ mergeParams: true });
 
@@ -25,6 +26,11 @@ ClassRouter.get(
   "/:id/course-offerings",
   requirePermission(PERMISSIONS.COURSE_OFFERING_READ),
   CourseOfferingRouter,
+);
+ClassRouter.get(
+  "/:id/students",
+  requirePermission(PERMISSIONS.CLASS_STUDENT_READ),
+  ClassStudentRouter,
 );
 
 export default ClassRouter;
