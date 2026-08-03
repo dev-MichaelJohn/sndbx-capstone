@@ -34,7 +34,7 @@ import toast from "react-hot-toast";
 export const UsersPage = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<SystemRole | "ALL">("ALL");
+  const [roleFilter, setRoleFilter] = useState<Exclude<SystemRole, "SYS_ADMIN"> | "ALL">("ALL");
 
   // Dialog state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -70,6 +70,9 @@ export const UsersPage = () => {
     onDelete: (user) => setDeletingUser(user),
   });
 
+  // Hide super-admin accounts from the list view
+  const users = (usersResponse?.data ?? []).filter((user) => !user.roles.includes("SYS_ADMIN"));
+
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
@@ -101,7 +104,7 @@ export const UsersPage = () => {
               <Select
                 value={roleFilter}
                 onValueChange={(val) => {
-                  setRoleFilter(val as SystemRole | "ALL");
+                  setRoleFilter(val as Exclude<SystemRole, "SYS_ADMIN"> | "ALL");
                   setPage(1);
                 }}
               >
@@ -124,9 +127,6 @@ export const UsersPage = () => {
                   <SelectItem value="ADMIN" className="text-xs">
                     Admin
                   </SelectItem>
-                  <SelectItem value="SYS_ADMIN" className="text-xs">
-                    System Admin
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -143,7 +143,7 @@ export const UsersPage = () => {
           <CardContent className="p-0">
             <DataTable
               columns={columns}
-              data={usersResponse?.data ?? []}
+              data={users}
               getRowId={(row) => row.id}
               isLoading={isUsersPending}
               isError={isUsersError}
