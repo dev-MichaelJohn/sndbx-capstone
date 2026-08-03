@@ -1,4 +1,4 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { DataTableColumn } from "@/components/main-data-table";
 import type { ClassStudentWithDetails } from "backend/types/class-student.type";
 import { Button } from "@/components/ui/button";
 import { UserMinus } from "lucide-react";
@@ -8,60 +8,48 @@ interface GetClassStudentColumnsProps {
   isDropping: boolean;
 }
 
-export function getClassStudentColumns({
+export const getClassStudentColumns = ({
   onDrop,
   isDropping,
-}: GetClassStudentColumnsProps): ColumnDef<ClassStudentWithDetails>[] {
-  return [
-    {
-      accessorKey: "institutional_id",
-      header: "Institutional ID",
-      cell: ({ row }) => (
-        <span className="font-mono text-xs font-medium">
-          {row.original.institutional_id || "N/A"}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "student_name",
-      header: "Student Name",
-      cell: ({ row }) => (
-        <span className="font-medium text-xs text-foreground">{row.original.student_name}</span>
-      ),
-    },
-    {
-      accessorKey: "program_name",
-      header: "Program",
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">{row.original.program_name}</span>
-      ),
-    },
-    {
-      id: "class_info",
-      header: "Yr / Section",
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">
-          Year {row.original.year_level} — {row.original.section}
-        </span>
-      ),
-    },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-            disabled={isDropping}
-            onClick={() => onDrop(row.original.id, row.original.student_name)}
-          >
-            <UserMinus className="mr-1 size-3.5" />
-            Drop
-          </Button>
-        </div>
-      ),
-    },
-  ];
-}
+}: GetClassStudentColumnsProps): DataTableColumn<ClassStudentWithDetails>[] => [
+  {
+    header: "Institutional ID",
+    cell: (student) => (
+      <span className="font-mono text-xs font-semibold">{student.institutional_id ?? "N/A"}</span>
+    ),
+  },
+  {
+    header: "Student Name",
+    cell: (student) => <span className="font-medium">{student.student_name}</span>,
+  },
+  {
+    header: "Program",
+    cell: (student) => <span className="text-muted-foreground">{student.program_name}</span>,
+  },
+  {
+    header: "Year & Section",
+    cell: (student) => (
+      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold">
+        Year {student.year_level} - {student.section}
+      </span>
+    ),
+  },
+  {
+    header: "Actions",
+    className: "text-right",
+    cell: (student) => (
+      <div className="text-right">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+          disabled={isDropping}
+          onClick={() => onDrop(student.id, student.student_name)}
+        >
+          <UserMinus className="mr-1.5 size-4" />
+          Drop
+        </Button>
+      </div>
+    ),
+  },
+];

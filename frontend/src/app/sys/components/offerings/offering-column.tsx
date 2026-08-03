@@ -1,72 +1,71 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Edit, MoreHorizontal, Trash } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-interface GetCourseOfferingColumnsProps {
+export interface DataTableColumn<T> {
+  header: string;
+  cell: (row: T) => ReactNode;
+  className?: string;
+}
+
+export interface GetCourseOfferingColumnsProps {
   onEdit: (offering: CourseOfferingWithDetails) => void;
-  onDelete: (id: number, courseName: string) => void;
-  isDeleting: boolean;
+  onDelete: (offering: CourseOfferingWithDetails) => void;
+  isDeleting?: boolean;
 }
 
 export const getCourseOfferingColumns = ({
   onEdit,
   onDelete,
   isDeleting,
-}: GetCourseOfferingColumnsProps): ColumnDef<CourseOfferingWithDetails>[] => [
+}: GetCourseOfferingColumnsProps): DataTableColumn<CourseOfferingWithDetails>[] => [
   {
-    accessorKey: "course_initialism",
-    header: "Code",
-    cell: ({ row }) => (
-      <span className="font-mono text-xs font-semibold">{row.original.course_initialism}</span>
-    ),
-  },
-  {
-    accessorKey: "course_name",
     header: "Course Name",
-    cell: ({ row }) => <span className="font-medium">{row.original.course_name}</span>,
+    cell: (row) => <span>{row.course_name}</span>,
   },
   {
-    accessorKey: "year_level",
-    header: "Year / Term",
-    cell: ({ row }) => (
-      <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold">
-        Year {row.original.year_level} - {row.original.semester_term}
+    header: "Course Initialism",
+    cell: (row) => <span>{row.course_initialism}</span>,
+  },
+  {
+    header: "Year & Term",
+    cell: (row) => (
+      <span>
+        {row.year_level} - {row.semester_term}
       </span>
     ),
   },
   {
-    accessorKey: "faculty_id",
-    header: "Faculty ID",
-    cell: ({ row }) => (
-      <span className="text-muted-foreground font-mono text-xs">
-        {row.original.faculty_id ? `#${row.original.faculty_id}` : "Unassigned"}
-      </span>
+    header: "Actions",
+    className: "text-right",
+    cell: (row) => (
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer" disabled={isDeleting}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit(row)} className="cursor-pointer">
+              <Edit className="mr-2 h-3.5 w-3.5" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onDelete(row)}
+              className="text-destructive focus:text-destructive cursor-pointer"
+            >
+              <Trash className="mr-2 h-3.5 w-3.5" /> Remove
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     ),
-  },
-  {
-    id: "actions",
-    header: () => <div className="text-right">Actions</div>,
-    cell: ({ row }) => {
-      const item = row.original;
-      return (
-        <div className="flex justify-end items-center gap-1">
-          <Button size="sm" variant="ghost" onClick={() => onEdit(item)}>
-            <Pencil className="mr-1 size-3.5" />
-            Edit
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            disabled={isDeleting}
-            onClick={() => onDelete(item.id, item.course_name)}
-          >
-            <Trash2 className="mr-1 size-3.5" />
-            Delete
-          </Button>
-        </div>
-      );
-    },
   },
 ];

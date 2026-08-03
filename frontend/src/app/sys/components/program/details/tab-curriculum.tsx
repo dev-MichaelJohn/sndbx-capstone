@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useCurriculums, useDeleteCurriculum } from "@/features/sys/curriculum.service";
+import { useCurriculums } from "@/features/sys/curriculum.service";
 import { CurriculumCreateDialog } from "../../curriculum/curriculum-create";
-import { DataTable } from "@/components/data-table";
+import { DataTable } from "@/components/main-data-table";
 import {
   getCurriculumColumns,
   type CurriculumColumnType,
@@ -35,7 +35,12 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
   const [semesterFilter, setSemesterFilter] = useState<string>("ALL");
   const [yearLevelFilter, setYearLevelFilter] = useState<string>("ALL");
 
-  const { data: paginatedData, isLoading } = useCurriculums({
+  const {
+    data: paginatedData,
+    isLoading,
+    isError,
+    error,
+  } = useCurriculums({
     program_id: programId,
     search: search || undefined,
     semester_term: semesterFilter !== "ALL" ? (semesterFilter as any) : undefined,
@@ -43,17 +48,9 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
     page: 1,
   });
 
-  const { mutate: deleteCurriculum, isPending: isDeleting } = useDeleteCurriculum();
-
   const curriculums = (paginatedData?.data ?? []) as CurriculumColumnType[];
 
-  const handleDelete = (id: number, initialism: string) => {
-    if (confirm(`Are you sure you want to remove ${initialism} from the curriculum?`)) {
-      deleteCurriculum(id);
-    }
-  };
-
-  const columns = getCurriculumColumns({ onDelete: handleDelete, isDeleting });
+  const columns = getCurriculumColumns();
 
   return (
     <Card className="overflow-hidden rounded-xl shadow-xs gap-0 pb-0">
@@ -71,7 +68,7 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
           </div>
 
           <Select value={yearLevelFilter} onValueChange={setYearLevelFilter}>
-            <SelectTrigger className="h-8 w-40 rounded-lg text-xs">
+            <SelectTrigger className="h-8 w-40 rounded-lg text-xs cursor-pointer">
               <SelectValue placeholder="All Year Levels" />
             </SelectTrigger>
             <SelectContent>
@@ -85,7 +82,7 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
           </Select>
 
           <Select value={semesterFilter} onValueChange={setSemesterFilter}>
-            <SelectTrigger className="h-8 w-40 rounded-lg text-xs">
+            <SelectTrigger className="h-8 w-40 rounded-lg text-xs cursor-pointer">
               <SelectValue placeholder="All Semesters" />
             </SelectTrigger>
             <SelectContent>
@@ -106,11 +103,7 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
 
       {/* ── Card Content / Year Level Sections ──────────────────────────── */}
       <CardContent className="p-6">
-        {isLoading ? (
-          <div className="p-12 text-center text-sm text-muted-foreground">
-            Loading curriculum records...
-          </div>
-        ) : curriculums.length === 0 ? (
+        {curriculums.length === 0 && !isLoading && !isError ? (
           <div className="p-12 text-center text-sm text-muted-foreground">
             No curriculum entries found for this program.
           </div>
@@ -119,7 +112,7 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
             {YEAR_LEVELS.map(({ key, label }) => {
               const levelData = curriculums.filter((item) => item.year_level === key);
 
-              if (levelData.length === 0) return null;
+              if (levelData.length === 0 && !isLoading) return null;
 
               return (
                 <div key={key} className="overflow-hidden rounded-xl border bg-card shadow-xs">
@@ -132,7 +125,15 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
                     </span>
                   </div>
                   <div className="p-0">
-                    <DataTable columns={columns} data={levelData} />
+                    <DataTable
+                      columns={columns}
+                      data={levelData}
+                      getRowId={(row) => row.id}
+                      isLoading={isLoading}
+                      isError={isError}
+                      error={error}
+                      emptyMessage="No courses assigned for this year level."
+                    />
                   </div>
                 </div>
               );

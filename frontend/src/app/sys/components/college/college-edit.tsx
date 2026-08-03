@@ -4,10 +4,10 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -81,7 +81,9 @@ export const CollegeEditDialog = ({
 
   const form = useForm({
     defaultValues: defaultFormData,
-    validators: { onSubmit: UpdateCollegeRecord },
+    validators: {
+      onSubmit: UpdateCollegeRecord,
+    },
     onSubmit: ({ value }) => handleFormSubmit({ value }),
   });
 
@@ -102,11 +104,9 @@ export const CollegeEditDialog = ({
     mutationFn: mutateAsync,
     loadingText: "Saving college changes...",
     successText: "Changes saved successfully.",
-    onReset: () => dean.reset(),
+    onReset: () => dean.reset(defaultSelectedDean),
   });
 
-  // Human-readable summary of the dean-assignment consequence, shown in the
-  // confirmation dialog so reassigning a dean isn't a one-click surprise.
   const deanChangeSummary = (() => {
     if (!pendingValue?.dean) {
       return "This college will be left without an assigned dean.";
@@ -199,8 +199,17 @@ export const CollegeEditDialog = ({
 
                     if (v === "no-dean") {
                       form.setFieldValue("dean", undefined);
+                      dean.setSelected(null);
                     } else if (v === "existing") {
-                      form.setFieldValue("dean", { type: "existing", id: 0 });
+                      const existingId = dean.selected?.account_id ?? defaultData.account_id;
+                      if (existingId) {
+                        form.setFieldValue("dean", { type: "existing", id: Number(existingId) });
+                        if (!dean.selected && defaultSelectedDean) {
+                          dean.setSelected(defaultSelectedDean);
+                        }
+                      } else {
+                        form.setFieldValue("dean", { type: "existing", id: 0 });
+                      }
                     } else {
                       form.setFieldValue("dean", {
                         type: "new",
@@ -215,8 +224,8 @@ export const CollegeEditDialog = ({
                           },
                         },
                       });
+                      dean.setSelected(null);
                     }
-                    dean.reset(v === "existing" ? dean.selected : null);
                   }}
                   className="w-full"
                 >
@@ -228,23 +237,48 @@ export const CollegeEditDialog = ({
                   </TabsList>
 
                   <TabsContent value="existing" className="space-y-2">
-                    <ExistingDeanSearch
-                      search={dean.search}
-                      onSearchChange={dean.setSearch}
-                      candidates={dean.candidates}
-                      isSearching={dean.isSearching}
-                      selected={dean.selected}
-                      onSelect={(candidate) => {
-                        form.setFieldValue("dean", {
-                          type: "existing",
-                          id: candidate.account_id,
-                        });
-                        dean.setSelected(candidate);
+                    <form.Field
+                      name="dean"
+                      validators={{
+                        onChange: ({ value }) => {
+                          if (value?.type === "existing" && (!value.id || value.id <= 0)) {
+                            return "Please select a faculty member.";
+                          }
+                          return undefined;
+                        },
                       }}
-                      onClear={() => {
-                        dean.setSelected(null);
-                        form.setFieldValue("dean", { type: "existing", id: 0 });
-                      }}
+                      children={(field) => (
+                        <div>
+                          <ExistingDeanSearch
+                            search={dean.search}
+                            onSearchChange={dean.setSearch}
+                            candidates={dean.candidates}
+                            isSearching={dean.isSearching}
+                            selected={dean.selected}
+                            onSelect={(candidate) => {
+                              const rawId = candidate.account_id ?? (candidate as any).id;
+                              const parsedId = Number(rawId);
+
+                              if (!parsedId || parsedId <= 0) return;
+
+                              dean.setSelected(candidate);
+                              form.setFieldValue("dean", {
+                                type: "existing",
+                                id: parsedId,
+                              });
+                            }}
+                            onClear={() => {
+                              dean.setSelected(null);
+                              form.setFieldValue("dean", { type: "existing", id: 0 });
+                            }}
+                          />
+                          {field.state.meta.errors.length > 0 && (
+                            <p className="mt-1 text-xs text-destructive">
+                              {field.state.meta.errors.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     />
                   </TabsContent>
 
@@ -328,28 +362,21 @@ export const CollegeEditDialog = ({
               Discard changes
             </Button>
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting, state.errors] as const}
-              children={([canSubmit, errors]) => {
-                console.log("canSubmit:", canSubmit, "errors:", errors);
-                return (
-                  <Button
-                    type="button"
-                    disabled={!canSubmit || isPending}
-                    onClick={() => {
-                      console.log("Save clicked");
-                      form.handleSubmit();
-                    }}
-                  >
-                    {isPending ? "Saving..." : "Save changes"}
-                  </Button>
-                );
-              }}
+              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Saving..." : "Save changes"}
+                </Button>
+              )}
             />
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Save confirmation — the deliberate friction point before mutation */}
       <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -365,7 +392,6 @@ export const CollegeEditDialog = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Discard confirmation — only triggered when the form is actually dirty */}
       <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

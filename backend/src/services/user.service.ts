@@ -63,14 +63,13 @@ export interface IUserService {
 }
 
 /**
- * Handles user account CRUD, spanning the PersonalDetails, Accounts,
- * and AccountRoles tables. All multi-step operations run as single
- * atomic transactions.
+ * Handles user account CRUD, spanning PersonalDetails, Accounts,
+ * and AccountRoles tables. All multi-step operations run as single atomic transactions.
  */
 class userService implements IUserService {
   constructor(private emailService: IEmailService = EmailService) {}
 
-  // ─── Private helpers ────────────────────────────────────────────────────────
+  // ─── Private helpers: Security & Formatting ──────────────────────────────────
 
   private async accountHasRole(accountId: number, role: SystemRole, tx?: PgTransaction) {
     const accountRecords = await GetRecords<"Accounts", AccountRecordWithRole>("Accounts", {
@@ -130,10 +129,6 @@ class userService implements IUserService {
     return passwordArray.join("");
   }
 
-  /**
-   * Computes the list of changed fields between old and new values,
-   * for use in the update notification email.
-   */
   private buildChangedFields(
     oldValues: Record<string, string | null | undefined>,
     newValues: Record<string, string | null | undefined>,
@@ -148,13 +143,88 @@ class userService implements IUserService {
       }));
   }
 
-  // ─── Public methods ──────────────────────────────────────────────────────────
+  // ─── Private helpers: Deletion Guard Rules ────────────────────────────────────
 
   /**
-   * Returns a paginated, searchable list of user accounts, each joined with
-   * personal details and their current roles. Searchable by name or
-   * institutional ID; filterable by system role.
+   * Assesses active assignments across domain entities and throws an error if deletion is blocked.
    */
+  private async validateAndDeleteRoleDependencies(
+    accountId: number,
+    roles: SystemRole[],
+    tx: PgTransaction,
+  ) {
+    // 1. FACULTY Blocking Check
+    if (roles.includes("FACULTY")) {
+      const activeOfferings = await GetRecords("CourseOfferings", {
+        where: (CourseOfferings) =>
+          and(eq(CourseOfferings.faculty_id, accountId), isNull(CourseOfferings.deleted_at)),
+        tx,
+      });
+      if (activeOfferings.length > 0) {
+        throw new AppError(
+          400,
+          "Cannot delete user account: active course offerings are linked to this faculty member.",
+        );
+      }
+    }
+
+    // 2. SUPERVISOR Blocking Check
+    if (roles.includes("SUPERVISOR")) {
+      const activeProgramChairs = await GetRecords("ProgramChairs", {
+        where: (ProgramChairs) =>
+          and(eq(ProgramChairs.chair_id, accountId), isNull(ProgramChairs.deleted_at)),
+        tx,
+      });
+      if (activeProgramChairs.length > 0) {
+        throw new AppError(
+          400,
+          "Cannot delete user account: active program chair roles are linked to this supervisor.",
+        );
+      }
+
+      const activeCollegeDeans = await GetRecords("CollegeDeans", {
+        where: (CollegeDeans) =>
+          and(eq(CollegeDeans.dean_id, accountId), isNull(CollegeDeans.deleted_at)),
+        tx,
+      });
+      if (activeCollegeDeans.length > 0) {
+        throw new AppError(
+          400,
+          "Cannot delete user account: active college dean roles are linked to this supervisor.",
+        );
+      }
+    }
+
+    // 3. STUDENT Blocking Check
+    if (roles.includes("STUDENT")) {
+      const activeClassStudents = await GetRecords("ClassStudents", {
+        where: (ClassStudents) =>
+          and(eq(ClassStudents.student_account_id, accountId), isNull(ClassStudents.deleted_at)),
+        tx,
+      });
+      if (activeClassStudents.length > 0) {
+        throw new AppError(
+          400,
+          "Cannot delete user account: student is linked to active class rosters.",
+        );
+      }
+
+      const activeStudentClasses = await GetRecords("StudentClasses", {
+        where: (StudentClasses) =>
+          and(eq(StudentClasses.student_account_id, accountId), isNull(StudentClasses.deleted_at)),
+        tx,
+      });
+      if (activeStudentClasses.length > 0) {
+        throw new AppError(
+          400,
+          "Cannot delete user account: student has active class enrollments.",
+        );
+      }
+    }
+  }
+
+  // ─── Public methods ──────────────────────────────────────────────────────────
+
   async getUsers(searchQuery: UserSearchType): Promise<PaginatedData<UserWithDetails[]>> {
     searchQuery.orderBy = searchQuery.orderBy ?? "id";
     searchQuery.orderDir = searchQuery.orderDir ?? "asc";
@@ -177,8 +247,6 @@ class userService implements IUserService {
         )
       : undefined;
 
-    // Pull all matching rows — one row per role since AccountRoles is 1:many.
-    // We collapse roles in-application after the query.
     const rows = await GetRecords<
       "Accounts",
       Omit<AccountSelect, "password"> & {
@@ -230,7 +298,6 @@ class userService implements IUserService {
 
     const totalItems = rows[0]?.totalItems ?? 0;
 
-    // Collapse multiple role rows per account into a single record with roles[]
     const accountMap = new Map<number, UserWithDetails>();
     for (const row of rows) {
       const { system_role, totalItems, ...rest } = row;
@@ -252,9 +319,6 @@ class userService implements IUserService {
     });
   }
 
-  /**
-   * Returns a single user by id + email, with personal details and roles.
-   */
   async getUser(credentials: Pick<AccountSelect, "id" | "email">) {
     const validation = await AccountSchema.select
       .pick({ id: true, email: true })
@@ -297,12 +361,6 @@ class userService implements IUserService {
     return { user, personalDetails, roles };
   }
 
-  /**
-   * Creates a new user account: inserts personal details, hashes the
-   * password and creates the account record, then maps the account to the
-   * given system role. All steps run in a single transaction.
-   * Sends a welcome email with credentials if the password was auto-generated.
-   */
   async createUser({
     credentials,
     personalDetails,
@@ -403,12 +461,6 @@ class userService implements IUserService {
     return result;
   }
 
-  /**
-   * Same steps as {@link createUser} but runs within a caller-owned transaction.
-   * Used when user creation is one step of a larger atomic operation
-   * (e.g. creating a college along with a brand-new dean account).
-   * Does NOT send a welcome email — the caller is responsible for that if needed.
-   */
   async createUserRecordViaExistingTx(
     { credentials, personalDetails, role }: CreateUserReqType,
     tx: PgTransaction,
@@ -475,20 +527,6 @@ class userService implements IUserService {
     };
   }
 
-  /**
-   * Admin-driven update of a user's credentials (email) and/or personal
-   * details (name fields, institutional ID). Password and role changes are
-   * excluded — those go through OTP or internal flows.
-   *
-   * If email changes, sends an update notification to both the old and new
-   * address. Otherwise sends to the current email only.
-   *
-   * @param id - the account id to update
-   * @param data - the fields to update (credentials and/or personalDetails)
-   * @throws {AppError} 400 if no update fields were provided
-   * @throws {AppError} 404 if the account or personal details record is not found
-   * @throws {AppError} 500 if either update fails
-   */
   async updateUser(id: number, data: UpdateUserReqType): Promise<UserType> {
     const idValidation = await z.coerce.number().int().positive().safeParseAsync(id);
     if (!idValidation.success) throw idValidation.error;
@@ -555,7 +593,6 @@ class userService implements IUserService {
 
     const { updatedAccount, updatedDetails, existingAccount, existingDetails } = result;
 
-    // Build changed fields for the notification email
     const credentialLabelMap: Record<string, string> = { email: "Email" };
     const detailsLabelMap: Record<string, string> = {
       institutional_id: "Institutional ID",
@@ -608,13 +645,11 @@ class userService implements IUserService {
       };
 
       try {
-        // Always notify the current (new) email
         await this.emailService.sendEmail({
           to: updatedAccount.email,
           options: emailOptions,
         });
 
-        // If email changed, also notify the old address
         const emailChanged = existingAccount.email !== updatedAccount.email;
         if (emailChanged) {
           await this.emailService.sendEmail({
@@ -633,7 +668,6 @@ class userService implements IUserService {
       }
     }
 
-    // Fetch fresh roles and return the full UserType shape
     const roleRecords = await GetRecords<"AccountRoles", Pick<RoleSelect, "system_role">>(
       "AccountRoles",
       {
@@ -655,12 +689,8 @@ class userService implements IUserService {
   }
 
   /**
-   * Soft-deletes a user account, cascading to PersonalDetails and all
-   * AccountRoles rows. All steps run in a single transaction.
-   *
-   * @param id - the account id to delete
-   * @throws {AppError} 404 if the account or personal details record is not found
-   * @throws {AppError} 500 if any soft-delete step fails
+   * Soft-deletes a user account, cascading to PersonalDetails and all AccountRoles rows.
+   * Performs dependency safety checks before performing soft-deletion.
    */
   async deleteUser(id: number): Promise<void> {
     const validation = await z.coerce.number().int().positive().safeParseAsync(id);
@@ -685,13 +715,30 @@ class userService implements IUserService {
       });
       if (!existingDetails) throw new AppError(404, "No user details found.");
 
-      // 1. Cascade soft-delete all role assignments
-      const roleRows = await GetRecords<"AccountRoles">("AccountRoles", {
-        where: (AccountRoles) =>
-          and(eq(AccountRoles.account_id, parsedId), isNull(AccountRoles.deleted_at)),
-        tx,
-      });
+      const roleRows = await GetRecords<"AccountRoles", { id: number; system_role: SystemRole }>(
+        "AccountRoles",
+        {
+          select: (AccountRoles) => ({
+            id: AccountRoles.id,
+            system_role: Roles.system_role,
+          }),
+          where: (AccountRoles) =>
+            and(eq(AccountRoles.account_id, parsedId), isNull(AccountRoles.deleted_at)),
+          join: (query) =>
+            query.innerJoin(
+              Roles,
+              and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at)),
+            ),
+          tx,
+        },
+      );
 
+      const roles = roleRows.map((r) => r.system_role);
+
+      // Validate blockers across domain entities
+      await this.validateAndDeleteRoleDependencies(parsedId, roles, tx);
+
+      // 1. Cascade soft-delete all role assignments
       for (const roleRow of roleRows) {
         const deleted = await SoftDeleteRecord<"AccountRoles">(
           "AccountRoles",
@@ -725,10 +772,6 @@ class userService implements IUserService {
     });
   }
 
-  /**
-   * Grants a system role to an account, if it doesn't already have it.
-   * No-ops if the account already holds the given role.
-   */
   async grantRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
     if (!(await this.accountHasRole(accountId, role, tx))) {
       const systemRole = await GetRecord("Roles", {
@@ -746,10 +789,6 @@ class userService implements IUserService {
     }
   }
 
-  /**
-   * Revokes a system role from an account, if it currently has it.
-   * No-ops if the account doesn't hold the given role.
-   */
   async revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
     if (await this.accountHasRole(accountId, role, tx)) {
       const revokedRole = await SoftDeleteRecord(

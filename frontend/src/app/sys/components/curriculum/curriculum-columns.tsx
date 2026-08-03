@@ -1,13 +1,13 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { DataTableColumn } from "@/components/main-data-table";
 import { CurriculumEditDialog } from "./curriculum-edit";
+import { CurriculumDeleteDialog } from "./curriculum-delete";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
 export type CurriculumColumnType = {
   id: number;
@@ -22,73 +22,52 @@ export type CurriculumColumnType = {
   initialism: string;
 };
 
-interface GetCurriculumColumnsProps {
-  onDelete: (id: number, initialism: string) => void;
-  isDeleting: boolean;
-}
-
-export const getCurriculumColumns = ({
-  onDelete,
-  isDeleting,
-}: GetCurriculumColumnsProps): ColumnDef<CurriculumColumnType>[] => [
+export const getCurriculumColumns = (): DataTableColumn<CurriculumColumnType>[] => [
   {
-    accessorKey: "initialism",
     header: "Code",
-    cell: ({ row }) => (
+    cell: (item) => (
       <div className="w-24">
         <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold">
-          {row.original.initialism}
+          {item.initialism}
         </span>
       </div>
     ),
   },
   {
-    accessorKey: "name",
     header: "Course Name",
-    cell: ({ row }) => (
+    cell: (item) => (
       <div className="w-48">
-        <span className="text-muted-foreground">{row.original.name}</span>
+        <span className="text-muted-foreground">{item.name}</span>
       </div>
     ),
   },
   {
-    accessorKey: "semester_term",
     header: "Semester",
-    cell: ({ row }) => (
+    cell: (item) => (
       <div className="w-24">
         <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-xs font-medium">
-          {row.original.semester_term} Semester
+          {item.semester_term} Semester
         </span>
       </div>
     ),
   },
   {
-    id: "actions",
-    header: () => <div className="text-right">Actions</div>,
-    cell: ({ row }) => {
-      const item = row.original;
-      return (
-        <div className="text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36">
-              <CurriculumEditDialog curriculum={item} />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive cursor-pointer"
-                disabled={isDeleting}
-                onSelect={() => onDelete(item.id, item.initialism)}
-              >
-                <Trash2 className="mr-2 size-3.5" />
-                <span>Remove</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
-    },
+    header: "Actions",
+    className: "text-right",
+    cell: (item) => (
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="size-8 cursor-pointer">
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36 space-y-0.5">
+            <CurriculumEditDialog curriculum={item} />
+            <CurriculumDeleteDialog curriculum={item} triggerText="Remove" />
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    ),
   },
 ];
