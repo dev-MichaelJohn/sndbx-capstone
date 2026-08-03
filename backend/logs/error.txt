@@ -5248,3 +5248,33 @@ params:
     at Layer.handleRequest (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/layer.js:152:17)
     at next (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:157:13)
     at Route.dispatch (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/router@2.2.0_supports-color@10.2.2/node_modules/router/lib/route.js:117:3)
+[2026-08-03 21:43:51:4351] [ERROR]: Missing required permission(s): account:read - Stack: AppError: Missing required permission(s): account:read
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 21:43:56:4356] [ERROR]: Missing required permission(s): account:read - Stack: AppError: Missing required permission(s): account:read
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 21:43:57:4357] [ERROR]: Missing required permission(s): account:read - Stack: AppError: Missing required permission(s): account:read
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 21:43:59:4359] [ERROR]: Missing required permission(s): account:read - Stack: AppError: Missing required permission(s): account:read
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 21:44:03:443] [ERROR]: Missing required permission(s): account:read - Stack: AppError: Missing required permission(s): account:read
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-03 21:44:37:4437] [ERROR]: Database operation failed. - Stack: DrizzleQueryError: Failed query: select "id", "account_id", "email", "token_hash", "is_revoked", "created_at", "expires_at" from "refresh_tokens" where (("refresh_tokens"."account_id" = $1) and ("refresh_tokens"."email" = $2) and ("refresh_tokens"."is_revoked" = $3) and ("refresh_tokens"."expires_at" > $4)) limit $5
+params: 1,dev.michael.john@gmail.com,false,2026-08-03T13:44:37.742Z,1
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:83:20)
+    at async tokenService.verifyToken (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/token.service.ts:221:26)
+    at async authController.refresh (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:239:20)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/auth.controller.ts:294:28)
+[2026-08-03 21:44:46:4446] [ERROR]: Database operation failed. - Stack: DrizzleQueryError: Failed query: select "id", "personal_details_id", "email", "password", "is_verified", "created_at", "updated_at", "deleted_at" from "accounts" where (("accounts"."email" = $1) and (("accounts"."deleted_at" is null))) limit $2
+params: dev.michael.john@gmail.com,1
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GetRecord (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:83:20)
+    at async authService.authenticateUserCredentials (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/auth.service.ts:57:18)
+    at async Strategy._verify (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/utils/auth.util.ts:31:22)

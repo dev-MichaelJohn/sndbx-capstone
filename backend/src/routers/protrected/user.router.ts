@@ -15,4 +15,16 @@ UserRouter.post(
   },
 );
 
+UserRouter.get("/", requirePermission(PERMISSIONS.ACCOUNT_READ), async (req, res, next) => {
+  await UserController.getUsers(req, res, next);
+});
+
+UserRouter.route("/:id")
+  .put(requirePermission(PERMISSIONS.ACCOUNT_UPDATE), async (req, res, next) => {
+    await UserController.updateUser(req, res, next);
+  })
+  .delete(requirePermission(PERMISSIONS.ACCOUNT_DELETE), async (req, res, next) => {
+    await UserController.deleteUser(req, res, next);
+  });
+
 export default UserRouter;
