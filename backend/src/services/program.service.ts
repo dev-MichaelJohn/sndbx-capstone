@@ -83,7 +83,7 @@ class programService implements IProgramService {
     if (!info) return true;
 
     if (info.type === "existing") return info.id === existingChair.account_id;
-    else return (info.details.personalDetails.institutional_id = existingChair.institutional_id);
+    else return info.details.personalDetails.institutional_id === existingChair.institutional_id;
   }
 
   private async validateChairCandidate(accountId: number, tx?: PgTransaction) {
@@ -110,7 +110,7 @@ class programService implements IProgramService {
     let account_id: number;
 
     if (info.type === "existing") {
-      await this.validateChairCandidate(info.id);
+      await this.validateChairCandidate(info.id, tx);
       account_id = info.id;
     } else {
       const { credentials, personalDetails } = info.details;
@@ -313,7 +313,7 @@ class programService implements IProgramService {
 
   async createProgramChairRecord(chair: ProgramChairInsert, tx?: PgTransaction) {
     const validation = await ProgramChairSchema.insert.safeParseAsync(chair);
-    if (!validation.success) throw validation.success;
+    if (!validation.success) throw validation.error;
 
     const parsed = validation.data;
 
@@ -342,7 +342,7 @@ class programService implements IProgramService {
       });
       if (!collegeExists) throw new AppError(400, "Invalid College ID.");
 
-      const programRecord = await CreateRecord("Programs", program);
+      const programRecord = await CreateRecord("Programs", program, tx);
       if (!programRecord) throw new AppError(500, "Failed to create program record.");
 
       let programChairRecord: ProgramChairSelect | undefined = undefined;
@@ -408,19 +408,19 @@ class programService implements IProgramService {
             !(await this.hasCollegeHandled(existingProgram.account_id, tx))
           ) {
             await this.userService.revokeRole(existingProgram.account_id, "SUPERVISOR", tx);
-
-            const deleteProgramChairRecord = await SoftDeleteRecord<"ProgramChairs">(
-              "ProgramChairs",
-              existingProgram.account_id,
-              ProgramChairs.chair_id,
-              tx,
-            );
-            if (!deleteProgramChairRecord)
-              throw new AppError(
-                500,
-                "Failed to remove old program chair record. Changes during this process were rolled back.",
-              );
           }
+
+          const deleteProgramChairRecord = await SoftDeleteRecord<"ProgramChairs">(
+            "ProgramChairs",
+            existingProgram.account_id,
+            ProgramChairs.chair_id,
+            tx,
+          );
+          if (!deleteProgramChairRecord)
+            throw new AppError(
+              500,
+              "Failed to remove old program chair record. Changes during this process were rolled back.",
+            );
         }
 
         programChairRecord = await this.grantRoleAndCreateProgramChair(
