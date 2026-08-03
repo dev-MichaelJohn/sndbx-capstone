@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 export const getPrograms = async (search?: string) => {
   try {
     const response = await apiClient<APIResponse<PaginatedData<ProgramWithChairType[]>>>(
-      `/sys/programs?search=${search || ""}`,
+      `/protected/programs?search=${search || ""}`,
     );
     return response.data.data;
   } catch (error) {
@@ -23,7 +23,7 @@ export const getPrograms = async (search?: string) => {
 export const getProgramsViaCollegeID = async (collegeId: number, search?: string) => {
   try {
     const response = await apiClient<APIResponse<PaginatedData<ProgramWithChairType[]>>>(
-      `/sys/colleges/${collegeId}/programs?search=${search || ""}`,
+      `/protected/colleges/${collegeId}/programs?search=${search || ""}`,
     );
     return response.data.data;
   } catch (error) {
@@ -34,7 +34,7 @@ export const getProgramsViaCollegeID = async (collegeId: number, search?: string
 const getProgramById = async (programId: number) => {
   try {
     const response = await apiClient<APIResponse<ProgramWithChairType>>(
-      `/sys/programs/${programId}`,
+      `/protected/programs/${programId}`,
     );
     return response.data.data;
   } catch (error) {
@@ -52,10 +52,13 @@ export const useProgram = (programId: number) => {
 
 const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
   try {
-    const response = await apiClient.post<APIResponse<ProgramWithChairType>>("/sys/programs/", {
-      program,
-      chair,
-    });
+    const response = await apiClient.post<APIResponse<ProgramWithChairType>>(
+      "/protected/programs/",
+      {
+        program,
+        chair,
+      },
+    );
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
@@ -76,7 +79,7 @@ export const useCreateProgram = () => {
 const updateProgramRecord = async ({ program_id, program, chair }: UpdateProgramType) => {
   try {
     const response = await apiClient.put<APIResponse<ProgramWithChairType>>(
-      `/sys/programs/${program_id}`,
+      `/protected/programs/${program_id}`,
       {
         program,
         chair,
@@ -101,7 +104,7 @@ export const useUpdateProgram = () => {
 
 const deleteProgramRecord = async (programId: number) => {
   try {
-    const response = await apiClient.delete<APIResponse>(`/sys/programs/${programId}`, {});
+    const response = await apiClient.delete<APIResponse>(`/protected/programs/${programId}`, {});
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to delete program record."), { cause: error });
@@ -122,7 +125,7 @@ export const useDeleteProgram = () => {
 export const searchChairCandidates = async (search?: string) => {
   try {
     const response = await apiClient<APIResponse<ChairCandidateType[]>>(
-      `/sys/programs/available-chairs?search=${search || ""}`,
+      `/protected/programs/available-chairs?search=${search || ""}`,
     );
     return response.data.data;
   } catch (error) {

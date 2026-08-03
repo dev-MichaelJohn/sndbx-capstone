@@ -16,7 +16,9 @@ export type Section = "A" | "B" | "C" | "D" | "E" | "F";
 
 export const getClasses = async (params: ClassSearch) => {
   try {
-    const url = params.program_id ? `/sys/programs/${params.program_id}/classes` : `/sys/classes`;
+    const url = params.program_id
+      ? `/protected/programs/${params.program_id}/classes`
+      : `/protected/classes`;
 
     const response = await apiClient<APIResponse<PaginatedData<ClassSelect[]>>>(url, {
       params,
@@ -29,7 +31,7 @@ export const getClasses = async (params: ClassSearch) => {
 
 const getClassById = async (classId: number) => {
   try {
-    const response = await apiClient<APIResponse<ClassSelect>>(`/sys/classes/${classId}`);
+    const response = await apiClient<APIResponse<ClassSelect>>(`/protected/classes/${classId}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch class details."), { cause: error });
@@ -38,7 +40,7 @@ const getClassById = async (classId: number) => {
 
 const createClassRecord = async (data: ClassInsert) => {
   try {
-    const url = `/sys/programs/${data.program_id}/classes`;
+    const url = `/protected/programs/${data.program_id}/classes`;
     const response = await apiClient.post<APIResponse<ClassSelect>>(url, data);
     return response.data.data;
   } catch (error) {
@@ -49,7 +51,7 @@ const createClassRecord = async (data: ClassInsert) => {
 const updateClassRecord = async ({ id: class_id, ...data }: ClassUpdate) => {
   try {
     const response = await apiClient.patch<APIResponse<ClassSelect>>(
-      `/sys/classes/${class_id}`,
+      `/protected/classes/${class_id}`,
       data,
     );
     return response.data.data;
@@ -60,7 +62,7 @@ const updateClassRecord = async ({ id: class_id, ...data }: ClassUpdate) => {
 
 const deleteClassRecord = async (classId: number) => {
   try {
-    const response = await apiClient.delete<APIResponse<null>>(`/sys/classes/${classId}`);
+    const response = await apiClient.delete<APIResponse<null>>(`/protected/classes/${classId}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to delete class record."), { cause: error });

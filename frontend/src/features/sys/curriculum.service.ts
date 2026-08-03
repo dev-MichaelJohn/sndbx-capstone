@@ -12,7 +12,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 export const getCurriculums = async (params: CurriculumSearch) => {
   try {
     const { program_id, ...queryParams } = params;
-    const endpoint = program_id ? `/sys/programs/${program_id}/curriculum` : "/sys/curriculum";
+    const endpoint = program_id
+      ? `/protected/programs/${program_id}/curriculum`
+      : "/sys/curriculum";
 
     const response = await apiClient.get<APIResponse<PaginatedData<CurriculumWithDetails[]>>>(
       endpoint,
@@ -50,7 +52,7 @@ export const useCurriculums = (
 export const getCurriculum = async (id: number) => {
   try {
     const response = await apiClient.get<APIResponse<CurriculumWithDetails>>(
-      `/sys/curriculum/${id}`,
+      `/protected/curriculum/${id}`,
     );
     return response.data.data;
   } catch (error) {
@@ -72,7 +74,7 @@ export const useCurriculum = (id: number) => {
 const createCurriculumRecord = async (payload: CurriculumInsert) => {
   try {
     const response = await apiClient.post<APIResponse<CurriculumSelect>>(
-      `/sys/programs/${payload.program_id}/curriculum`,
+      `/protected/programs/${payload.program_id}/curriculum`,
       payload,
     );
     return response.data.data;
@@ -101,7 +103,7 @@ const updateCurriculumRecord = async ({
 }: CurriculumUpdate & { curriculum_id: number }) => {
   try {
     const response = await apiClient.put<APIResponse<CurriculumSelect>>(
-      `/sys/curriculum/${curriculum_id}`,
+      `/protected/curriculum/${curriculum_id}`,
       payload,
     );
     return response.data.data;
@@ -126,7 +128,7 @@ export const useUpdateCurriculum = () => {
 // Delete curriculum record
 const deleteCurriculumRecord = async (curriculumId: number) => {
   try {
-    const response = await apiClient.delete<APIResponse>(`/sys/curriculum/${curriculumId}`);
+    const response = await apiClient.delete<APIResponse>(`/protected/curriculum/${curriculumId}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to delete curriculum record."), {

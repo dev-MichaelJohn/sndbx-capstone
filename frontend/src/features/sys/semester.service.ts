@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 export const getSemesters = async (params: SemesterSearch) => {
   try {
     const response = await apiClient.get<APIResponse<PaginatedData<SemesterSelect[]>>>(
-      "/sys/semesters",
+      "/protected/semesters",
       { params },
     );
     return response.data.data;
@@ -31,7 +31,7 @@ export const useSemesters = (params: SemesterSearch) => {
 // Fetch single semester by ID
 export const getSemester = async (id: number) => {
   try {
-    const response = await apiClient.get<APIResponse<SemesterSelect>>(`/sys/semesters/${id}`);
+    const response = await apiClient.get<APIResponse<SemesterSelect>>(`/protected/semesters/${id}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch semester details."), { cause: error });
@@ -49,7 +49,10 @@ export const useSemester = (id: number) => {
 // Create semester record
 const createSemesterRecord = async (payload: SemesterInsert) => {
   try {
-    const response = await apiClient.post<APIResponse<SemesterSelect>>("/sys/semesters", payload);
+    const response = await apiClient.post<APIResponse<SemesterSelect>>(
+      "/protected/semesters",
+      payload,
+    );
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to create semester record."), { cause: error });
@@ -74,7 +77,7 @@ const updateSemesterRecord = async ({
 }: SemesterUpdate & { semester_id: number }) => {
   try {
     const response = await apiClient.patch<APIResponse<SemesterSelect>>(
-      `/sys/semesters/${semester_id}`,
+      `/protected/semesters/${semester_id}`,
       payload,
     );
     return response.data.data;
@@ -97,7 +100,7 @@ export const useUpdateSemester = () => {
 // Delete semester record
 const deleteSemesterRecord = async (semesterId: number) => {
   try {
-    const response = await apiClient.delete<APIResponse>(`/sys/semesters/${semesterId}`);
+    const response = await apiClient.delete<APIResponse>(`/protected/semesters/${semesterId}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to delete semester record."), { cause: error });

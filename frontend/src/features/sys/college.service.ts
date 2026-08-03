@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 export const getColleges = async ({ page, search }: BasicSearchProps) => {
   try {
     const response = await apiClient<APIResponse<PaginatedData<CollegeWithDean[]>>>(
-      `/sys/colleges?page=${page}&search=${search || ""}`,
+      `/protected/colleges?page=${page}&search=${search || ""}`,
     );
     return response.data.data;
   } catch (error) {
@@ -25,7 +25,7 @@ export const getColleges = async ({ page, search }: BasicSearchProps) => {
 export const searchDeanCandidates = async (search?: string) => {
   try {
     const response = await apiClient<APIResponse<DeanCandidate[]>>(
-      `/sys/colleges/available-deans?search=${search || ""}`,
+      `/protected/colleges/available-deans?search=${search || ""}`,
     );
     return response.data.data;
   } catch (error) {
@@ -45,7 +45,7 @@ const updateCollegeRecord = async ({ collegeId, college, dean }: UpdateCollegeRe
   try {
     const response = await apiClient.put<
       APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
-    >(`/sys/colleges/${collegeId}`, {
+    >(`/protected/colleges/${collegeId}`, {
       college,
       dean,
     });
@@ -68,7 +68,7 @@ export const useUpdateCollege = () => {
 
 const deleteCollegeRecord = async (collegeId: number) => {
   try {
-    const response = await apiClient.delete<APIResponse>(`/sys/colleges/${collegeId}`, {});
+    const response = await apiClient.delete<APIResponse>(`/protected/colleges/${collegeId}`, {});
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to delete college record."), { cause: error });
@@ -90,7 +90,7 @@ const createCollegeRecord = async ({ college, dean }: CreateCollegeRecordType) =
   try {
     const response = await apiClient.post<
       APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
-    >("/sys/colleges", { college, dean });
+    >("/protected/colleges", { college, dean });
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to create college record."), { cause: error });

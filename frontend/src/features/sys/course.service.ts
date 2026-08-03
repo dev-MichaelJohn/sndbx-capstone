@@ -13,7 +13,7 @@ export const getCourses = async (params: CourseSearch) => {
   try {
     const { program_id, ...queryParams } = params;
 
-    const endpoint = program_id ? `/sys/programs/${program_id}/courses` : "/sys/courses";
+    const endpoint = program_id ? `/protected/programs/${program_id}/courses` : "/sys/courses";
 
     const response = await apiClient.get<APIResponse<PaginatedData<CourseSelect[]>>>(endpoint, {
       params: queryParams,
@@ -65,7 +65,7 @@ export const useProgramCourseCount = (programId: number) => {
 // Fetch single course by ID
 export const getCourse = async (id: number) => {
   try {
-    const response = await apiClient.get<APIResponse<CourseSelect>>(`/sys/courses/${id}`);
+    const response = await apiClient.get<APIResponse<CourseSelect>>(`/protected/courses/${id}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch course details."), { cause: error });
@@ -83,7 +83,7 @@ export const useCourse = (id: number) => {
 // Create course record
 const createCourseRecord = async (payload: CourseInsert) => {
   try {
-    const response = await apiClient.post<APIResponse<CourseSelect>>("/sys/courses", payload);
+    const response = await apiClient.post<APIResponse<CourseSelect>>("/protected/courses", payload);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to create course record."), { cause: error });
@@ -108,7 +108,7 @@ const updateCourseRecord = async ({
 }: CourseUpdate & { course_id: number }) => {
   try {
     const response = await apiClient.put<APIResponse<CourseSelect>>(
-      `/sys/courses/${course_id}`,
+      `/protected/courses/${course_id}`,
       payload,
     );
     return response.data.data;
@@ -131,7 +131,7 @@ export const useUpdateCourse = () => {
 // Delete course record
 const deleteCourseRecord = async (courseId: number) => {
   try {
-    const response = await apiClient.delete<APIResponse>(`/sys/courses/${courseId}`);
+    const response = await apiClient.delete<APIResponse>(`/protected/courses/${courseId}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to delete course record."), { cause: error });
