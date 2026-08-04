@@ -27,14 +27,18 @@ export const CourseOfferingSearchSchema = createSearchSchema("CourseOfferings").
 
 export type CourseOfferingSearch = z.infer<typeof CourseOfferingSearchSchema>;
 
-// Joined shape for list/detail views — course name/initialism come from
-// CourseCurriculums -> Courses, plus year_level/semester_term from the
-// curriculum entry itself, so the UI never needs a second round trip.
+// Joined shape for list/detail views matching the program/chair detail pattern
 export const CourseOfferingWithDetailsSchema = CourseOfferingSchema.select.extend({
   course_name: z.string(),
   course_initialism: z.string(),
   year_level: z.string(),
   semester_term: z.string(),
+  account_id: z.number().nullable(),
+  institutional_id: z.string().nullable(),
+  first_name: z.string().nullable(),
+  last_name: z.string().nullable(),
+  middle_name: z.string().nullable().optional(),
+  suffix: z.string().nullable().optional(),
 });
 
 export type CourseOfferingWithDetails = z.infer<typeof CourseOfferingWithDetailsSchema>;

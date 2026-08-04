@@ -96,9 +96,6 @@ export const ClassDetailsPage = () => {
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
         <ClassHeader name={className} onBack={handleBack} />
-
-        <ClassMetrics totalOfferings={offeringCount ?? 0} totalStudents={studentCount ?? 0} />
-
         <ClassTabs classId={parsedClassId} />
       </div>
     </div>

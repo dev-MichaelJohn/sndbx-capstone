@@ -11,7 +11,8 @@ import { ProgramTabs } from "./details/details-tabs";
 
 export const ProgramDetailsPage = () => {
   const navigate = useNavigate();
-  const { programId } = useParams<{ collegeId: string; programId: string }>();
+  // Extract collegeId as well so we can route back to its specific program list
+  const { collegeId, programId } = useParams<{ collegeId: string; programId: string }>();
   const parsedProgramId = Number(programId);
 
   // Live data connections
@@ -23,7 +24,9 @@ export const ProgramDetailsPage = () => {
     isError: isProgramError,
   } = useProgram(parsedProgramId);
 
-  const handleBack = () => navigate(-1);
+  const handleBack = () => {
+    navigate(`/sys/institution/${collegeId}/programs`);
+  };
 
   if (!parsedProgramId || isNaN(parsedProgramId)) {
     return <div className="p-6 text-xs text-muted-foreground">Invalid Program Identifier.</div>;
@@ -60,9 +63,8 @@ export const ProgramDetailsPage = () => {
         />
 
         <ProgramMetrics
-          totalCourses={courseCount ?? 0}
-          totalClasses={classCount ?? 0}
-          totalFaculty={18}
+          totalCourses={courseCount.data ?? 0}
+          totalClasses={classCount.data ?? 0}
           totalStudents={380}
         />
 

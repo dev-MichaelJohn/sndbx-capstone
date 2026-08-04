@@ -14,62 +14,54 @@ import {
 import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { useDeleteClass } from "@/features/sys/class.service";
-import { useCourseOfferings } from "@/features/sys/offerings.service";
-import { useClassStudents } from "@/features/sys/class-student.service"; // Corrected service import for class students
+import { useDeleteCourseOffering } from "@/features/sys/offerings.service";
+import { useCourseOfferingStudents } from "@/features/sys/student-class.service";
 
-import type { StudentClassWithDetails } from "backend/types/student-class.type";
+import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 import { cn } from "@/lib/utils";
 
-interface ClassDeleteDialogProps {
-  classItem: StudentClassWithDetails;
+interface CourseOfferingDeleteDialogProps {
+  offering: CourseOfferingWithDetails;
   icon?: LucideIcon;
   triggerText?: string;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   className?: string;
 }
 
-export const ClassDeleteDialog = ({
-  classItem,
+export const CourseOfferingDeleteDialog = ({
+  offering,
   icon: Icon = Trash2,
-  triggerText = "Delete",
+  triggerText = "Remove",
   variant = "ghost",
   className,
-}: ClassDeleteDialogProps) => {
+}: CourseOfferingDeleteDialogProps) => {
   const [open, setOpen] = useState(false);
-  const { mutateAsync, isPending: isDeleting } = useDeleteClass();
+  const { mutateAsync, isPending: isDeleting } = useDeleteCourseOffering();
 
-  // ── Parallel Relation Checks ─────────────────────────────────────────────
-  const {
-    data: offeringsRes,
-    isLoading: isCheckingOfferings,
-    isError: isOfferingsError,
-  } = useCourseOfferings({ class_id: classItem.id, page: 1 });
-
+  // Check for enrolled students tied to this course offering
   const {
     data: studentsRes,
     isLoading: isCheckingStudents,
     isError: isStudentsError,
-  } = useClassStudents({ class_id: classItem.id, page: 1 }, { enabled: open });
+  } = useCourseOfferingStudents(offering.id, { page: 1 }, { enabled: open });
 
-  const offeringsCount = offeringsRes?.pagination?.totalItems ?? offeringsRes?.data?.length ?? 0;
   const studentsCount = studentsRes?.pagination?.totalItems ?? studentsRes?.data?.length ?? 0;
 
-  const isChecking = isCheckingOfferings || isCheckingStudents;
-  const isCheckError = isOfferingsError || isStudentsError;
-  const isBlocked = offeringsCount > 0 || studentsCount > 0;
+  const isChecking = isCheckingStudents;
+  const isCheckError = isStudentsError;
+  const isBlocked = studentsCount > 0;
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (isBlocked || isChecking) return;
 
-    const toastId = toast.loading(`Deleting class ${classItem.name}...`);
+    const toastId = toast.loading(`Deleting course offering...`);
     try {
-      await mutateAsync(classItem.id);
-      toast.success("Class block deleted successfully.", { id: toastId });
+      await mutateAsync(offering.id);
+      toast.success("Course offering deleted successfully.", { id: toastId });
       setOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete class block.", {
+      toast.error(error instanceof Error ? error.message : "Failed to delete course offering.", {
         id: toastId,
       });
     }
@@ -94,19 +86,20 @@ export const ClassDeleteDialog = ({
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {classItem.name}?</AlertDialogTitle>
+          <AlertDialogTitle>Delete Course Offering?</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 pt-1 text-sm text-muted-foreground">
               <p>
-                This action cannot be undone. This will permanently soft-delete class block{" "}
-                <strong>{classItem.name}</strong> from the system.
+                Are you sure you want to remove the course offering for{" "}
+                <strong>{offering.course_name}</strong> ({offering.course_initialism})? This action
+                cannot be undone.
               </p>
 
               {/* Loader while checking database */}
               {isChecking && (
                 <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
                   <Loader2 className="size-4 animate-spin text-primary" />
-                  Checking for active offerings and student enrollments...
+                  Checking for enrolled students in this course offering...
                 </div>
               )}
 
@@ -115,23 +108,14 @@ export const ClassDeleteDialog = ({
                 <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
                   <AlertCircle className="size-4 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="font-semibold">Cannot delete class block</p>
-                    <p className="text-destructive/90 pb-0.5">This class is currently linked to:</p>
-                    <ul className="list-disc pl-4 font-medium space-y-0.5">
-                      {offeringsCount > 0 && (
-                        <li>
-                          <strong>{offeringsCount}</strong> active course offering(s)
-                        </li>
-                      )}
-                      {studentsCount > 0 && (
-                        <li>
-                          <strong>{studentsCount}</strong> enrolled student(s)
-                        </li>
-                      )}
-                    </ul>
-                    <p className="pt-1.5 text-destructive/80">
-                      Please remove all course offerings and unassign enrolled students before
-                      deleting this class block.
+                    <p className="font-semibold">Cannot delete course offering</p>
+                    <p className="text-destructive/90">
+                      There are currently <strong>{studentsCount}</strong> student(s) enrolled in
+                      this offering.
+                    </p>
+                    <p className="pt-1 text-destructive/80">
+                      Please unenroll or drop all students from this course offering before deleting
+                      it.
                     </p>
                   </div>
                 </div>
@@ -140,7 +124,7 @@ export const ClassDeleteDialog = ({
               {/* Error fallback if checking failed */}
               {isCheckError && !isChecking && (
                 <p className="text-xs text-destructive">
-                  Failed to verify linked class records. Please try again or check your network
+                  Failed to verify student enrollments. Please try again or check your network
                   connection.
                 </p>
               )}
@@ -159,7 +143,7 @@ export const ClassDeleteDialog = ({
               disabled={isDeleting || isChecking || isCheckError}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Yes, delete class"}
+              {isDeleting ? "Deleting..." : "Yes, delete offering"}
             </AlertDialogAction>
           )}
         </AlertDialogFooter>

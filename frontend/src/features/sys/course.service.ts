@@ -47,21 +47,15 @@ export const useCourses = (
 
 // Inspects query cache to read current program course count without triggering a re-fetch
 export const useProgramCourseCount = (programId: number) => {
-  const queryClient = useQueryClient();
+  const { data, isLoading } = useCourses(
+    { program_id: programId, page: 1 },
+    { enabled: !!programId },
+  );
 
-  const queryKey = [
-    "getCourses",
-    {
-      page: 1,
-      orderBy: "id",
-      orderDir: "asc",
-      program_id: programId,
-      search: undefined,
-    },
-  ];
-
-  const cachedData = queryClient.getQueryData<PaginatedData<CourseSelect[]>>(queryKey);
-  return cachedData?.data?.length;
+  return {
+    data: data?.pagination?.totalItems ?? 0,
+    isLoading,
+  };
 };
 
 // Fetch single course by ID

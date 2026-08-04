@@ -16,6 +16,7 @@ import { ProgramsPage } from "./sys/pages/ProgramsPage";
 import SemestersPage from "./sys/pages/SemestersPage";
 import { ProgramDetailsPage } from "./sys/components/program/program-details";
 import { ClassDetailsPage } from "./sys/components/class/class-details";
+import { CourseOfferingStudentsPage } from "./sys/components/offerings/details/student-class-page";
 
 const App = () => {
   return (
@@ -37,7 +38,13 @@ const App = () => {
               <Route index element={<ProgramsPage />} />
               <Route path=":programId">
                 <Route index element={<ProgramDetailsPage />} />
-                <Route path="classes/:classId" element={<ClassDetailsPage />}></Route>
+                <Route path="classes/:classId">
+                  <Route index element={<ClassDetailsPage />} />
+                  <Route
+                    path="course-offerings/:id/students"
+                    element={<CourseOfferingStudentsPage />}
+                  />
+                </Route>
               </Route>
             </Route>
           </Route>

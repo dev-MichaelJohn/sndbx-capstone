@@ -15,7 +15,7 @@ export const getCourseOfferingStudents = async (
 ) => {
   try {
     const response = await apiClient.get<APIResponse<PaginatedData<StudentClassWithDetails[]>>>(
-      `/course-offerings/${courseOfferingId}/student-classes`,
+      `/protected/course-offerings/${courseOfferingId}/student-classes`,
       { params },
     );
     return response.data.data;
@@ -53,7 +53,7 @@ export const useCourseOfferingStudents = (
 const enrollIrregularStudentRecord = async (payload: StudentClassInsert) => {
   try {
     const response = await apiClient.post<APIResponse<StudentClassSelect>>(
-      "/student-classes",
+      "/protected/student-classes",
       payload,
     );
     return response.data.data;
@@ -80,7 +80,9 @@ export const useEnrollIrregularStudent = () => {
 // Drop a student from a course offering[cite: 1]
 const dropStudentFromOfferingRecord = async (studentClassId: number) => {
   try {
-    const response = await apiClient.delete<APIResponse>(`/student-classes/${studentClassId}`);
+    const response = await apiClient.delete<APIResponse>(
+      `/protected/student-classes/${studentClassId}`,
+    );
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to drop student from course offering."), {

@@ -163,7 +163,7 @@ class userService implements IUserService {
       if (activeOfferings.length > 0) {
         throw new AppError(
           400,
-          "Cannot delete user account: active course offerings are linked to this faculty member.",
+          "Cannot delete user account: Active course offerings are linked to this faculty member.",
         );
       }
     }
@@ -178,7 +178,7 @@ class userService implements IUserService {
       if (activeProgramChairs.length > 0) {
         throw new AppError(
           400,
-          "Cannot delete user account: active program chair roles are linked to this supervisor.",
+          "Cannot delete user account: Active program chair roles are linked to this supervisor.",
         );
       }
 
@@ -190,7 +190,7 @@ class userService implements IUserService {
       if (activeCollegeDeans.length > 0) {
         throw new AppError(
           400,
-          "Cannot delete user account: active college dean roles are linked to this supervisor.",
+          "Cannot delete user account: Active college dean roles are linked to this supervisor.",
         );
       }
     }
@@ -205,7 +205,7 @@ class userService implements IUserService {
       if (activeClassStudents.length > 0) {
         throw new AppError(
           400,
-          "Cannot delete user account: student is linked to active class rosters.",
+          "Cannot delete user account: Student is linked to active class rosters.",
         );
       }
 
@@ -217,7 +217,7 @@ class userService implements IUserService {
       if (activeStudentClasses.length > 0) {
         throw new AppError(
           400,
-          "Cannot delete user account: student has active class enrollments.",
+          "Cannot delete user account: Student has active class enrollments.",
         );
       }
     }

@@ -1,27 +1,17 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { useNavigate } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { DataTable } from "@/components/main-data-table";
 
 import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
-import { useCourseOfferings, useDeleteCourseOffering } from "@/features/sys/offerings.service";
+import { useCourseOfferings } from "@/features/sys/offerings.service";
 import { getCourseOfferingColumns } from "../../offerings/offering-column";
 import { OfferingCreateDialog } from "../../offerings/offering-create";
 import { OfferingEditDialog } from "../../offerings/offering-edit";
-import toast from "react-hot-toast";
 
 interface CourseOfferingsTabProps {
   classId: number;
@@ -29,15 +19,15 @@ interface CourseOfferingsTabProps {
 }
 
 export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabProps) => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
   // Dialog & Active Selection States
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingOffering, setEditingOffering] = useState<CourseOfferingWithDetails | null>(null);
-  const [deletingOffering, setDeletingOffering] = useState<CourseOfferingWithDetails | null>(null);
 
-  // Queries & Mutations
+  // Queries
   const {
     data: offeringsResponse,
     isPending: isOfferingsPending,
@@ -49,24 +39,10 @@ export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabPro
     page,
   });
 
-  const deleteMutation = useDeleteCourseOffering();
-
-  const handleConfirmDelete = async () => {
-    if (!deletingOffering) return;
-    try {
-      await deleteMutation.mutateAsync(deletingOffering.id);
-      toast.success("Course offering removed successfully.");
-      setDeletingOffering(null);
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
-  };
-
   // Table Column Config
   const columns = getCourseOfferingColumns({
     onEdit: (offering) => setEditingOffering(offering),
-    onDelete: (offering) => setDeletingOffering(offering),
-    isDeleting: deleteMutation.isPending,
+    onViewStudents: (offering) => navigate(`course-offerings/${offering.id}/students`),
   });
 
   return (
@@ -163,37 +139,6 @@ export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabPro
         offering={editingOffering}
         programId={programId}
       />
-
-      {/* Delete Confirmation Alert */}
-      <AlertDialog
-        open={!!deletingOffering}
-        onOpenChange={(open) => !open && setDeletingOffering(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Course Offering?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deletingOffering && (
-                <>
-                  Are you sure you want to remove the course offering for{" "}
-                  <strong>{deletingOffering.course_name}</strong>? This action will unassign it from
-                  this class.
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={deleteMutation.isPending}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-            >
-              {deleteMutation.isPending ? "Removing..." : "Yes, remove offering"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

@@ -46,7 +46,7 @@ export const ProgramsPage = () => {
             variant="outline"
             size="icon"
             className="h-9 w-9 rounded-lg"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/sys/institution")} // ── FIX: Hierarchical routing
           >
             <ArrowLeft className="size-4" />
           </Button>

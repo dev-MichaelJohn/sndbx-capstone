@@ -22,12 +22,6 @@ export const ProgramTabs = ({ programId }: ProgramTabsProps) => {
           <TabsTrigger value="classes" className="rounded-xl text-xs">
             Classes
           </TabsTrigger>
-          <TabsTrigger value="faculty" className="rounded-xl text-xs">
-            Faculty
-          </TabsTrigger>
-          <TabsTrigger value="students" className="rounded-xl text-xs">
-            Students
-          </TabsTrigger>
         </TabsList>
       </div>
 
@@ -41,18 +35,6 @@ export const ProgramTabs = ({ programId }: ProgramTabsProps) => {
 
       <TabsContent value="classes" className="m-0">
         <ClassesTab programId={programId} />
-      </TabsContent>
-
-      <TabsContent value="faculty" className="m-0">
-        <Card className="overflow-hidden rounded-xl p-6 text-xs text-muted-foreground shadow-xs">
-          Faculty tab component goes here.
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="students" className="m-0">
-        <Card className="overflow-hidden rounded-xl p-6 text-xs text-muted-foreground shadow-xs">
-          Students tab component goes here.
-        </Card>
       </TabsContent>
     </Tabs>
   );

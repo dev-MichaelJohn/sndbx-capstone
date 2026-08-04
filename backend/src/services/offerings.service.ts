@@ -1,5 +1,5 @@
 import { CourseOfferings, CourseCurriculums, Courses } from "@/schemas/institution.schema.js";
-import { AccountRoles, Roles } from "@/schemas/auth.schema.js";
+import { AccountRoles, Accounts, PersonalDetails, Roles } from "@/schemas/auth.schema.js";
 import {
   CourseOfferingSchema,
   CourseOfferingSearchSchema,
@@ -146,6 +146,12 @@ export class courseOfferingService implements ICourseOfferingService {
         course_initialism: Courses.initialism,
         year_level: CourseCurriculums.year_level,
         semester_term: CourseCurriculums.semester_term,
+        account_id: Accounts.id,
+        institutional_id: PersonalDetails.institutional_id,
+        first_name: PersonalDetails.first_name,
+        last_name: PersonalDetails.last_name,
+        middle_name: PersonalDetails.middle_name,
+        suffix: PersonalDetails.suffix,
         totalItems: sql<number>`count(*) over()::int`.as("totalItems"),
       }),
       join: (query) =>
@@ -155,6 +161,11 @@ export class courseOfferingService implements ICourseOfferingService {
             eq(CourseCurriculums.id, CourseOfferings.course_curriculum_id),
           )
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
+          .leftJoin(
+            Accounts,
+            and(eq(Accounts.id, CourseOfferings.faculty_id), isNull(Accounts.deleted_at)),
+          )
+          .leftJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id))
           .orderBy(orderFn(orderColumn))
           .limit(PAGE_SIZE)
           .offset((page - 1) * PAGE_SIZE),
@@ -191,6 +202,12 @@ export class courseOfferingService implements ICourseOfferingService {
         course_initialism: Courses.initialism,
         year_level: CourseCurriculums.year_level,
         semester_term: CourseCurriculums.semester_term,
+        account_id: Accounts.id,
+        institutional_id: PersonalDetails.institutional_id,
+        first_name: PersonalDetails.first_name,
+        last_name: PersonalDetails.last_name,
+        middle_name: PersonalDetails.middle_name,
+        suffix: PersonalDetails.suffix,
       }),
       join: (query) =>
         query
@@ -198,7 +215,12 @@ export class courseOfferingService implements ICourseOfferingService {
             CourseCurriculums,
             eq(CourseCurriculums.id, CourseOfferings.course_curriculum_id),
           )
-          .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id)),
+          .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
+          .leftJoin(
+            Accounts,
+            and(eq(Accounts.id, CourseOfferings.faculty_id), isNull(Accounts.deleted_at)),
+          )
+          .leftJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id)),
       where: () => and(eq(CourseOfferings.id, parsedId), isNull(CourseOfferings.deleted_at)),
       ...(tx && { tx }),
     });

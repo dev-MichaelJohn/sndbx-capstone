@@ -88,20 +88,15 @@ export const useClasses = (params: Partial<ClassSearch> = {}, options?: { enable
 };
 
 export const useProgramClassCount = (programId: number) => {
-  const queryClient = useQueryClient();
+  const { data, isLoading } = useClasses(
+    { program_id: programId, page: 1 },
+    { enabled: !!programId },
+  );
 
-  const queryKey = [
-    "classes",
-    {
-      page: 1,
-      program_id: programId,
-      search: undefined,
-    },
-  ];
-
-  const cachedData = queryClient.getQueryData<PaginatedData<ClassSelect[]>>(queryKey);
-
-  return cachedData?.data?.length;
+  return {
+    data: data?.pagination?.totalItems ?? 0,
+    isLoading,
+  };
 };
 
 export const useClass = (classId: number) => {
