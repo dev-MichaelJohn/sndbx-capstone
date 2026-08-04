@@ -11,6 +11,7 @@ import ClassRouter from "./class.route.js";
 import CourseOfferingRouter from "./offerings.route.js";
 import StudentClassRouter from "./student-class.route.js";
 import ClassStudentRouter from "./class-student.route.js";
+import EvaluationFormRouter from "./evaluation-form.route.js";
 
 const ProtectedRouter: IRouter = Router();
 
@@ -27,6 +28,7 @@ ProtectedRouter.use("/classes", ClassRouter);
 ProtectedRouter.use("/course-offerings", CourseOfferingRouter);
 ProtectedRouter.use("/class-students", ClassStudentRouter);
 ProtectedRouter.use("/student-classes", StudentClassRouter);
+ProtectedRouter.use("/evaluation-forms", EvaluationFormRouter);
 
 ProtectedRouter.get("/", (_req: Request, res: Response, _next: NextFunction) => {
   const response = createAPIResponse(200, "Welcome to Super Admin Routes!.");

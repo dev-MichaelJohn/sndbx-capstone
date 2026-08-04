@@ -16,7 +16,7 @@ import {
   StudentEvaluationQuestions,
   SupervisorEvaluationForms,
   SupervisorEvaluationQuestions,
-} from "./evaluation-forms.schema.js";
+} from "./evaluation-form.schema.js";
 
 // ==========================================
 // STUDENT EXECUTION
