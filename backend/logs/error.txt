@@ -5412,3 +5412,11 @@ params: 4
     at async userService.deleteUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:701:12)
     at async userController.deleteUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.controller.ts:105:7)
     at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/protrected/user.router.ts:27:5)
+[2026-08-04 11:20:49:2049] [ERROR]: Cannot delete user account: Active course offerings are linked to this faculty member. - Stack: AppError: Cannot delete user account: Active course offerings are linked to this faculty member.
+    at userService.validateAndDeleteRoleDependencies (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:164:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:739:7)
+    at async NodePgSession.transaction (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/node-postgres/session.ts:125:19)
+    at async userService.deleteUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:701:12)
+    at async userController.deleteUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.controller.ts:105:7)
+    at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/protrected/user.router.ts:27:5)
