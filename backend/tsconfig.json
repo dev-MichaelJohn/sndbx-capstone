@@ -1,6 +1,7 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
+    "typeRoots": ["./node_modules/@types/", "./src/types/"],
     // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
@@ -36,9 +37,8 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
+      "@/*": ["./src/*"]
     }
-  }
+  },
+  "include": ["./src/**/*"]
 }

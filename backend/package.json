@@ -29,6 +29,7 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.22.0",
+    "sentiment": "^5.0.2",
     "winston": "^3.19.0",
     "zod": "^4.4.3"
   },
@@ -45,6 +46,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.20.0",
+    "@types/sentiment": "^5.0.4",
     "@types/supertest": "^7.2.1",
     "drizzle-kit": "1.0.0-rc.4",
     "oxfmt": "^0.60.0",
