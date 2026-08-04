@@ -8,6 +8,7 @@ import {
   timestamp,
   uniqueIndex,
   varchar,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // ==========================================
@@ -21,6 +22,10 @@ export const StudentEvaluationForms = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
     created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     deleted_at: timestamp("deleted_at"),
   },
   (t) => [
@@ -37,6 +42,9 @@ export const StudentEvaluationCategories = pgTable(
     form_id: integer("form_id")
       .notNull()
       .references(() => StudentEvaluationForms.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references((): AnyPgColumn => StudentEvaluationCategories.id, {
+      onDelete: "set null",
+    }),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     order: integer("order").notNull(),
@@ -63,6 +71,9 @@ export const StudentEvaluationQuestions = pgTable(
     category_id: integer("category_id")
       .notNull()
       .references(() => StudentEvaluationCategories.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references((): AnyPgColumn => StudentEvaluationQuestions.id, {
+      onDelete: "set null",
+    }),
     question: text("question").notNull(),
     max_rating: integer("max_rating").notNull().default(5),
     order: integer("order").notNull(),
@@ -88,6 +99,10 @@ export const SupervisorEvaluationForms = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
     created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     deleted_at: timestamp("deleted_at"),
   },
   (t) => [
@@ -104,6 +119,10 @@ export const SupervisorEvaluationCategories = pgTable(
     form_id: integer("form_id")
       .notNull()
       .references(() => SupervisorEvaluationForms.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references(
+      (): AnyPgColumn => SupervisorEvaluationCategories.id,
+      { onDelete: "set null" },
+    ),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     order: integer("order").notNull(),
@@ -130,6 +149,10 @@ export const SupervisorEvaluationQuestions = pgTable(
     category_id: integer("category_id")
       .notNull()
       .references(() => SupervisorEvaluationCategories.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references(
+      (): AnyPgColumn => SupervisorEvaluationQuestions.id,
+      { onDelete: "set null" },
+    ),
     question: text("question").notNull(),
     max_rating: integer("max_rating").notNull().default(5),
     order: integer("order").notNull(),
@@ -151,6 +174,9 @@ export const SupervisorEvaluationMeans = pgTable(
     question_id: integer("question_id")
       .notNull()
       .references(() => SupervisorEvaluationQuestions.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references((): AnyPgColumn => SupervisorEvaluationMeans.id, {
+      onDelete: "set null",
+    }),
     descriptor: varchar("descriptor", { length: 255 }).notNull(),
     version: integer("version").notNull().default(1),
     created_at: timestamp("created_at").notNull().defaultNow(),

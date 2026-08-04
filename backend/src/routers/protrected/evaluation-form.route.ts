@@ -5,9 +5,7 @@ import { PERMISSIONS } from "@/types/seeder.type.js";
 
 const EvaluationFormRouter: IRouter = Router({ mergeParams: true });
 
-// ==========================================
-// FORM ROOT ENDPOINTS
-// ==========================================
+// FORM ROOT
 EvaluationFormRouter.post(
   "/:type/forms",
   requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
@@ -19,9 +17,7 @@ EvaluationFormRouter.get(
   (req, res, next) => EvaluationFormController.getFormTree(req, res, next),
 );
 
-// ==========================================
-// CATEGORY ENDPOINTS
-// ==========================================
+// CATEGORY
 EvaluationFormRouter.get(
   "/:type/forms/:formId/categories",
   requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
@@ -43,9 +39,7 @@ EvaluationFormRouter.delete(
   (req, res, next) => EvaluationFormController.deleteCategory(req, res, next),
 );
 
-// ==========================================
-// QUESTION ENDPOINTS
-// ==========================================
+// QUESTION
 EvaluationFormRouter.get(
   "/:type/categories/:categoryId/questions",
   requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
@@ -67,9 +61,7 @@ EvaluationFormRouter.delete(
   (req, res, next) => EvaluationFormController.deleteQuestion(req, res, next),
 );
 
-// ==========================================
-// SUPERVISOR MEANS (DESCRIPTORS) ENDPOINTS
-// ==========================================
+// SUPERVISOR MEANS
 EvaluationFormRouter.get(
   "/supervisor/questions/:questionId/means",
   requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),

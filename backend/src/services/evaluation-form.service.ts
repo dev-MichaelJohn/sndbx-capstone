@@ -19,6 +19,7 @@ import {
   SupervisorEvaluationMeans,
 } from "@/schemas/evaluation-form.schema.js";
 import {
+  CreateFormReqSchema,
   UpsertCategoryReqSchema,
   UpsertQuestionReqSchema,
   UpsertMeanReqSchema,
@@ -73,28 +74,16 @@ export interface IEvaluationFormService {
 }
 
 export class evaluationFormService implements IEvaluationFormService {
-  /**
-   * Initializes a new top-level evaluation form template (Student or Supervisor).
-   *
-   * @param type - specifies whether the form belongs to the 'student' or 'supervisor' suite
-   * @param payload - the title and optional description for the form
-   * @returns an object containing the newly created form record
-   */
   async createForm(type: EvaluationType, payload: CreateFormReq): Promise<{ form: FormSelect }> {
+    const validation = await CreateFormReqSchema.safeParseAsync(payload);
+    if (!validation.success) throw validation.error;
+
     const tableName: TableNames =
       type === "student" ? "StudentEvaluationForms" : "SupervisorEvaluationForms";
-    const record = await CreateRecord(tableName, payload);
+    const record = await CreateRecord(tableName, validation.data);
     return { form: record as FormSelect };
   }
 
-  /**
-   * Fetches an evaluation form and constructs its complete nested tree structure
-   * (Form -> Categories -> Questions) using GetRecords with relational joins, sorted by order indices.
-   *
-   * @param id - the primary key ID of the evaluation form
-   * @param type - specifies whether to query the 'student' or 'supervisor' tables
-   * @returns the structured form tree object with its associated categories and questions
-   */
   async getFormTree(id: number, type: EvaluationType): Promise<EvaluationFormTree> {
     const isStudent = type === "student";
     const formTableName: TableNames = isStudent
@@ -108,16 +97,20 @@ export class evaluationFormService implements IEvaluationFormService {
       select: (table) => ({
         ...getColumns(table),
         category_id: catTable.id,
+        category_parent_id: catTable.parent_id,
         category_name: catTable.name,
         category_description: catTable.description,
         category_order: catTable.order,
+        category_version: catTable.version,
         category_created_at: catTable.created_at,
         category_updated_at: catTable.updated_at,
         category_deleted_at: catTable.deleted_at,
         question_id: qTable.id,
+        question_parent_id: qTable.parent_id,
         question_text: qTable.question,
         max_rating: qTable.max_rating,
         question_order: qTable.order,
+        question_version: qTable.version,
         question_created_at: qTable.created_at,
         question_updated_at: qTable.updated_at,
         question_deleted_at: qTable.deleted_at,
@@ -130,7 +123,7 @@ export class evaluationFormService implements IEvaluationFormService {
       where: () => and(eq(formTable.id, id), isNull(formTable.deleted_at)),
     });
 
-    if (rows.length === 0 || !rows[0]) throw new AppError(404, "Evaluation form not found.");
+    if (!rows.length || !rows[0]) throw new AppError(404, "Form not found.");
 
     const baseRow = rows[0];
     const formTree: EvaluationFormTree = {
@@ -138,6 +131,7 @@ export class evaluationFormService implements IEvaluationFormService {
       title: baseRow.title,
       description: baseRow.description,
       created_at: baseRow.created_at,
+      updated_at: baseRow.updated_at,
       deleted_at: baseRow.deleted_at,
       categories: [],
     };
@@ -150,9 +144,11 @@ export class evaluationFormService implements IEvaluationFormService {
           const newCategory: EvaluationCategoryNode = {
             id: row.category_id,
             form_id: row.id,
+            parent_id: row.category_parent_id,
             name: row.category_name as string,
             description: row.category_description,
             order: row.category_order as number,
+            version: row.category_version as number,
             created_at: row.category_created_at as Date,
             updated_at: row.category_updated_at as Date,
             deleted_at: row.category_deleted_at,
@@ -165,9 +161,11 @@ export class evaluationFormService implements IEvaluationFormService {
           categoryMap.get(row.category_id)!.questions.push({
             id: row.question_id,
             category_id: row.category_id,
+            parent_id: row.question_parent_id,
             question: row.question_text as string,
             max_rating: row.max_rating as number,
             order: row.question_order as number,
+            version: row.question_version as number,
             created_at: row.question_created_at as Date,
             updated_at: row.question_updated_at as Date,
             deleted_at: row.question_deleted_at,
@@ -179,13 +177,6 @@ export class evaluationFormService implements IEvaluationFormService {
     return formTree;
   }
 
-  /**
-   * Retrieves all active categories associated with a given evaluation form using GetRecords.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param formId - the target evaluation form identifier
-   * @returns an array of active category records
-   */
   async getCategories(type: EvaluationType, formId: number): Promise<CategorySelect[]> {
     const isStudent = type === "student";
     const tableName: SoftDeletableTables = isStudent
@@ -199,14 +190,6 @@ export class evaluationFormService implements IEvaluationFormService {
     return records as CategorySelect[];
   }
 
-  /**
-   * Adds a new category to an evaluation form blueprint.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param formId - the parent form identifier
-   * @param payload - category details including name, description, and order
-   * @returns the created category record wrapped in an object
-   */
   async addCategory(
     type: EvaluationType,
     formId: number,
@@ -220,79 +203,81 @@ export class evaluationFormService implements IEvaluationFormService {
     const category = await CreateRecord(tableName, {
       form_id: formId,
       ...validation.data,
+      version: 1,
     });
     return { category: category as CategorySelect };
   }
 
-  /**
-   * Updates an existing evaluation category by decommissioning the old record and inserting a new version.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param categoryId - the primary key ID of the category to update
-   * @param payload - partial fields to update
-   * @returns the newly created version of the category record
-   */
   async updateCategory(
     type: EvaluationType,
     categoryId: number,
     payload: Partial<UpsertCategoryReq>,
   ): Promise<{ category: CategorySelect }> {
-    const tableName: SoftDeletableTables =
-      type === "student" ? "StudentEvaluationCategories" : "SupervisorEvaluationCategories";
-    const catTable =
-      type === "student" ? StudentEvaluationCategories : SupervisorEvaluationCategories;
+    const validation = await UpsertCategoryReqSchema.partial().safeParseAsync(payload);
+    if (!validation.success) throw validation.error;
+
+    const isStudent = type === "student";
+    const tableName: SoftDeletableTables = isStudent
+      ? "StudentEvaluationCategories"
+      : "SupervisorEvaluationCategories";
+    const catTable = isStudent ? StudentEvaluationCategories : SupervisorEvaluationCategories;
 
     return await db.transaction(async (tx) => {
-      const existing = await GetRecord(tableName, {
+      const oldRecord = await GetRecord(tableName, {
         where: () => and(eq(catTable.id, categoryId), isNull(catTable.deleted_at)),
         tx,
       });
 
-      if (!existing) {
-        throw new AppError(404, "Category not found or already decommissioned.");
-      }
+      if (!oldRecord) throw new AppError(404, "Category not found.");
 
       await SoftDeleteRecord(tableName, categoryId, catTable.id, tx);
 
-      const newCategory = await CreateRecord(
+      const newRecord = await CreateRecord(
         tableName,
         {
-          form_id: existing.form_id,
-          name: payload.name ?? existing.name,
+          form_id: oldRecord.form_id,
+          name: validation.data.name ?? oldRecord.name,
           description:
-            payload.description !== undefined ? payload.description : existing.description,
-          order: payload.order ?? existing.order,
+            validation.data.description !== undefined
+              ? validation.data.description
+              : oldRecord.description,
+          order: validation.data.order ?? oldRecord.order,
+          parent_id: oldRecord.id,
+          version: ((oldRecord.version as number) ?? 1) + 1,
         },
         tx,
       );
 
-      return { category: newCategory as CategorySelect };
+      return { category: newRecord as CategorySelect };
     });
   }
 
-  /**
-   * Soft-deletes an evaluation category.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param categoryId - the primary key ID of the category to soft-delete
-   */
   async deleteCategory(type: EvaluationType, categoryId: number): Promise<void> {
-    const tableName: SoftDeletableTables =
-      type === "student" ? "StudentEvaluationCategories" : "SupervisorEvaluationCategories";
-    const categorySchema =
-      type === "student" ? StudentEvaluationCategories : SupervisorEvaluationCategories;
+    const isStudent = type === "student";
+    const catTableName: SoftDeletableTables = isStudent
+      ? "StudentEvaluationCategories"
+      : "SupervisorEvaluationCategories";
+    const qTableName: SoftDeletableTables = isStudent
+      ? "StudentEvaluationQuestions"
+      : "SupervisorEvaluationQuestions";
+    const catTable = isStudent ? StudentEvaluationCategories : SupervisorEvaluationCategories;
+    const qTable = isStudent ? StudentEvaluationQuestions : SupervisorEvaluationQuestions;
 
-    const deleted = await SoftDeleteRecord(tableName, categoryId, categorySchema.id);
-    if (!deleted) throw new AppError(404, "Category not found.");
+    await db.transaction(async (tx) => {
+      const cat = await SoftDeleteRecord(catTableName, categoryId, catTable.id, tx);
+      if (!cat) throw new AppError(404, "Category not found.");
+
+      const questions = await GetRecords(qTableName, {
+        where: () => and(eq(qTable.category_id, categoryId), isNull(qTable.deleted_at)),
+        tx,
+      });
+
+      for (const q of questions) {
+        await SoftDeleteRecord(qTableName, q.id, qTable.id, tx);
+      }
+    });
   }
 
-  /**
-   * Retrieves all active questions belonging to a specific evaluation category using GetRecords.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param categoryId - the target category identifier
-   * @returns an array of active question records
-   */
   async getQuestions(type: EvaluationType, categoryId: number): Promise<QuestionSelect[]> {
     const isStudent = type === "student";
     const tableName: SoftDeletableTables = isStudent
@@ -306,14 +291,6 @@ export class evaluationFormService implements IEvaluationFormService {
     return records as QuestionSelect[];
   }
 
-  /**
-   * Adds a new question item to an evaluation category.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param categoryId - the parent category identifier
-   * @param payload - question text, maximum rating scale, and order index
-   * @returns the created question record
-   */
   async addQuestion(
     type: EvaluationType,
     categoryId: number,
@@ -327,76 +304,84 @@ export class evaluationFormService implements IEvaluationFormService {
     const question = await CreateRecord(tableName, {
       category_id: categoryId,
       ...validation.data,
+      version: 1,
     });
     return { question: question as QuestionSelect };
   }
 
-  /**
-   * Updates an existing evaluation question by decommissioning the old record and inserting a new version.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param questionId - the primary key ID of the question to update
-   * @param payload - partial question fields to modify
-   * @returns the newly created version of the question record
-   */
   async updateQuestion(
     type: EvaluationType,
     questionId: number,
     payload: Partial<UpsertQuestionReq>,
   ): Promise<{ question: QuestionSelect }> {
-    const tableName: SoftDeletableTables =
-      type === "student" ? "StudentEvaluationQuestions" : "SupervisorEvaluationQuestions";
-    const qTable = type === "student" ? StudentEvaluationQuestions : SupervisorEvaluationQuestions;
+    const validation = await UpsertQuestionReqSchema.partial().safeParseAsync(payload);
+    if (!validation.success) throw validation.error;
+
+    const isStudent = type === "student";
+    const tableName: SoftDeletableTables = isStudent
+      ? "StudentEvaluationQuestions"
+      : "SupervisorEvaluationQuestions";
+    const qTable = isStudent ? StudentEvaluationQuestions : SupervisorEvaluationQuestions;
 
     return await db.transaction(async (tx) => {
-      const existing = await GetRecord(tableName, {
+      const oldRecord = await GetRecord(tableName, {
         where: () => and(eq(qTable.id, questionId), isNull(qTable.deleted_at)),
         tx,
       });
 
-      if (!existing) {
-        throw new AppError(404, "Question not found or already decommissioned.");
-      }
+      if (!oldRecord) throw new AppError(404, "Question not found.");
 
       await SoftDeleteRecord(tableName, questionId, qTable.id, tx);
 
-      const newQuestion = await CreateRecord(
+      const newRecord = await CreateRecord(
         tableName,
         {
-          category_id: existing.category_id,
-          question: payload.question ?? existing.question,
-          max_rating: payload.max_rating ?? existing.max_rating,
-          order: payload.order ?? existing.order,
+          category_id: oldRecord.category_id,
+          question: validation.data.question ?? oldRecord.question,
+          max_rating: validation.data.max_rating ?? oldRecord.max_rating,
+          order: validation.data.order ?? oldRecord.order,
+          parent_id: oldRecord.id,
+          version: ((oldRecord.version as number) ?? 1) + 1,
         },
         tx,
       );
 
-      return { question: newQuestion as QuestionSelect };
+      return { question: newRecord as QuestionSelect };
     });
   }
 
-  /**
-   * Soft-deletes an evaluation question.
-   *
-   * @param type - specifies 'student' or 'supervisor' evaluation domain
-   * @param questionId - the primary key ID of the question to soft-delete
-   */
   async deleteQuestion(type: EvaluationType, questionId: number): Promise<void> {
-    const tableName: SoftDeletableTables =
-      type === "student" ? "StudentEvaluationQuestions" : "SupervisorEvaluationQuestions";
-    const questionSchema =
-      type === "student" ? StudentEvaluationQuestions : SupervisorEvaluationQuestions;
+    const isStudent = type === "student";
+    const qTableName: SoftDeletableTables = isStudent
+      ? "StudentEvaluationQuestions"
+      : "SupervisorEvaluationQuestions";
+    const qTable = isStudent ? StudentEvaluationQuestions : SupervisorEvaluationQuestions;
 
-    const deleted = await SoftDeleteRecord(tableName, questionId, questionSchema.id);
-    if (!deleted) throw new AppError(404, "Question not found.");
+    await db.transaction(async (tx) => {
+      const q = await SoftDeleteRecord(qTableName, questionId, qTable.id, tx);
+      if (!q) throw new AppError(404, "Question not found.");
+
+      if (!isStudent) {
+        const means = await GetRecords("SupervisorEvaluationMeans", {
+          where: () =>
+            and(
+              eq(SupervisorEvaluationMeans.question_id, questionId),
+              isNull(SupervisorEvaluationMeans.deleted_at),
+            ),
+          tx,
+        });
+        for (const m of means) {
+          await SoftDeleteRecord(
+            "SupervisorEvaluationMeans",
+            m.id,
+            SupervisorEvaluationMeans.id,
+            tx,
+          );
+        }
+      }
+    });
   }
 
-  /**
-   * Retrieves all means/descriptors associated with a specific supervisor evaluation question using GetRecords.
-   *
-   * @param questionId - the target supervisor question identifier
-   * @returns an array of supervisor mean descriptors
-   */
   async getSupervisorMeans(questionId: number): Promise<MeanSelect[]> {
     const records = await GetRecords("SupervisorEvaluationMeans", {
       where: () =>
@@ -408,13 +393,6 @@ export class evaluationFormService implements IEvaluationFormService {
     return records as MeanSelect[];
   }
 
-  /**
-   * Adds a mean descriptor to a supervisor evaluation question item.
-   *
-   * @param questionId - the parent supervisor question identifier
-   * @param payload - the mean descriptor text
-   * @returns the created mean descriptor record
-   */
   async addSupervisorMean(
     questionId: number,
     payload: UpsertMeanReq,
@@ -425,25 +403,22 @@ export class evaluationFormService implements IEvaluationFormService {
     const mean = await CreateRecord("SupervisorEvaluationMeans", {
       question_id: questionId,
       ...validation.data,
+      version: 1,
     });
     return { mean: mean as MeanSelect };
   }
 
-  /**
-   * Updates an existing supervisor mean descriptor by decommissioning the old record and inserting a new version.
-   *
-   * @param meanId - the primary key ID of the mean descriptor to update
-   * @param payload - partial descriptor fields to update
-   * @returns the newly created version of the mean descriptor record
-   */
   async updateSupervisorMean(
     meanId: number,
     payload: Partial<UpsertMeanReq>,
   ): Promise<{ mean: MeanSelect }> {
+    const validation = await UpsertMeanReqSchema.partial().safeParseAsync(payload);
+    if (!validation.success) throw validation.error;
+
     const tableName: SoftDeletableTables = "SupervisorEvaluationMeans";
 
     return await db.transaction(async (tx) => {
-      const existing = await GetRecord(tableName, {
+      const oldRecord = await GetRecord(tableName, {
         where: () =>
           and(
             eq(SupervisorEvaluationMeans.id, meanId),
@@ -452,30 +427,25 @@ export class evaluationFormService implements IEvaluationFormService {
         tx,
       });
 
-      if (!existing) {
-        throw new AppError(404, "Mean descriptor not found or already decommissioned.");
-      }
+      if (!oldRecord) throw new AppError(404, "Mean descriptor not found.");
 
       await SoftDeleteRecord(tableName, meanId, SupervisorEvaluationMeans.id, tx);
 
-      const newMean = await CreateRecord(
+      const newRecord = await CreateRecord(
         tableName,
         {
-          question_id: existing.question_id,
-          descriptor: payload.descriptor ?? existing.descriptor,
+          question_id: oldRecord.question_id,
+          descriptor: validation.data.descriptor ?? oldRecord.descriptor,
+          parent_id: oldRecord.id,
+          version: ((oldRecord.version as number) ?? 1) + 1,
         },
         tx,
       );
 
-      return { mean: newMean as MeanSelect };
+      return { mean: newRecord as MeanSelect };
     });
   }
 
-  /**
-   * Soft deletes a supervisor mean descriptor.
-   *
-   * @param meanId - the primary key ID of the mean descriptor to delete
-   */
   async deleteSupervisorMean(meanId: number): Promise<void> {
     const deleted = await SoftDeleteRecord(
       "SupervisorEvaluationMeans",
