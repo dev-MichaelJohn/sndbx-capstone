@@ -5,6 +5,7 @@ import {
   integer,
   pgTable,
   serial,
+  text,
   timestamp,
   uniqueIndex,
   varchar,
@@ -37,6 +38,11 @@ export const IndividualFacultyEvaluationReports = pgTable(
     }),
 
     status: varchar("status", { length: 32 }).default("DRAFT").notNull(), // DRAFT, FINALIZED, ACKNOWLEDGED
+
+    areas_for_improvement: text("areas_for_improvement"),
+    proposed_activities: text("proposed_activities"),
+    action_plan: text("action_plan"),
+    acknowledged_at: timestamp("acknowledged_at"),
 
     created_at: timestamp("created_at").notNull().defaultNow(),
     updated_at: timestamp("updated_at")

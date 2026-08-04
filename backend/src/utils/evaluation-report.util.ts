@@ -1,0 +1,48 @@
+export const EVALUATION_WEIGHTS = {
+  SET_DEFAULT: 0.6,
+  SEF_DEFAULT: 0.4,
+  SET_PERCENTAGE: "60%",
+  SEF_PERCENTAGE: "40%",
+} as const;
+
+export const RATING_CONFIG = {
+  DECIMAL_PLACES: 2,
+  MIN_WEIGHT: 0,
+  MAX_WEIGHT: 1,
+} as const;
+
+export const PDF_LAYOUT = {
+  PAGE_MARGIN: 36,
+  FONT_SIZE: {
+    HEADER_TITLE: 12,
+    FEDAF_TITLE: 11,
+    SECTION_TITLE: 9.5,
+    BODY: 9,
+    BODY_SMALL: 8.5,
+    FOOTER_NOTE: 8,
+  },
+  SPACING: {
+    TINY: 0.4,
+    SMALL: 0.5,
+    MEDIUM: 0.8,
+    DEFAULT: 1.0,
+    LARGE: 1.2,
+    XLARGE: 1.5,
+    DOUBLE: 2.0,
+  },
+  TABLE_COLUMNS: {
+    COURSE: 40,
+    SECTION: 150,
+    STUDENTS: 250,
+    AVG_SET: 340,
+    WEIGHTED_SCORE: 440,
+  },
+  SIGNATURE_POSITIONS: {
+    LEFT_COL: 40,
+    RIGHT_COL: 350,
+    LINE_OFFSET_Y: -10,
+    TITLE_OFFSET_Y: 2,
+    LABEL_OFFSET_Y: 12,
+    DATE_OFFSET_Y: 24,
+  },
+} as const;
