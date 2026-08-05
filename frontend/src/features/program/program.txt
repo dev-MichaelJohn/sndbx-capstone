@@ -1,0 +1,1546 @@
+./program.txt
+---
+
+
+---
+./api/program.service.ts
+---
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type {
+  ChairCandidateType,
+  CreateProgramType,
+  ProgramWithChairType,
+  UpdateProgramType,
+} from "backend/types/program.type";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+
+export const getPrograms = async (search?: string) => {
+  try {
+    const response = await apiClient<APIResponse<PaginatedData<ProgramWithChairType[]>>>(
+      `/protected/programs?search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const getProgramsViaCollegeID = async (collegeId: number, search?: string) => {
+  try {
+    const response = await apiClient<APIResponse<PaginatedData<ProgramWithChairType[]>>>(
+      `/protected/colleges/${collegeId}/programs?search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+const getProgramById = async (programId: number) => {
+  try {
+    const response = await apiClient<APIResponse<ProgramWithChairType>>(
+      `/protected/programs/${programId}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch program details."), { cause: error });
+  }
+};
+
+export const useProgram = (programId: number) => {
+  return useQuery({
+    queryKey: ["program", programId],
+    queryFn: () => getProgramById(programId),
+    enabled: !!programId && !isNaN(programId),
+  });
+};
+
+const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
+  try {
+    const response = await apiClient.post<APIResponse<ProgramWithChairType>>(
+      "/protected/programs/",
+      {
+        program,
+        chair,
+      },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const useCreateProgram = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createProgramRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+    },
+  });
+};
+
+const updateProgramRecord = async ({ program_id, program, chair }: UpdateProgramType) => {
+  try {
+    const response = await apiClient.put<APIResponse<ProgramWithChairType>>(
+      `/protected/programs/${program_id}`,
+      {
+        program,
+        chair,
+      },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update program record."), { cause: error });
+  }
+};
+
+export const useUpdateProgram = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateProgramRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+    },
+  });
+};
+
+const deleteProgramRecord = async (programId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/protected/programs/${programId}`, {});
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete program record."), { cause: error });
+  }
+};
+
+export const useDeleteProgram = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteProgramRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+    },
+  });
+};
+
+export const searchChairCandidates = async (search?: string) => {
+  try {
+    const response = await apiClient<APIResponse<ChairCandidateType[]>>(
+      `/protected/programs/available-chairs?search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const useSearchChairCandidates = (search?: string) => {
+  return useQuery({
+    queryKey: ["searchChairCandidates", search],
+    queryFn: () => searchChairCandidates(search),
+    enabled: !!search && search.length >= 2,
+  });
+};
+
+export function useChairSelection(initial: ChairCandidateType | null) {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selected, setSelected] = useState<ChairCandidateType | null>(initial);
+
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(handle);
+  }, [search]);
+
+  const { data: candidates, isFetching: isSearching } = useSearchChairCandidates(debouncedSearch);
+
+  const reset = (next: ChairCandidateType | null = initial) => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelected(next);
+  };
+
+  return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
+}
+
+
+---
+./components/ExistingChairSearch.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { formatFullName } from "@/lib/nameFormatter";
+import type { ChairCandidateType } from "backend/types/program.type";
+
+interface ExistingChairSearchProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  candidates: ChairCandidateType[] | undefined;
+  isSearching: boolean;
+  selected: ChairCandidateType | null;
+  onSelect: (candidate: ChairCandidateType) => void;
+  onClear: () => void;
+}
+
+export function ExistingChairSearch({
+  search,
+  onSearchChange,
+  candidates,
+  isSearching,
+  selected,
+  onSelect,
+  onClear,
+}: ExistingChairSearchProps) {
+  if (selected) {
+    return (
+      <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2 text-sm">
+        <span>
+          {formatFullName({
+            first_name: selected.first_name,
+            middle_name: selected.middle_name,
+            last_name: selected.last_name,
+            suffix: selected.suffix,
+          })}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={onClear}
+        >
+          Change
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Command className="w-full rounded-lg border" shouldFilter={false}>
+      <CommandInput
+        placeholder="Search via name or institution ID..."
+        value={search}
+        onValueChange={onSearchChange}
+      />
+      <CommandList>
+        {search.length < 2 ? (
+          <CommandEmpty>Type at least 2 characters to search.</CommandEmpty>
+        ) : isSearching ? (
+          <CommandEmpty>Searching...</CommandEmpty>
+        ) : !candidates?.length ? (
+          <CommandEmpty>No matching faculty found.</CommandEmpty>
+        ) : (
+          <CommandGroup>
+            {candidates.map((candidate) => (
+              <CommandItem
+                key={candidate.account_id}
+                value={String(candidate.account_id)}
+                onSelect={() => onSelect(candidate)}
+                className="flex items-center justify-between"
+              >
+                <span>
+                  {formatFullName({
+                    first_name: candidate.first_name,
+                    middle_name: candidate.middle_name,
+                    last_name: candidate.last_name,
+                    suffix: candidate.suffix,
+                  })}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+      </CommandList>
+    </Command>
+  );
+}
+
+
+---
+./components/ProgramColumns.tsx
+---
+import { Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Link } from "react-router";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { DataTableColumn } from "@/components/main-data-table";
+import type { ProgramWithChairType } from "backend/types/program.type";
+
+import { formatFullName } from "@/lib/nameFormatter";
+import { ProgramEditDialog } from "./ProgramEdit.tsx";
+import { ProgramDeleteDialog } from "./ProgramDelete.tsx";
+
+// We use a factory function here so we can inject the collegeId from the page URL
+export const getProgramColumns = (
+  collegeId: string | number,
+): Array<DataTableColumn<ProgramWithChairType>> => [
+  {
+    header: "Code",
+    className: "w-24",
+    cell: (row) => (
+      <Badge variant="outline" className="font-mono text-sm">
+        {row.initialism}
+      </Badge>
+    ),
+  },
+  {
+    header: "Program Name",
+    className: "w-auto",
+    cell: (row) => row.name,
+  },
+  {
+    header: "Program Chair",
+    className: "w-auto",
+    cell: (row) => {
+      const chairName = row.account_id
+        ? formatFullName({
+            first_name: row.first_name,
+            last_name: row.last_name,
+            middle_name: row.middle_name,
+            suffix: row.suffix,
+          })
+        : null;
+
+      return chairName ?? <span className="italic text-muted-foreground/60">Unassigned</span>;
+    },
+  },
+  {
+    header: "Actions",
+    className: "w-px whitespace-nowrap",
+    cell: (row) => (
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-40 p-1">
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
+            >
+              <Link to={`/sys/institution/${collegeId}/programs/${row.id}`}>
+                <Eye className="mr-2 size-3.5" />
+                View Details
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              className="cursor-pointer p-0 hover:bg-transparent focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <ProgramEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="cursor-pointer p-0 hover:bg-transparent focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <ProgramDeleteDialog icon={Trash2} triggerText="Delete" program={row} />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    ),
+  },
+];
+
+
+---
+./components/ProgramCreate.tsx
+---
+import { useForm } from "@tanstack/react-form";
+import type { LucideIcon } from "lucide-react";
+import { formatFullName } from "@/lib/nameFormatter";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { FormTextField } from "@/components/form-text-field";
+import { ExistingChairSearch } from "./ExistingChairSearch";
+import { useChairSelection, useCreateProgram } from "@/features/program/api/program.service";
+import { CreateProgram, type CreateProgramType } from "backend/types/program.type";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface ProgramCreateDialogProps {
+  collegeId: number;
+  icon: LucideIcon;
+  triggerText: string;
+}
+
+const emptyChairDetails = {
+  credentials: { email: "" },
+  personalDetails: {
+    institutional_id: "",
+    first_name: "",
+    last_name: "",
+    middle_name: "",
+    suffix: "",
+  },
+};
+
+export const ProgramCreateDialog = ({
+  collegeId,
+  icon: Icon,
+  triggerText,
+}: ProgramCreateDialogProps) => {
+  const { mutateAsync, isPending } = useCreateProgram();
+  const chair = useChairSelection(null);
+
+  const initialFormData: CreateProgramType = {
+    program: { college_id: collegeId, name: "", initialism: "" },
+    chair: undefined,
+  };
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    validators: { onSubmit: CreateProgram },
+    onSubmit: (values) => dialog.handleFormSubmit(values),
+  });
+
+  const dialog = useEntityDialog<CreateProgramType>({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Creating program record...",
+    successText: "Program created successfully.",
+    onReset: () => chair.reset(null),
+  });
+
+  const handleTabChange = (v: string) => {
+    if (v === "no-chair") {
+      form.setFieldValue("chair", undefined);
+      chair.reset(null);
+    } else if (v === "existing") {
+      form.setFieldValue("chair", { type: "existing", id: chair.selected?.account_id ?? 0 });
+    } else if (v === "new") {
+      form.setFieldValue("chair", { type: "new", details: emptyChairDetails });
+      chair.reset(null);
+    }
+  };
+
+  const chairChangeSummary = (() => {
+    if (!dialog.pendingValue?.chair)
+      return "This program will be created without an assigned program chair.";
+    if (dialog.pendingValue.chair.type === "existing") {
+      return chair.selected
+        ? `${formatFullName(chair.selected)} will be assigned as the program chair.`
+        : "The selected faculty member will be assigned as the program chair.";
+    }
+    const { first_name, last_name } = dialog.pendingValue.chair.details.personalDetails;
+    return `A new faculty record for ${first_name} ${last_name} will be created and assigned as program chair.`;
+  })();
+
+  return (
+    <>
+      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button type="button" className="rounded-lg p-4 flex items-center justify-center gap-1">
+            <Icon className="size-3.5" />
+            <span className="leading-none text-sm">{triggerText}</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Program</DialogTitle>
+            <DialogDescription>
+              Add a new academic program and optionally assign a program chair.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <form.Field
+              name="program.name"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Program Name"
+                  disabled={isPending}
+                  placeholder="e.g. Bachelor of Science in Civil Engineering"
+                />
+              )}
+            />
+            <form.Field
+              name="program.initialism"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Initialism / Code"
+                  disabled={isPending}
+                  placeholder="e.g. BSCE"
+                />
+              )}
+            />
+
+            <form.Field
+              name="chair.type"
+              children={() => (
+                <Tabs
+                  value={form.state.values.chair?.type ?? "no-chair"}
+                  className="w-full mt-2"
+                  onValueChange={handleTabChange}
+                >
+                  <Label>Assign Program Chair</Label>
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="no-chair">No Chair</TabsTrigger>
+                    <TabsTrigger value="existing">Existing Faculty</TabsTrigger>
+                    <TabsTrigger value="new">New Faculty</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="existing" className="space-y-2 mt-3">
+                    <ExistingChairSearch
+                      search={chair.search}
+                      onSearchChange={chair.setSearch}
+                      candidates={chair.candidates}
+                      isSearching={chair.isSearching}
+                      selected={chair.selected}
+                      onSelect={(candidate) => {
+                        form.setFieldValue("chair", {
+                          type: "existing",
+                          id: Number(candidate.account_id),
+                        });
+                        chair.setSelected(candidate);
+                      }}
+                      onClear={() => {
+                        chair.setSelected(null);
+                        form.setFieldValue("chair", { type: "existing", id: 0 });
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="new" className="space-y-3 mt-3">
+                    <form.Field
+                      name="chair.details.credentials.email"
+                      children={(field) => (
+                        <FormTextField
+                          field={field}
+                          label="Email"
+                          type="email"
+                          disabled={isPending}
+                          placeholder="chair@school.edu"
+                        />
+                      )}
+                    />
+                    <form.Field
+                      name="chair.details.personalDetails.institutional_id"
+                      children={(field) => (
+                        <FormTextField
+                          field={field}
+                          label="Institutional ID"
+                          disabled={isPending}
+                          placeholder="e.g. 2021-00456"
+                        />
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="chair.details.personalDetails.first_name"
+                        children={(field) => (
+                          <FormTextField field={field} label="First Name" disabled={isPending} />
+                        )}
+                      />
+                      <form.Field
+                        name="chair.details.personalDetails.last_name"
+                        children={(field) => (
+                          <FormTextField field={field} label="Last Name" disabled={isPending} />
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="chair.details.personalDetails.middle_name"
+                        children={(field) => (
+                          <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                        )}
+                      />
+                      <form.Field
+                        name="chair.details.personalDetails.suffix"
+                        children={(field) => (
+                          <FormTextField
+                            field={field}
+                            label="Suffix"
+                            disabled={isPending}
+                            placeholder="Jr., Sr., III"
+                          />
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Creating..." : "Create Program"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create new program?</AlertDialogTitle>
+            <AlertDialogDescription>{chairChangeSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+              {isPending ? "Creating..." : "Yes, create program"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved input in this form. Closing now will discard your entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+./components/ProgramDelete.tsx
+---
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { useDeleteProgram } from "@/features/program/api/program.service";
+import { useCourses } from "@/features/course/api/course.service";
+import { useCurriculums } from "@/features/curriculum/api/curriculum.service";
+import { cn } from "@/lib/utils";
+
+interface ProgramDeleteDialogProps {
+  program: {
+    id: number;
+    name: string;
+    initialism: string;
+  };
+  icon?: LucideIcon;
+  triggerText?: string;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+}
+
+export const ProgramDeleteDialog = ({
+  program,
+  icon: Icon = Trash2,
+  triggerText = "Delete",
+  variant = "ghost",
+  className,
+}: ProgramDeleteDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const { mutateAsync, isPending: isDeleting } = useDeleteProgram();
+
+  const {
+    data: coursesResponse,
+    isLoading: isCheckingCourses,
+    isError: isCoursesError,
+  } = useCourses({ program_id: program.id, page: 1 }, { enabled: open });
+
+  const {
+    data: curriculumsResponse,
+    isLoading: isCheckingCurriculums,
+    isError: isCurriculumsError,
+  } = useCurriculums({ program_id: program.id, page: 1 }, { enabled: open });
+
+  const courses = coursesResponse?.data ?? [];
+  const curriculums = curriculumsResponse?.data ?? [];
+
+  const hasCourses = courses.length > 0;
+  const hasCurriculums = curriculums.length > 0;
+  const hasLinkedItems = hasCourses || hasCurriculums;
+  const isChecking = isCheckingCourses || isCheckingCurriculums;
+  const isCheckError = isCoursesError || isCurriculumsError;
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (hasLinkedItems || isChecking) return;
+
+    const toastId = toast.loading(`Deleting ${program.initialism}...`);
+    try {
+      await mutateAsync(program.id);
+      toast.success("Program record deleted successfully.", { id: toastId });
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete program record.", {
+        id: toastId,
+      });
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant={variant}
+          size="sm"
+          className={cn(
+            "w-full h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-destructive hover:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive focus-visible:outline-none",
+            className,
+          )}
+        >
+          <Icon className="mr-2 size-3.5 shrink-0" />
+          <span>{triggerText}</span>
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {program.name}?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 pt-1 text-sm text-muted-foreground">
+              <p>
+                This action cannot be undone. This will permanently remove the program record from
+                the system.
+              </p>
+
+              {/* Loader while checking database */}
+              {isChecking && (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                  Checking for existing courses and curriculum linked to this program...
+                </div>
+              )}
+
+              {/* Blocked state visual callout */}
+              {!isChecking && hasLinkedItems && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">Cannot delete program record</p>
+                    <p className="text-destructive/90">
+                      This program has dependent records attached to it:
+                    </p>
+                    <ul className="list-disc pl-4 font-medium space-y-0.5">
+                      {hasCourses && (
+                        <li>
+                          <strong>{courses.length}</strong> course(s)
+                        </li>
+                      )}
+                      {hasCurriculums && (
+                        <li>
+                          <strong>{curriculums.length}</strong> curriculum entry(ies)
+                        </li>
+                      )}
+                    </ul>
+                    <p className="pt-1 text-destructive/80">
+                      Please remove these associated courses and curriculum records before deleting
+                      this program.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error fallback if checking failed */}
+              {isCheckError && (
+                <p className="text-xs text-destructive">
+                  Failed to verify linked records. Please try again or check your network
+                  connection.
+                </p>
+              )}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>
+            {hasLinkedItems ? "Close" : "Cancel"}
+          </AlertDialogCancel>
+
+          {!hasLinkedItems && (
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting || isChecking || isCheckError}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Yes, delete program"}
+            </AlertDialogAction>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
+
+---
+./components/ProgramDetailsHeader.tsx
+---
+import { ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+interface ProgramHeaderProps {
+  name: string;
+  code: string;
+  onBack: () => void;
+}
+
+export const ProgramDetailsHeader = ({ name, code, onBack }: ProgramHeaderProps) => {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-lg"
+          onClick={onBack}
+        >
+          <ArrowLeft className="size-4" />
+        </Button>
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
+            <Badge variant="outline" className="font-mono text-xs">
+              {code}
+            </Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Overview and management of courses, active classes, assigned faculty, and enrolled
+            students
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+---
+./components/ProgramDetailsMetrics.tsx
+---
+import { BookOpen, GraduationCap, Layers } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface ProgramMetricsProps {
+  totalCourses: number;
+  totalClasses: number;
+  totalStudents: number;
+}
+
+export const ProgramDetailsMetrics = ({
+  totalCourses,
+  totalClasses,
+  totalStudents,
+}: ProgramMetricsProps) => {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <Card className="rounded-xl shadow-xs">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Total Courses</CardTitle>
+          <BookOpen className="size-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalCourses}</div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-xl shadow-xs">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-xs font-medium text-muted-foreground">
+            Active Classes
+          </CardTitle>
+          <Layers className="size-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalClasses}</div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-xl shadow-xs">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-xs font-medium text-muted-foreground">
+            Enrolled Students
+          </CardTitle>
+          <GraduationCap className="size-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalStudents}</div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+
+---
+./components/ProgramDetailsTabs.tsx
+---
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProgramCoursesTab } from "@/features/course/components/CoursesTab";
+import { CurriculumTab } from "@/features/curriculum/components/CurriculumTab";
+import { ClassesTab } from "@/features/class/components/ClassTab";
+
+interface ProgramTabsProps {
+  programId: number;
+}
+
+export const ProgramDetailsTabs = ({ programId }: ProgramTabsProps) => {
+  return (
+    <Tabs defaultValue="courses" className="flex flex-1 flex-col gap-4">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <TabsList className="h-9 rounded-2xl p-1">
+          <TabsTrigger value="courses" className="rounded-xl text-xs">
+            Courses
+          </TabsTrigger>
+          <TabsTrigger value="curriculum" className="rounded-xl text-xs">
+            Curriculum
+          </TabsTrigger>
+          <TabsTrigger value="classes" className="rounded-xl text-xs">
+            Classes
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="courses" className="m-0">
+        <ProgramCoursesTab programId={programId} />
+      </TabsContent>
+
+      <TabsContent value="curriculum" className="m-0">
+        <CurriculumTab programId={programId} />
+      </TabsContent>
+
+      <TabsContent value="classes" className="m-0">
+        <ClassesTab programId={programId} />
+      </TabsContent>
+    </Tabs>
+  );
+};
+
+
+---
+./components/ProgramEdit.tsx
+---
+import { useForm } from "@tanstack/react-form";
+import type { LucideIcon } from "lucide-react";
+import { formatFullName } from "@/lib/nameFormatter";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FormTextField } from "@/components/form-text-field";
+import { ExistingChairSearch } from "./ExistingChairSearch";
+import { useChairSelection, useUpdateProgram } from "@/features/program/api/program.service";
+import {
+  UpdateProgram,
+  type ProgramWithChairType,
+  type UpdateProgramType,
+  type ChairCandidateType,
+} from "backend/types/program.type";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface ProgramEditDialogProps {
+  icon: LucideIcon;
+  triggerText: string;
+  defaultData: ProgramWithChairType;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+}
+
+const emptyChairDetails = {
+  credentials: { email: "" },
+  personalDetails: {
+    institutional_id: "",
+    first_name: "",
+    last_name: "",
+    middle_name: "",
+    suffix: "",
+  },
+};
+
+export const ProgramEditDialog = ({
+  icon: Icon,
+  triggerText,
+  defaultData,
+  variant = "ghost",
+  className,
+}: ProgramEditDialogProps) => {
+  const { mutateAsync, isPending } = useUpdateProgram();
+
+  const defaultSelectedChair: ChairCandidateType | null = defaultData.account_id
+    ? {
+        account_id: defaultData.account_id,
+        first_name: defaultData.first_name,
+        last_name: defaultData.last_name,
+        middle_name: defaultData.middle_name,
+        suffix: defaultData.suffix,
+        institutional_id: defaultData.institutional_id,
+      }
+    : null;
+
+  const chair = useChairSelection(defaultSelectedChair);
+
+  const defaultFormData: UpdateProgramType = {
+    program_id: defaultData.id,
+    program: {
+      college_id: defaultData.college_id,
+      name: defaultData.name,
+      initialism: defaultData.initialism,
+    },
+    chair: defaultData.account_id ? { type: "existing", id: defaultData.account_id } : undefined,
+  };
+
+  const form = useForm({
+    defaultValues: defaultFormData,
+    validators: { onSubmit: UpdateProgram },
+    onSubmit: (values) => dialog.handleFormSubmit(values),
+  });
+
+  const dialog = useEntityDialog<UpdateProgramType>({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Saving program changes...",
+    successText: "Program updated successfully.",
+    onReset: () => chair.reset(defaultSelectedChair),
+  });
+
+  const handleTabChange = (v: string) => {
+    if (v === "no-chair") {
+      form.setFieldValue("chair", undefined);
+    } else if (v === "existing") {
+      form.setFieldValue("chair", { type: "existing", id: defaultData.account_id ?? 0 });
+    } else if (v === "new") {
+      form.setFieldValue("chair", { type: "new", details: emptyChairDetails });
+    }
+    chair.reset(v === "existing" ? chair.selected : null);
+  };
+
+  const chairChangeSummary = (() => {
+    if (!dialog.pendingValue?.chair)
+      return "This program will be left without an assigned program chair.";
+    if (dialog.pendingValue.chair.type === "existing") {
+      return chair.selected
+        ? `${formatFullName(chair.selected)} will be assigned as program chair.`
+        : "The selected faculty member will be assigned as program chair.";
+    }
+    const { first_name, last_name } = dialog.pendingValue.chair.details.personalDetails;
+    return `A new faculty record for ${first_name} ${last_name} will be created and assigned as program chair.`;
+  })();
+
+  return (
+    <>
+      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant={variant}
+            size="sm"
+            className={cn(
+              "w-full h-full min-h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-primary hover:bg-primary/10 hover:text-primary focus-visible:outline-none",
+              className,
+            )}
+          >
+            <Icon className="mr-2 size-3.5" />
+            {triggerText}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Program</DialogTitle>
+            <DialogDescription>
+              Update program information or reassign the program chair.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <form.Field
+              name="program.name"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Program Name"
+                  disabled={isPending}
+                  placeholder="e.g. Bachelor of Science in Information Technology"
+                />
+              )}
+            />
+            <form.Field
+              name="program.initialism"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Initialism / Code"
+                  disabled={isPending}
+                  placeholder="e.g. BSIT"
+                />
+              )}
+            />
+
+            <Field>
+              <Label htmlFor="current-program-chair">Program Chair</Label>
+              <Input
+                type="text"
+                id="current-program-chair"
+                value={
+                  formatFullName({
+                    first_name: defaultData.first_name,
+                    middle_name: defaultData.middle_name,
+                    last_name: defaultData.last_name,
+                    suffix: defaultData.suffix,
+                  }) ?? "-"
+                }
+                disabled
+              />
+            </Field>
+
+            <form.Field
+              name="chair.type"
+              children={() => (
+                <Tabs
+                  value={form.state.values.chair?.type ?? "no-chair"}
+                  onValueChange={handleTabChange}
+                  className="w-full mt-2"
+                >
+                  <Label>Assign Program Chair</Label>
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="no-chair">Keep Record</TabsTrigger>
+                    <TabsTrigger value="existing">Existing Faculty</TabsTrigger>
+                    <TabsTrigger value="new">New Faculty</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="existing" className="space-y-2 mt-3">
+                    <ExistingChairSearch
+                      search={chair.search}
+                      onSearchChange={chair.setSearch}
+                      candidates={chair.candidates}
+                      isSearching={chair.isSearching}
+                      selected={chair.selected}
+                      onSelect={(candidate) => {
+                        form.setFieldValue("chair", { type: "existing", id: candidate.account_id });
+                        chair.setSelected(candidate);
+                      }}
+                      onClear={() => {
+                        chair.setSelected(null);
+                        form.setFieldValue("chair", { type: "existing", id: 0 });
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="new" className="space-y-3 mt-3">
+                    <form.Field
+                      name="chair.details.credentials.email"
+                      children={(field) => (
+                        <FormTextField
+                          field={field}
+                          label="Email"
+                          type="email"
+                          disabled={isPending}
+                          placeholder="chair@school.edu"
+                        />
+                      )}
+                    />
+                    <form.Field
+                      name="chair.details.personalDetails.institutional_id"
+                      children={(field) => (
+                        <FormTextField
+                          field={field}
+                          label="Institutional ID"
+                          disabled={isPending}
+                          placeholder="e.g. 2021-00456"
+                        />
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="chair.details.personalDetails.first_name"
+                        children={(field) => (
+                          <FormTextField field={field} label="First Name" disabled={isPending} />
+                        )}
+                      />
+                      <form.Field
+                        name="chair.details.personalDetails.last_name"
+                        children={(field) => (
+                          <FormTextField field={field} label="Last Name" disabled={isPending} />
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="chair.details.personalDetails.middle_name"
+                        children={(field) => (
+                          <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                        )}
+                      />
+                      <form.Field
+                        name="chair.details.personalDetails.suffix"
+                        children={(field) => (
+                          <FormTextField
+                            field={field}
+                            label="Suffix"
+                            disabled={isPending}
+                            placeholder="Jr., Sr., III"
+                          />
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+            >
+              Discard changes
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Saving..." : "Save changes"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm program changes?</AlertDialogTitle>
+            <AlertDialogDescription>{chairChangeSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+              {isPending ? "Saving..." : "Yes, save changes"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved edits to this program record. Closing now will lose them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard changes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+./page/ProgramDetailsPage.tsx
+---
+import { useNavigate, useParams } from "react-router";
+import { Button } from "@/components/ui/button";
+
+import { useProgramCourseCount } from "@/features/course/api/course.service";
+import { useProgramClassCount } from "@/features/class/api/class.service";
+import { useProgram } from "../api/program.service";
+
+import { ProgramDetailsHeader } from "../components/ProgramDetailsHeader";
+import { ProgramDetailsMetrics } from "../components/ProgramDetailsMetrics";
+import { ProgramDetailsTabs } from "../components/ProgramDetailsTabs";
+
+export const ProgramDetailsPage = () => {
+  const navigate = useNavigate();
+  // Extract collegeId as well so we can route back to its specific program list
+  const { programId } = useParams<{ collegeId: string; programId: string }>();
+  const parsedProgramId = Number(programId);
+
+  // Live data connections
+  const courseCount = useProgramCourseCount(parsedProgramId);
+  const classCount = useProgramClassCount(parsedProgramId);
+  const {
+    data: programData,
+    isLoading: isProgramLoading,
+    isError: isProgramError,
+  } = useProgram(parsedProgramId);
+
+  const handleBack = () => {
+    navigate("..", { relative: "path" });
+  };
+
+  if (!parsedProgramId || isNaN(parsedProgramId)) {
+    return <div className="p-6 text-xs text-muted-foreground">Invalid Program Identifier.</div>;
+  }
+
+  if (isProgramLoading) {
+    return (
+      <div className="flex h-full flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading program details...
+      </div>
+    );
+  }
+
+  if (isProgramError || !programData) {
+    return (
+      <div className="flex h-full flex-1 flex-col items-center justify-center gap-4 p-6">
+        <p className="text-sm text-muted-foreground">
+          Failed to load program details or program not found.
+        </p>
+        <Button variant="outline" onClick={handleBack}>
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        <ProgramDetailsHeader
+          name={programData.name ?? "Unknown Program"}
+          code={programData.initialism ?? "N/A"}
+          onBack={handleBack}
+        />
+
+        <ProgramDetailsMetrics
+          totalCourses={courseCount.data ?? 0}
+          totalClasses={classCount.data ?? 0}
+          totalStudents={380}
+        />
+
+        <ProgramDetailsTabs programId={parsedProgramId} />
+      </div>
+    </div>
+  );
+};
+
+export default ProgramDetailsPage;
+
+
+---
+./page/ProgramPage.tsx
+---
+import { useState, useMemo } from "react";
+import { useNavigate, useParams } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Plus, Search } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { DataTable } from "@/components/main-data-table";
+import { TablePagination } from "@/components/table-pagination";
+
+import { getProgramsViaCollegeID } from "@/features/program/api/program.service";
+import { ProgramCreateDialog } from "@/features/program/components/ProgramCreate";
+import { getProgramColumns } from "@/features/program/components/ProgramColumns";
+
+export const ProgramPage = () => {
+  const { collegeId } = useParams<{ collegeId: string }>();
+  const navigate = useNavigate();
+
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+
+  const numericCollegeId = Number(collegeId);
+
+  // Memoize the columns so they don't trigger unnecessary table re-renders
+  const columns = useMemo(() => getProgramColumns(numericCollegeId), [numericCollegeId]);
+
+  const {
+    data: programResponse,
+    isPending: isProgramsPending,
+    isError: isProgramsError,
+    error: programError,
+  } = useQuery({
+    queryKey: ["getProgramsViaCollegeID", numericCollegeId, search, page],
+    queryFn: () => getProgramsViaCollegeID(numericCollegeId, search),
+    enabled: !isNaN(numericCollegeId) && numericCollegeId > 0,
+    placeholderData: (previousData) => previousData,
+  });
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        {/* ── Header Section ────────────────────────────────────────────── */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 rounded-lg"
+            onClick={() => navigate("../..", { relative: "path" })} // ── FIX: Hierarchical routing
+          >
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Programs</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage academic degree programs under this college
+            </p>
+          </div>
+        </div>
+
+        {/* ── Table Section ─────────────────────────────────────────────── */}
+        <Card className="flex flex-col gap-0 overflow-hidden rounded-xl pb-0 shadow-xs">
+          <CardHeader className="flex flex-col items-center justify-between gap-2.5 border-b px-6 sm:flex-row">
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search programs..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1); // Reset to page 1 on new search
+                }}
+                className="h-8 rounded-lg pl-8"
+              />
+            </div>
+
+            <ProgramCreateDialog
+              icon={Plus}
+              triggerText="Add Program"
+              collegeId={numericCollegeId}
+            />
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <DataTable
+              columns={columns}
+              data={programResponse?.data ?? []}
+              getRowId={(row) => row.id.toString()}
+              isLoading={isProgramsPending}
+              isError={isProgramsError}
+              error={programError}
+              emptyMessage="No programs found for this college."
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Pagination Footer ───────────────────────────────────────────── */}
+      <TablePagination
+        pagination={programResponse?.pagination}
+        isPending={isProgramsPending}
+        onPageChange={setPage}
+      />
+    </div>
+  );
+};
+
+export default ProgramPage;
+
+
+---
