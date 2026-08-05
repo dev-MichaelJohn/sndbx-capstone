@@ -7,7 +7,7 @@ import type {
   DeanCandidate,
   UpdateCollegeRecordType,
 } from "backend/types/college.types";
-import { apiClient, getErrorMessage, type BasicSearchProps } from "@/srcx/lib/api.lib";
+import { apiClient, getErrorMessage, type BasicSearchProps } from "@/lib/api.lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 

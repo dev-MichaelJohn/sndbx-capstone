@@ -3,7 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import type { LucideIcon } from "lucide-react";
 import { CurriculumSchema, type CurriculumInsert } from "backend/types/curriculum.type";
 import { useCreateCurriculum } from "../api/curriculum.service";
-import { useCourses } from "@/srcx/features/course/api/course.service";
+import { useCourses } from "@/features/course/api/course.service";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 import { Button } from "@/components/ui/button";

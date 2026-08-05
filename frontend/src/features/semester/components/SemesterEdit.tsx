@@ -13,7 +13,7 @@ import {
 } from "backend/types/semester.type";
 import { useUpdateSemester } from "../api/semester.service";
 
-import { cn } from "@/srcx/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Users } from "lucide-react";
-import { CourseOfferingsTab } from "@/srcx/features/offerings/components/OfferingsTab";
-import { ClassStudentsTab } from "@/srcx/features/class-student/components/ClassStudentTab";
+import { CourseOfferingsTab } from "@/features/offerings/components/OfferingsTab";
+import { ClassStudentsTab } from "@/features/class-student/components/ClassStudentTab";
 
 interface ClassTabsProps {
   classId: number;

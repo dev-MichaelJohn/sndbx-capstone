@@ -14,11 +14,11 @@ import {
 import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useDeleteCourse } from "../api/course.service";
-import { useCurriculums } from "@/srcx/features/curriculum/api/curriculum.service";
-import { useProgram } from "@/srcx/features/program/api/program.service";
+import { useCurriculums } from "@/features/curriculum/api/curriculum.service";
+import { useProgram } from "@/features/program/api/program.service";
 import type { CourseSelect } from "backend/types/course.type";
 import type { CurriculumWithDetails } from "backend/types/curriculum.type";
-import { cn } from "@/srcx/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface CourseDeleteDialogProps {
   course: CourseSelect;

@@ -6,7 +6,7 @@ import type {
   CurriculumUpdate,
   CurriculumWithDetails,
 } from "backend/types/curriculum.type";
-import { apiClient, getErrorMessage } from "@/srcx/lib/api.lib";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const getCurriculums = async (params: CurriculumSearch) => {

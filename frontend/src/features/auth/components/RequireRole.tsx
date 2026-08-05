@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router";
-import { useUser } from "@/srcx/features/auth/context/user.context";
-import { getHomeRouteForRoles } from "@/srcx/lib/role-route";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
 import type { SystemRole } from "backend/types/user.type";
 
 export const RequireRole = ({ allowed }: { allowed: SystemRole[] }) => {

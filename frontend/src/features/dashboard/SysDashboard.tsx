@@ -1,21 +1,25 @@
 import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useUser } from "@/srcx/features/auth/context/user.context";
+import { useUser } from "@/features/auth/context/user.context";
 import { Calendar, Landmark, SquareTerminal, Users } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { Navigate, Outlet, useLocation } from "react-router";
 
-export const SysDashboard = () => {
+interface SysDashboardProps {
+  basePath?: string;
+}
+
+export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
   const { user } = useUser();
   const location = useLocation();
   if (!user) return <Navigate to="/auth/login" />;
 
   const navMain: SysSidebarData["navMain"] = [
-    { title: "Overview", url: "/sys/dashboard", icon: SquareTerminal, isActive: true },
-    { title: "Users", url: "/sys/users", icon: Users },
-    { title: "Institution", url: "/sys/institution", icon: Landmark },
-    { title: "Semesters", url: "/sys/semesters", icon: Calendar },
+    { title: "Overview", url: `${basePath}/dashboard`, icon: SquareTerminal },
+    { title: "Users", url: `${basePath}/users`, icon: Users },
+    { title: "Institution", url: `${basePath}/institution`, icon: Landmark },
+    { title: "Semesters", url: `${basePath}/semesters`, icon: Calendar },
   ];
 
   const activePageName =

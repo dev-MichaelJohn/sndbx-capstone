@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { DataTableColumn } from "@/components/main-data-table";
 import type { UserWithDetails, SystemRole } from "backend/types/user.type";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 
 interface GetUserColumnsProps {
   onEdit: (user: UserWithDetails) => void;

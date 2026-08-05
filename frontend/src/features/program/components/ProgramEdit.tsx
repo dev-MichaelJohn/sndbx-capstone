@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import type { LucideIcon } from "lucide-react";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
-import { cn } from "@/srcx/lib/utils";
+import { formatFullName } from "@/lib/nameFormatter";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormTextField } from "@/components/form-text-field";
 import { ExistingChairSearch } from "./ExistingChairSearch";
-import { useChairSelection, useUpdateProgram } from "@/srcx/features/program/api/program.service";
+import { useChairSelection, useUpdateProgram } from "@/features/program/api/program.service";
 import {
   UpdateProgram,
   type ProgramWithChairType,

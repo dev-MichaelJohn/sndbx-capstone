@@ -15,7 +15,7 @@ import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useDeleteCourseOffering } from "../api/offerings.service";
-import { useCourseOfferingStudents } from "@/srcx/features/student-class/api/student-class.service";
+import { useCourseOfferingStudents } from "@/features/student-class/api/student-class.service";
 
 import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 import { cn } from "@/lib/utils";

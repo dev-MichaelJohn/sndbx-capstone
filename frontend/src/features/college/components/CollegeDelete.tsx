@@ -14,10 +14,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
-import { useDeleteCollege } from "@/srcx/features/college/api/college.service";
+import { useDeleteCollege } from "@/features/college/api/college.service";
 import type { CollegeWithDean } from "backend/types/college.types";
-import { getProgramsViaCollegeID } from "@/srcx/features/program/api/program.service";
-import { cn } from "@/srcx/lib/utils";
+import { getProgramsViaCollegeID } from "@/features/program/api/program.service";
+import { cn } from "@/lib/utils";
 
 interface CollegeDeleteDialogProps {
   college: CollegeWithDean;

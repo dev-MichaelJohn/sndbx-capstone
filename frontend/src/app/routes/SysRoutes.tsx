@@ -1,37 +1,30 @@
-import { SysDashboard } from "@/app/sys/SysDashboard";
-import { RequireRole } from "@/srcx/features/auth/components/RequireRole";
-import ClassDetailsPage from "@/srcx/features/class/components/ClassDetails";
-import CollegePage from "@/srcx/features/college/page/CollegePage";
-import ProgramDetailsPage from "@/srcx/features/program/page/ProgramDetailsPage";
-import ProgramPage from "@/srcx/features/program/page/ProgramPage";
-import { CourseOfferingStudentsPage } from "@/srcx/features/student-class/page/StudentClassPage";
-import UsersPage from "@/srcx/features/user/page/UsersPage";
-import SemesterPage from "@/srcx/features/semester/page/SemestersPage";
-import { Route } from "react-router";
+import { Navigate, Route } from "react-router";
+import { SysDashboard } from "@/features/dashboard/SysDashboard";
+import { RequireRole } from "@/features/auth/components/RequireRole";
+import UsersPage from "@/features/user/page/UsersPage";
+import SemesterPage from "@/features/semester/page/SemestersPage";
+import { InstitutionRoutes } from "./InstitutionRoutes";
+import type { SystemRole } from "backend/types/user.type";
 
-export const SysRoutes = () => {
+interface SysRoutesProps {
+  basePath?: string;
+  allowedRoles?: SystemRole[];
+}
+
+export const SysRoutes = ({
+  basePath = "sys",
+  allowedRoles = ["SYS_ADMIN"],
+}: SysRoutesProps = {}) => {
   return (
-    <Route element={<RequireRole allowed={["SYS_ADMIN"]} />}>
-      <Route path="sys" element={<SysDashboard />}>
+    <Route element={<RequireRole allowed={allowedRoles} />}>
+      <Route path={basePath} element={<SysDashboard basePath={`/${basePath}`} />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<h1>Dashboard</h1>} />
         <Route path="users" element={<UsersPage />} />
         <Route path="semesters" element={<SemesterPage />} />
-        <Route path="institution">
-          <Route index element={<CollegePage />} />
-          <Route path=":collegeId/programs">
-            <Route index element={<ProgramPage />} />
-            <Route path=":programId">
-              <Route index element={<ProgramDetailsPage />} />
-              <Route path="classes/:classId">
-                <Route index element={<ClassDetailsPage />} />
-                <Route
-                  path="course-offerings/:id/students"
-                  element={<CourseOfferingStudentsPage />}
-                />
-              </Route>
-            </Route>
-          </Route>
-        </Route>
+
+        {/* Reusable Institution Sub-tree */}
+        {InstitutionRoutes()}
       </Route>
     </Route>
   );

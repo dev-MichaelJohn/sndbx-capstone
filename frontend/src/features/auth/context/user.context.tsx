@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AccountSelect, PersonalDetailsSelect, SystemRole } from "backend/types/user.type";
 import { createContext, useContext, type ReactNode } from "react";
-import { fetchCurrentUser } from "@/srcx/features/auth/api/auth.service";
+import { fetchCurrentUser } from "@/features/auth/api/auth.service";
 
 type CurrentUser =
   | (Pick<AccountSelect, "id" | "email"> & {

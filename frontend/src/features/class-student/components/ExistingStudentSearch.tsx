@@ -7,7 +7,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 
 export interface StudentUser {
   id: number;

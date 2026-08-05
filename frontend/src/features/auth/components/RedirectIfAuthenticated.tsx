@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router";
-import { useUser } from "@/srcx/features/auth/context/user.context";
-import { getHomeRouteForRoles } from "@/srcx/lib/role-route";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
 
 export const RedirectIfAuthenticated = () => {
   const { user, isLoading } = useUser();

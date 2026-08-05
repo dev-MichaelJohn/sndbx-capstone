@@ -1,8 +1,8 @@
 import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 
-import { useProgramCourseCount } from "@/srcx/features/course/api/course.service";
-import { useProgramClassCount } from "@/srcx/features/class/api/class.service";
+import { useProgramCourseCount } from "@/features/course/api/course.service";
+import { useProgramClassCount } from "@/features/class/api/class.service";
 import { useProgram } from "../api/program.service";
 
 import { ProgramDetailsHeader } from "../components/ProgramDetailsHeader";
@@ -12,7 +12,7 @@ import { ProgramDetailsTabs } from "../components/ProgramDetailsTabs";
 export const ProgramDetailsPage = () => {
   const navigate = useNavigate();
   // Extract collegeId as well so we can route back to its specific program list
-  const { collegeId, programId } = useParams<{ collegeId: string; programId: string }>();
+  const { programId } = useParams<{ collegeId: string; programId: string }>();
   const parsedProgramId = Number(programId);
 
   // Live data connections
@@ -25,7 +25,7 @@ export const ProgramDetailsPage = () => {
   } = useProgram(parsedProgramId);
 
   const handleBack = () => {
-    navigate(`/sys/institution/${collegeId}/programs`);
+    navigate("..", { relative: "path" });
   };
 
   if (!parsedProgramId || isNaN(parsedProgramId)) {

@@ -3,8 +3,8 @@ import { useForm } from "@tanstack/react-form";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
-import { useValidateLogin } from "@/srcx/features/auth/api/auth.service";
-import { useAuth } from "@/srcx/features/auth/context/auth.context";
+import { useValidateLogin } from "@/features/auth/api/auth.service";
+import { useAuth } from "@/features/auth/context/auth.context";
 import { useNavigate } from "react-router";
 
 export const LoginForm = () => {

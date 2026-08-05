@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { CourseOfferingDeleteDialog } from "./OfferingDelete";
 
 export interface DataTableColumn<T> {

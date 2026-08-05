@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCourses } from "@/features/sys/course.service";
+import { useCourses } from "../api/course.service";
 import { DataTable, type DataTableColumn } from "@/components/main-data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

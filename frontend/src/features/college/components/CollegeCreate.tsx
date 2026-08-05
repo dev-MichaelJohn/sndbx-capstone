@@ -20,13 +20,13 @@ import {
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { useForm } from "@tanstack/react-form";
 import { CreateCollegeRecord, type CreateCollegeRecordType } from "backend/types/college.types";
 import type { LucideIcon } from "lucide-react";
 import { ExistingDeanSearch } from "./ExistingDeanSearch";
 import { FormTextField } from "@/components/form-text-field";
-import { useCreateCollege, useDeanSelection } from "@/srcx/features/college/api/college.service";
+import { useCreateCollege, useDeanSelection } from "@/features/college/api/college.service";
 import { Label } from "@/components/ui/label";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 

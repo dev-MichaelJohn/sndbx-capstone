@@ -29,9 +29,9 @@ import { Label } from "@/components/ui/label";
 import {
   ExistingStudentSearch,
   type StudentUser,
-} from "@/srcx/features/class-student/components/ExistingStudentSearch";
+} from "@/features/class-student/components/ExistingStudentSearch";
 
-import { useStudentList } from "@/srcx/features/user/api/user.service";
+import { useStudentList } from "@/features/user/api/user.service";
 import { useEnrollIrregularStudent } from "../api/student-class.service";
 import type { StudentClassInsert } from "backend/types/student-class.type";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";

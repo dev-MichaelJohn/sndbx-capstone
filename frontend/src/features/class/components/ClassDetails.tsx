@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 
 import { useClass } from "../api/class.service";
-import { useProgram } from "@/srcx/features/program/api/program.service";
+import { useProgram } from "@/features/program/api/program.service";
 
 import { ClassDetailsHeader } from "./ClassDetailsHeader";
 import { ClassDetailsTabs } from "./ClassDetailsTab";
@@ -42,7 +42,7 @@ export const ClassDetailsPage = () => {
 
   const handleBack = () => {
     if (collegeId && programId) {
-      navigate(`/sys/institution/${collegeId}/programs/${programId}`);
+      navigate("../..", { relative: "path" });
     } else {
       navigate(-1);
     }

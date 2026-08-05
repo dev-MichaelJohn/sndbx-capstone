@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import type { LucideIcon } from "lucide-react";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -27,9 +27,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { FormTextField } from "@/components/form-text-field";
 import { ExistingFacultySearch, type FacultyUser } from "./ExistingFacultySearch";
-import { useSemesters } from "@/srcx/features/semester/api/semester.service";
-import { useCurriculums } from "@/srcx/features/curriculum/api/curriculum.service";
-import { useFacultyList } from "@/srcx/features/user/api/user.service";
+import { useSemesters } from "@/features/semester/api/semester.service";
+import { useCurriculums } from "@/features/curriculum/api/curriculum.service";
+import { useFacultyList } from "@/features/user/api/user.service";
 import { useCreateCourseOffering } from "../api/offerings.service";
 import type { CreateCourseOfferingParams } from "backend/types/offerings.type";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";

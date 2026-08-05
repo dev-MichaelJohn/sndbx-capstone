@@ -15,11 +15,11 @@ import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useDeleteCurriculum } from "../api/curriculum.service";
-import { useCourseOfferings } from "@/srcx/features/offerings/api/offerings.service";
-import { useProgram } from "@/srcx/features/program/api/program.service";
+import { useCourseOfferings } from "@/features/offerings/api/offerings.service";
+import { useProgram } from "@/features/program/api/program.service";
 
 import type { CurriculumWithDetails } from "backend/types/curriculum.type";
-import { cn } from "@/srcx/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface CurriculumDeleteDialogProps {
   curriculum: CurriculumWithDetails;

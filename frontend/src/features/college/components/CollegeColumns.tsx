@@ -13,7 +13,7 @@ import {
 import type { DataTableColumn } from "@/components/main-data-table";
 import type { CollegeWithDean } from "backend/types/college.types";
 
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { CollegeEditDialog } from "./CollegeEdit";
 import { CollegeDeleteDialog } from "./CollegeDelete";
 
@@ -60,7 +60,7 @@ export const collegeColumns: Array<DataTableColumn<CollegeWithDean>> = [
               asChild
               className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
             >
-              <Link to={`/sys/institution/${row.id}/programs`}>
+              <Link to={`${row.id}/programs`}>
                 <Eye className="mr-2 size-3.5" />
                 View Programs
               </Link>

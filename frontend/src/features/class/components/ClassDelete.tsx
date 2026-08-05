@@ -15,14 +15,16 @@ import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useDeleteClass } from "../api/class.service";
-import { useCourseOfferings } from "@/srcx/features/offerings/api/offerings.service";
-import { useClassStudents } from "@/srcx/features/class-student/api/class-student.service";
+import { useCourseOfferings } from "@/features/offerings/api/offerings.service";
+import { useClassStudents } from "@/features/class-student/api/class-student.service";
 
+import type { ClassSelect } from "backend/types/class.type";
 import type { StudentClassWithDetails } from "backend/types/student-class.type";
-import { cn } from "@/srcx/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface ClassDeleteDialogProps {
-  classItem: StudentClassWithDetails;
+  classItem: ClassSelect | StudentClassWithDetails;
+  programInitialism?: string;
   icon?: LucideIcon;
   triggerText?: string;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
@@ -31,6 +33,7 @@ interface ClassDeleteDialogProps {
 
 export const ClassDeleteDialog = ({
   classItem,
+  programInitialism,
   icon: Icon = Trash2,
   triggerText = "Delete",
   variant = "ghost",
@@ -38,6 +41,19 @@ export const ClassDeleteDialog = ({
 }: ClassDeleteDialogProps) => {
   const [open, setOpen] = useState(false);
   const { mutateAsync, isPending: isDeleting } = useDeleteClass();
+
+  // ── Type Guard Property Extraction ───────────────────────────────────────
+  const isDetailed = "class_year_level" in classItem;
+
+  const initialism = isDetailed ? classItem.course_initialism : (programInitialism ?? "");
+
+  const yearLevel = isDetailed ? classItem.class_year_level : classItem.year_level;
+
+  const section = isDetailed ? classItem.class_section : classItem.section;
+
+  const classLabel =
+    [initialism, `${yearLevel}${section}`.trim()].filter(Boolean).join(" ") ||
+    `Class #${classItem.id}`;
 
   // ── Parallel Relation Checks ─────────────────────────────────────────────
   const {
@@ -63,9 +79,7 @@ export const ClassDeleteDialog = ({
     e.preventDefault();
     if (isBlocked || isChecking) return;
 
-    const toastId = toast.loading(
-      `Deleting class ${classItem.course_initialism} ${classItem.class_year_level}${classItem.class_section}...`,
-    );
+    const toastId = toast.loading(`Deleting class ${classLabel}...`);
     try {
       await mutateAsync(classItem.id);
       toast.success("Class block deleted successfully.", { id: toastId });
@@ -96,20 +110,14 @@ export const ClassDeleteDialog = ({
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Delete{" "}
-            {`${classItem.course_initialism} ${classItem.class_year_level}${classItem.class_section}`}
-            ?
-          </AlertDialogTitle>
+          <AlertDialogTitle>Delete {classLabel}?</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 pt-1 text-sm text-muted-foreground">
               <p>
                 This action cannot be undone. This will permanently soft-delete class block{" "}
-                <strong>{`${classItem.course_initialism} ${classItem.class_year_level}${classItem.class_section}`}</strong>{" "}
-                from the system.
+                <strong>{classLabel}</strong> from the system.
               </p>
 
-              {/* Loader while checking database */}
               {isChecking && (
                 <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
                   <Loader2 className="size-4 animate-spin text-primary" />
@@ -117,7 +125,6 @@ export const ClassDeleteDialog = ({
                 </div>
               )}
 
-              {/* Blocked state visual callout */}
               {!isChecking && isBlocked && (
                 <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
                   <AlertCircle className="size-4 shrink-0 mt-0.5" />
@@ -144,7 +151,6 @@ export const ClassDeleteDialog = ({
                 </div>
               )}
 
-              {/* Error fallback if checking failed */}
               {isCheckError && !isChecking && (
                 <p className="text-xs text-destructive">
                   Failed to verify linked class records. Please try again or check your network

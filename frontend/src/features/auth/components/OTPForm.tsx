@@ -4,11 +4,11 @@ import toast from "react-hot-toast";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { useAuth } from "@/srcx/features/auth/context/auth.context";
+import { useAuth } from "@/features/auth/context/auth.context";
 import { useNavigate } from "react-router";
-import { setBearerToken, useValidateOTP } from "@/srcx/features/auth/api/auth.service";
-import { useUser } from "@/srcx/features/auth/context/user.context";
-import { getHomeRouteForRoles } from "@/srcx/lib/role-route";
+import { setBearerToken, useValidateOTP } from "@/features/auth/api/auth.service";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
 
 export const OTPForm = () => {
   const { pendingAuth, setPendingAuth } = useAuth();

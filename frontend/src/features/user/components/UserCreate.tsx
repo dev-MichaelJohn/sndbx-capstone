@@ -32,7 +32,7 @@ import {
 import { useCreateUser } from "../api/user.service";
 import type { CreateUserReqType, SystemRole } from "backend/types/user.type";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
-import { useUser } from "@/srcx/features/auth/context/user.context";
+import { useUser } from "@/features/auth/context/user.context";
 
 interface UserCreateDialogProps {
   open: boolean;

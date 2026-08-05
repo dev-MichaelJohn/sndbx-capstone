@@ -8,10 +8,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { OTPForm } from "./OTPForm";
-import { useAuth } from "@/srcx/features/auth/context/auth.context";
+import { useAuth } from "@/features/auth/context/auth.context";
 import { Link, Navigate } from "react-router";
 import { ResendBtn } from "./ResendBtn";
-import { useValidateLogin } from "@/srcx/features/auth/api/auth.service";
+import { useValidateLogin } from "@/features/auth/api/auth.service";
 import toast from "react-hot-toast";
 
 export const OTPCard = () => {

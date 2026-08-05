@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import type { LucideIcon } from "lucide-react";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -25,7 +25,7 @@ import {
 import { FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { ExistingStudentSearch, type StudentUser } from "./ExistingStudentSearch";
-import { useStudentList } from "@/srcx/features/user/api/user.service";
+import { useStudentList } from "@/features/user/api/user.service";
 import { useEnrollStudent } from "../api/class-student.service";
 import type { ClassStudentInsert } from "backend/types/class-student.type";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";

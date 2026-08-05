@@ -13,7 +13,7 @@ import {
 import type { DataTableColumn } from "@/components/main-data-table";
 import type { ProgramWithChairType } from "backend/types/program.type";
 
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { ProgramEditDialog } from "./ProgramEdit.tsx";
 import { ProgramDeleteDialog } from "./ProgramDelete.tsx";
 

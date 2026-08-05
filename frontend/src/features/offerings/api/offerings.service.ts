@@ -6,7 +6,7 @@ import type {
   CreateCourseOfferingParams,
   UpdateCourseOfferingParams,
 } from "backend/types/offerings.type";
-import { apiClient, getErrorMessage } from "@/srcx/lib/api.lib";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Fetch course offerings filtered by class_id, semester_id, or faculty_id

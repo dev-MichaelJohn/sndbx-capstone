@@ -5,8 +5,8 @@ import { SysRoutes } from "./SysRoutes";
 export const AppRoutes = () => {
   return (
     <Routes>
-      <AuthRoutes />
-      <SysRoutes />
+      {AuthRoutes()}
+      {SysRoutes()}
     </Routes>
   );
 };

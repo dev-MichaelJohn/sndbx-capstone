@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
 import { Toaster } from "react-hot-toast";
-import { AuthProvider } from "@/srcx/features/auth/context/auth.context";
+import { AuthProvider } from "@/features/auth/context/auth.context";
 
 export const AuthPage = () => {
   return (

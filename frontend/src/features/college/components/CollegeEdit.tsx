@@ -22,7 +22,7 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { useForm } from "@tanstack/react-form";
 import {
   UpdateCollegeRecord,
@@ -32,9 +32,9 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { ExistingDeanSearch } from "./ExistingDeanSearch";
 import { FormTextField } from "@/components/form-text-field";
-import { useDeanSelection, useUpdateCollege } from "@/srcx/features/college/api/college.service";
+import { useDeanSelection, useUpdateCollege } from "@/features/college/api/college.service";
 import type { DeanCandidate } from "backend/types/college.types";
-import { cn } from "@/srcx/lib/utils";
+import { cn } from "@/lib/utils";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 interface CollegeEditDialogProps {

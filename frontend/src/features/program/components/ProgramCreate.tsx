@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import type { LucideIcon } from "lucide-react";
-import { formatFullName } from "@/srcx/lib/nameFormatter";
+import { formatFullName } from "@/lib/nameFormatter";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -26,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { FormTextField } from "@/components/form-text-field";
 import { ExistingChairSearch } from "./ExistingChairSearch";
-import { useChairSelection, useCreateProgram } from "@/srcx/features/program/api/program.service";
+import { useChairSelection, useCreateProgram } from "@/features/program/api/program.service";
 import { CreateProgram, type CreateProgramType } from "backend/types/program.type";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 

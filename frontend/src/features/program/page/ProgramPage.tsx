@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/main-data-table";
 import { TablePagination } from "@/components/table-pagination";
 
-import { getProgramsViaCollegeID } from "@/srcx/features/program/api/program.service";
-import { ProgramCreateDialog } from "@/srcx/features/program/components/ProgramCreate";
-import { getProgramColumns } from "@/srcx/features/program/components/ProgramColumns";
+import { getProgramsViaCollegeID } from "@/features/program/api/program.service";
+import { ProgramCreateDialog } from "@/features/program/components/ProgramCreate";
+import { getProgramColumns } from "@/features/program/components/ProgramColumns";
 
 export const ProgramPage = () => {
   const { collegeId } = useParams<{ collegeId: string }>();
@@ -46,7 +46,7 @@ export const ProgramPage = () => {
             variant="outline"
             size="icon"
             className="h-9 w-9 rounded-lg"
-            onClick={() => navigate("/sys/institution")} // ── FIX: Hierarchical routing
+            onClick={() => navigate("../..", { relative: "path" })} // ── FIX: Hierarchical routing
           >
             <ArrowLeft className="size-4" />
           </Button>

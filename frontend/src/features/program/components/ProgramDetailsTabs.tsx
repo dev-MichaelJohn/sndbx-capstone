@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProgramCoursesTab } from "@/srcx/features/course/components/CoursesTab";
-import { CurriculumTab } from "@/srcx/features/curriculum/components/CurriculumTab";
-import { ClassesTab } from "@/srcx/features/class/components/ClassTab";
+import { ProgramCoursesTab } from "@/features/course/components/CoursesTab";
+import { CurriculumTab } from "@/features/curriculum/components/CurriculumTab";
+import { ClassesTab } from "@/features/class/components/ClassTab";
 
 interface ProgramTabsProps {
   programId: number;

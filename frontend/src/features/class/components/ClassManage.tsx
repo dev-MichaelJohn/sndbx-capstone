@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Eye } from "lucide-react";
 
@@ -8,10 +8,9 @@ interface ClassManageItemProps {
 
 export const ClassManageItem = ({ classId }: ClassManageItemProps) => {
   const navigate = useNavigate();
-  const { collegeId, programId } = useParams<{ collegeId: string; programId: string }>();
 
   const handleManage = () => {
-    navigate(`/sys/institution/${collegeId}/programs/${programId}/classes/${classId}`);
+    navigate(`classes/${classId}`);
   };
 
   return (

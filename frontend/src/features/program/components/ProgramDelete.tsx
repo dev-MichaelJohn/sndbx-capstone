@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
-import { useDeleteProgram } from "@/srcx/features/program/api/program.service";
-import { useCourses } from "@/srcx/features/course/api/course.service";
-import { useCurriculums } from "@/srcx/features/curriculum/api/curriculum.service";
-import { cn } from "@/srcx/lib/utils";
+import { useDeleteProgram } from "@/features/program/api/program.service";
+import { useCourses } from "@/features/course/api/course.service";
+import { useCurriculums } from "@/features/curriculum/api/curriculum.service";
+import { cn } from "@/lib/utils";
 
 interface ProgramDeleteDialogProps {
   program: {

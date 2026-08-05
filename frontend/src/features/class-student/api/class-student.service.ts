@@ -5,7 +5,7 @@ import type {
   ClassStudentSelect,
   ClassStudentWithDetails,
 } from "backend/types/class-student.type";
-import { apiClient, getErrorMessage } from "@/srcx/lib/api.lib";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Fetch paginated class student records (filterable by class_id or student_account_id)

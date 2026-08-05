@@ -5,7 +5,7 @@ import type {
   UserLoginType,
 } from "backend/types/user.type";
 import { type APIResponse } from "backend/utils/response.util";
-import { apiClient, getErrorMessage } from "@/srcx/lib/api.lib";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import { useMutation } from "@tanstack/react-query";
 import type { VerifyOTPType } from "backend/types/otp.type";
 
