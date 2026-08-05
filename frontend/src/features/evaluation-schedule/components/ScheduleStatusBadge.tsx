@@ -18,7 +18,7 @@ export const ScheduleStatusBadge = ({ openAt, closeAt, className }: ScheduleStat
         <Badge
           variant="outline"
           className={cn(
-            "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1.5 font-medium px-2.5 py-0.5",
+            "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1.5 font-medium px-2.5 py-0.5 rounded-md text-[11px]",
             className,
           )}
         >
@@ -26,7 +26,7 @@ export const ScheduleStatusBadge = ({ openAt, closeAt, className }: ScheduleStat
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
           </span>
-          Active
+          Active Window
         </Badge>
       );
 
@@ -35,7 +35,7 @@ export const ScheduleStatusBadge = ({ openAt, closeAt, className }: ScheduleStat
         <Badge
           variant="outline"
           className={cn(
-            "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1.5 font-medium px-2.5 py-0.5",
+            "border-amber-500/30 bg-amber-500/10 text-amber-400 gap-1.5 font-medium px-2.5 py-0.5 rounded-md text-[11px]",
             className,
           )}
         >
@@ -50,7 +50,7 @@ export const ScheduleStatusBadge = ({ openAt, closeAt, className }: ScheduleStat
         <Badge
           variant="outline"
           className={cn(
-            "border-border bg-muted/50 text-muted-foreground gap-1.5 font-medium px-2.5 py-0.5",
+            "border-rose-500/20 bg-rose-500/10 text-rose-400 gap-1.5 font-medium px-2.5 py-0.5 rounded-md text-[11px]",
             className,
           )}
         >

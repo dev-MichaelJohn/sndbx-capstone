@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, CalendarDays } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,6 @@ export const EvaluationSchedulePage = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5">
-              <CalendarDays className="size-6 text-primary" />
               <h1 className="text-2xl font-semibold tracking-tight">Evaluation Schedules</h1>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">

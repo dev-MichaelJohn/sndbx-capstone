@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 
 import { useClass } from "../api/class.service";
 import { useProgram } from "@/features/program/api/program.service";
+import { useClassOfferingCount } from "@/features/offerings/api/offerings.service";
 
 import { ClassDetailsHeader } from "./ClassDetailsHeader";
+import { ClassDetailsMetrics } from "./ClassDetailsMetrics";
 import { ClassDetailsTabs } from "./ClassDetailsTab";
+import { useClassStudentCount } from "@/features/class-student/api/class-student.service";
 
-// Helper map to convert Roman numeral year levels to numbers
 const YEAR_LEVEL_MAP: Record<string, number> = {
   I: 1,
   II: 2,
@@ -27,18 +29,20 @@ export const ClassDetailsPage = () => {
   const parsedClassId = Number(classId);
   const isValidClassId = !isNaN(parsedClassId) && parsedClassId > 0;
 
-  // 1. Fetch Class Data
+  // 1. Fetch Class & Program Data
   const {
     data: classData,
     isLoading: isClassLoading,
     isError: isClassError,
   } = useClass(parsedClassId);
 
-  // 2. Fetch Program Data using program_id from classData (or fallback to URL param)
   const effectiveProgramId = classData?.program_id ?? Number(programId);
   const { data: programData } = useProgram(effectiveProgramId);
 
-  // 3. Fetch Metrics
+  // 2. Fetch Metrics
+  const { data: totalOfferings } = useClassOfferingCount(parsedClassId);
+
+  const classStudents = useClassStudentCount(parsedClassId);
 
   const handleBack = () => {
     if (collegeId && programId) {
@@ -50,9 +54,9 @@ export const ClassDetailsPage = () => {
 
   if (!isValidClassId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-100 gap-4 p-6 text-xs text-muted-foreground">
+      <div className="flex min-h-100 flex-col items-center justify-center gap-4 p-6 text-xs text-muted-foreground">
         Invalid or missing Class Identifier.
-        <Button variant="outline" onClick={handleBack}>
+        <Button variant="outline" size="sm" onClick={handleBack}>
           Go Back
         </Button>
       </div>
@@ -73,24 +77,36 @@ export const ClassDetailsPage = () => {
         <p className="text-sm text-muted-foreground">
           Failed to load class details or class not found.
         </p>
-        <Button variant="outline" onClick={handleBack}>
+        <Button variant="outline" size="sm" onClick={handleBack}>
           Go Back
         </Button>
       </div>
     );
   }
 
-  // Converts "III" + "A" -> "3A"
   const numericYear = YEAR_LEVEL_MAP[classData.year_level] ?? classData.year_level;
   const programCode = programData?.initialism ?? "BSIT";
-
-  // Formats to "BSIT 3A"
   const className = `${programCode} ${numericYear}${classData.section}`;
 
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <ClassDetailsHeader name={className} onBack={handleBack} />
+        {/* Header Section */}
+        <ClassDetailsHeader
+          name={className}
+          programCode={programCode}
+          yearLevel={String(numericYear)}
+          section={classData.section}
+          onBack={handleBack}
+        />
+
+        {/* KPI Summary Cards */}
+        <ClassDetailsMetrics
+          totalOfferings={totalOfferings ?? 0}
+          totalStudents={classStudents.data ?? 0} // Replace with student count hook when available
+        />
+
+        {/* Tabs Section */}
         <ClassDetailsTabs classId={parsedClassId} />
       </div>
     </div>

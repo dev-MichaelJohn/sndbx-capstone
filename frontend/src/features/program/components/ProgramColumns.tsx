@@ -1,8 +1,8 @@
-import { Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Eye, MoreHorizontal, Pencil, Trash2, GraduationCap, User } from "lucide-react";
 import { Link } from "react-router";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,27 +17,30 @@ import { formatFullName } from "@/lib/nameFormatter";
 import { ProgramEditDialog } from "./ProgramEdit.tsx";
 import { ProgramDeleteDialog } from "./ProgramDelete.tsx";
 
-// We use a factory function here so we can inject the collegeId from the page URL
+// We use a factory function here so we can inject the collegeId from the page URL[cite: 12]
 export const getProgramColumns = (
   collegeId: string | number,
 ): Array<DataTableColumn<ProgramWithChairType>> => [
   {
-    header: "Code",
-    className: "w-24",
-    cell: (row) => (
-      <Badge variant="outline" className="font-mono text-sm">
-        {row.initialism}
-      </Badge>
-    ),
-  },
-  {
-    header: "Program Name",
-    className: "w-auto",
-    cell: (row) => row.name,
+    header: "Program Details",
+    className: "w-auto min-w-[240px]",
+    cell: (row) => {
+      return (
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <GraduationCap className="size-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold text-foreground">{row.name}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{row.initialism}</span>
+          </div>
+        </div>
+      );
+    },
   },
   {
     header: "Program Chair",
-    className: "w-auto",
+    className: "w-auto min-w-[200px]",
     cell: (row) => {
       const chairName = row.account_id
         ? formatFullName({
@@ -48,7 +51,26 @@ export const getProgramColumns = (
           })
         : null;
 
-      return chairName ?? <span className="italic text-muted-foreground/60">Unassigned</span>;
+      const initials = `${row.first_name?.[0] ?? ""}${row.last_name?.[0] ?? ""}`.toUpperCase();
+
+      if (!chairName) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs italic text-muted-foreground/60">
+            <User className="size-3.5" /> Unassigned
+          </span>
+        );
+      }
+
+      return (
+        <div className="flex items-center gap-2.5">
+          <Avatar className="size-7 border border-border/50">
+            <AvatarFallback className="bg-muted text-[10px] font-semibold text-foreground">
+              {initials || "C"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs font-medium text-foreground">{chairName}</span>
+        </div>
+      );
     },
   },
   {
@@ -58,9 +80,9 @@ export const getProgramColumns = (
       <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="ghost" className="size-8 p-0">
               <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
 

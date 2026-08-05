@@ -12,6 +12,7 @@ import { TablePagination } from "@/components/table-pagination";
 import { getProgramsViaCollegeID } from "@/features/program/api/program.service";
 import { ProgramCreateDialog } from "@/features/program/components/ProgramCreate";
 import { getProgramColumns } from "@/features/program/components/ProgramColumns";
+import { ProgramStatsCards } from "@/features/program/components/ProgramStatsCards";
 
 export const ProgramPage = () => {
   const { collegeId } = useParams<{ collegeId: string }>();
@@ -22,7 +23,7 @@ export const ProgramPage = () => {
 
   const numericCollegeId = Number(collegeId);
 
-  // Memoize the columns so they don't trigger unnecessary table re-renders
+  // Memoize the columns so they don't trigger unnecessary table re-renders[cite: 19]
   const columns = useMemo(() => getProgramColumns(numericCollegeId), [numericCollegeId]);
 
   const {
@@ -37,26 +38,35 @@ export const ProgramPage = () => {
     placeholderData: (previousData) => previousData,
   });
 
+  const programs = useMemo(() => programResponse?.data ?? [], [programResponse?.data]);
+  const totalPrograms = programResponse?.pagination?.totalItems ?? programs.length;
+
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
         {/* ── Header Section ────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 rounded-lg"
-            onClick={() => navigate("../..", { relative: "path" })} // ── FIX: Hierarchical routing
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Programs</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage academic degree programs under this college
-            </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0 rounded-lg"
+              onClick={() => navigate("../..", { relative: "path" })}
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Programs</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Manage academic degree programs under this college
+              </p>
+            </div>
           </div>
+          <ProgramCreateDialog icon={Plus} triggerText="Add Program" collegeId={numericCollegeId} />
         </div>
+
+        {/* KPI Summary Cards */}
+        <ProgramStatsCards programs={programs} total={totalPrograms} />
 
         {/* ── Table Section ─────────────────────────────────────────────── */}
         <Card className="flex flex-col gap-0 overflow-hidden rounded-xl pb-0 shadow-xs">
@@ -68,23 +78,17 @@ export const ProgramPage = () => {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setPage(1); // Reset to page 1 on new search
+                  setPage(1); // Reset to page 1 on new search[cite: 19]
                 }}
-                className="h-8 rounded-lg pl-8"
+                className="h-8 rounded-lg pl-8 text-xs"
               />
             </div>
-
-            <ProgramCreateDialog
-              icon={Plus}
-              triggerText="Add Program"
-              collegeId={numericCollegeId}
-            />
           </CardHeader>
 
           <CardContent className="p-0">
             <DataTable
               columns={columns}
-              data={programResponse?.data ?? []}
+              data={programs}
               getRowId={(row) => row.id.toString()}
               isLoading={isProgramsPending}
               isError={isProgramsError}

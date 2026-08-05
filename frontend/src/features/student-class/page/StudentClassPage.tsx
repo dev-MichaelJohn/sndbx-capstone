@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
@@ -23,13 +22,16 @@ import {
   useCourseOfferingStudents,
   useDropStudentFromOffering,
 } from "../api/student-class.service";
+import { useClassStudents } from "@/features/class-student/api/class-student.service";
 import { getStudentClassColumns } from "../components/StudentClassColumns";
 import { CourseOfferingStudentEnrollDialog } from "../components/StudentClassCreate";
+import { CourseOfferingRosterCards } from "../components/StudentClassCards";
 
 export const CourseOfferingStudentsPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { classId, id } = useParams<{ classId?: string; id?: string }>();
   const courseOfferingId = Number(id);
+  const currentClassId = Number(classId);
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -37,15 +39,22 @@ export const CourseOfferingStudentsPage = () => {
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
   const [droppingStudent, setDroppingStudent] = useState<StudentClassWithDetails | null>(null);
 
+  // Fetch enrolled students for this course offering
   const {
-    data: studentsResponse,
-    isPending: isStudentsPending,
+    data: offeringStudentsResponse,
+    isPending: isOfferingStudentsPending,
     isError: isStudentsError,
     error: studentsError,
   } = useCourseOfferingStudents(courseOfferingId, {
     search: search.trim() || undefined,
     page,
   });
+
+  // Fetch official class section roster to cross-reference section members
+  const { data: officialClassResponse, isPending: isOfficialClassPending } = useClassStudents(
+    { class_id: currentClassId },
+    { enabled: !!currentClassId },
+  );
 
   const dropMutation = useDropStudentFromOffering();
 
@@ -60,110 +69,146 @@ export const CourseOfferingStudentsPage = () => {
     }
   };
 
-  const columns = getStudentClassColumns({
-    onDrop: (student) => setDroppingStudent(student),
-    isDropping: dropMutation.isPending,
-  });
+  const officialStudentAccountIds = useMemo(() => {
+    if (!officialClassResponse?.data) return new Set<number>();
+    return new Set(officialClassResponse.data.map((s) => s.student_account_id));
+  }, [officialClassResponse]);
+
+  const columns = useMemo(
+    () =>
+      getStudentClassColumns({
+        onDrop: (student) => setDroppingStudent(student),
+        isDropping: dropMutation.isPending,
+        officialStudentAccountIds,
+      }),
+    [dropMutation.isPending, officialStudentAccountIds],
+  );
+
+  // Metrics Calculation
+  const enrolledList = offeringStudentsResponse?.data ?? [];
+  const totalEnrolled = offeringStudentsResponse?.pagination?.totalItems ?? enrolledList.length;
+
+  const regularEnrolled = useMemo(() => {
+    if (!enrolledList.length) return 0;
+    return enrolledList.filter((student) => {
+      if ("class_id" in student && student.class_id) {
+        return student.class_id === currentClassId;
+      }
+      return officialStudentAccountIds.has(student.student_account_id);
+    }).length;
+  }, [enrolledList, currentClassId, officialStudentAccountIds]);
+
+  const crossEnrolled = useMemo(() => {
+    return Math.max(0, totalEnrolled - regularEnrolled);
+  }, [totalEnrolled, regularEnrolled]);
 
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        {/* Page Header */}
-        <div className="flex flex-col gap-4">
+        {/* Header Navigation */}
+        <div className="flex items-center gap-3">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="icon"
             onClick={() => navigate(-1)}
-            className="w-fit -ml-2 text-muted-foreground hover:text-foreground cursor-pointer"
+            className="size-9 shrink-0 cursor-pointer rounded-lg border-border/60 hover:bg-muted/80 hover:text-foreground"
+            title="Back"
           >
-            <ChevronLeft className="mr-1 size-4" />
-            Back to Course Offerings
+            <ChevronLeft className="size-4" />
           </Button>
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Course Offering Roster</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage the student list, drop enrollments, and manually enroll irregular students.
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              Course Offering Roster
+            </h1>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              Manage course enrollments, drop records, and enroll irregular students.
             </p>
           </div>
         </div>
 
-        {/* ── Table Section ───────────────────────────────────────────────── */}
-        <Card className="overflow-hidden rounded-xl shadow-xs gap-0 pb-0">
-          <CardHeader className="flex items-center justify-between border-b px-6 flex-col gap-2.5 sm:flex-row sm:items-center">
-            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search students..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="pl-8 h-8 rounded-lg text-xs"
-                />
-              </div>
+        {/* Roster KPI Summary Cards */}
+        <CourseOfferingRosterCards
+          totalEnrolled={totalEnrolled}
+          regularEnrolled={regularEnrolled}
+          crossEnrolled={crossEnrolled}
+          isLoading={isOfferingStudentsPending || isOfficialClassPending}
+        />
+
+        {/* Data Table Shell */}
+        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+          <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Search students..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="h-8 rounded-lg pl-8 text-xs"
+              />
             </div>
 
             <Button
               size="sm"
-              className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto cursor-pointer"
+              className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
               onClick={() => setIsEnrollOpen(true)}
             >
               <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
             </Button>
-          </CardHeader>
+          </div>
 
-          <CardContent className="p-0">
-            <DataTable
-              columns={columns}
-              data={studentsResponse?.data ?? []}
-              getRowId={(row) => row.id}
-              isLoading={isStudentsPending}
-              isError={isStudentsError}
-              error={studentsError}
-              emptyMessage="No students currently enrolled in this course offering."
-            />
-          </CardContent>
-        </Card>
-      </div>
+          <DataTable
+            columns={columns}
+            data={enrolledList}
+            getRowId={(row) => row.id}
+            isLoading={isOfferingStudentsPending}
+            isError={isStudentsError}
+            error={studentsError}
+            emptyMessage="No students currently enrolled in this course offering."
+          />
 
-      {/* ── Pagination Footer ─────────────────────────────────────────────── */}
-      <div className="shrink-0 border-t bg-card px-6 py-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {studentsResponse?.pagination
-              ? `Page ${studentsResponse.pagination.currentPage} of ${studentsResponse.pagination.totalPage}`
-              : "Loading page info..."}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 rounded-lg p-0 cursor-pointer"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={!studentsResponse?.pagination?.hasPrev || isStudentsPending}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
-              {studentsResponse?.pagination?.currentPage ?? 1}
+          {/* Footer Pagination */}
+          <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
+            <span>
+              {offeringStudentsResponse?.pagination
+                ? `Page ${offeringStudentsResponse.pagination.currentPage} of ${offeringStudentsResponse.pagination.totalPage}`
+                : "Loading page info..."}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 rounded-lg p-0 cursor-pointer"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!studentsResponse?.pagination?.hasNext || isStudentsPending}
-            >
-              <ChevronRight className="size-3.5" />
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={
+                  !offeringStudentsResponse?.pagination?.hasPrev || isOfferingStudentsPending
+                }
+              >
+                <ChevronLeft className="size-3.5" />
+              </Button>
+              <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
+                {offeringStudentsResponse?.pagination?.currentPage ?? 1}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={
+                  !offeringStudentsResponse?.pagination?.hasNext || isOfferingStudentsPending
+                }
+              >
+                <ChevronRight className="size-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Dialogs & Modals */}
+      {/* Enrollment Dialog */}
       <CourseOfferingStudentEnrollDialog
         open={isEnrollOpen}
         onOpenChange={setIsEnrollOpen}
@@ -175,26 +220,29 @@ export const CourseOfferingStudentsPage = () => {
         open={!!droppingStudent}
         onOpenChange={(open) => !open && setDroppingStudent(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Drop Student Enrollment?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-semibold">
+              Drop Student Enrollment?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               {droppingStudent && (
                 <>
-                  Are you sure you want to drop <strong>{droppingStudent.student_name}</strong> from
+                  Are you sure you want to drop{" "}
+                  <strong className="text-foreground">{droppingStudent.student_name}</strong> from
                   this course offering? This will remove their record from the class roster.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={dropMutation.isPending} className="cursor-pointer">
+            <AlertDialogCancel disabled={dropMutation.isPending} className="h-8 rounded-lg text-xs">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDrop}
               disabled={dropMutation.isPending}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
+              className="h-8 rounded-lg bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
             >
               {dropMutation.isPending ? "Dropping..." : "Yes, drop student"}
             </AlertDialogAction>

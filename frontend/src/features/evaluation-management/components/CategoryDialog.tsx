@@ -41,6 +41,7 @@ interface CategoryDialogProps {
   triggerIcon?: LucideIcon;
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "icon";
+  className?: string;
 }
 
 export const CategoryDialog = ({
@@ -52,6 +53,7 @@ export const CategoryDialog = ({
   triggerIcon: Icon,
   variant = "outline",
   size = "sm",
+  className,
 }: CategoryDialogProps) => {
   const isEdit = Boolean(initialData);
 
@@ -92,22 +94,29 @@ export const CategoryDialog = ({
     <>
       <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
         <DialogTrigger asChild>
-          <Button type="button" variant={variant} size={size} className="gap-1 rounded-lg">
+          <Button
+            type="button"
+            variant={variant}
+            size={size}
+            className={className ?? "h-8 cursor-pointer gap-1.5 rounded-lg text-xs font-medium"}
+          >
             {Icon && <Icon className="size-3.5" />}
-            {triggerText && <span className="text-xs">{triggerText}</span>}
+            {triggerText && <span>{triggerText}</span>}
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="rounded-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Category" : "Add Category"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base font-semibold">
+              {isEdit ? "Edit Category" : "Add Category"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
               {isEdit
                 ? "Update category details and order."
                 : "Group question items under an evaluation domain."}
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup>
+          <FieldGroup className="py-2">
             <form.Field
               name="name"
               children={(field) => (
@@ -138,6 +147,7 @@ export const CategoryDialog = ({
               variant="outline"
               onClick={dialog.attemptClose}
               disabled={isPending}
+              className="h-8 rounded-lg text-xs"
             >
               Cancel
             </Button>
@@ -148,6 +158,7 @@ export const CategoryDialog = ({
                   type="button"
                   disabled={!canSubmit || isPending}
                   onClick={() => form.handleSubmit()}
+                  className="h-8 cursor-pointer rounded-lg text-xs font-medium"
                 >
                   {isPending ? "Saving..." : isEdit ? "Update Category" : "Add Category"}
                 </Button>
@@ -158,20 +169,26 @@ export const CategoryDialog = ({
       </Dialog>
 
       <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-base font-semibold">
               {isEdit ? "Update category changes?" : "Add category to evaluation form?"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               {isEdit
                 ? "This will update category details across the evaluation instrument."
                 : "This will add a new criteria section to this form."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+            <AlertDialogCancel disabled={isPending} className="h-8 rounded-lg text-xs">
+              Go back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={dialog.confirmSave}
+              disabled={isPending}
+              className="h-8 rounded-lg text-xs font-medium"
+            >
               {isPending ? "Saving..." : "Yes, confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -179,14 +196,20 @@ export const CategoryDialog = ({
       </AlertDialog>
 
       <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
-            <AlertDialogDescription>Closing now will discard your entry.</AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-semibold">
+              Discard unsaved changes?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Closing now will discard your entry.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
+            <AlertDialogCancel className="h-8 rounded-lg text-xs">Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmDiscard} className="h-8 rounded-lg text-xs">
+              Discard
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

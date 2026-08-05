@@ -2,12 +2,15 @@ import type { DataTableColumn } from "@/components/main-data-table";
 import { CurriculumEditDialog } from "./CurriculumEdit";
 import { CurriculumDeleteDialog } from "./CurriculumDelete";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, BookOpen } from "lucide-react";
 
 export type CurriculumColumnType = {
   id: number;
@@ -24,47 +27,54 @@ export type CurriculumColumnType = {
 
 export const getCurriculumColumns = (): DataTableColumn<CurriculumColumnType>[] => [
   {
-    header: "Code",
+    header: "Course Details",
+    className: "w-auto min-w-[240px]",
     cell: (item) => (
-      <div className="w-24">
-        <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold">
-          {item.initialism}
-        </span>
+      <div className="flex items-center gap-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <BookOpen className="size-4" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold text-foreground">{item.name}</span>
+          <span className="font-mono text-[11px] text-muted-foreground">{item.initialism}</span>
+        </div>
       </div>
     ),
   },
   {
-    header: "Course Name",
+    header: "Semester Term",
+    className: "w-40",
     cell: (item) => (
-      <div className="w-48">
-        <span className="text-muted-foreground">{item.name}</span>
-      </div>
-    ),
-  },
-  {
-    header: "Semester",
-    cell: (item) => (
-      <div className="w-24">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-xs font-medium">
-          {item.semester_term} Semester
-        </span>
-      </div>
+      <Badge variant="outline" className="font-mono text-[10px]">
+        {item.semester_term} Semester
+      </Badge>
     ),
   },
   {
     header: "Actions",
-    className: "text-right",
+    className: "w-px whitespace-nowrap",
     cell: (item) => (
       <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-8 cursor-pointer">
+            <Button variant="ghost" size="icon" className="size-8 cursor-pointer p-0">
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36 space-y-0.5">
-            <CurriculumEditDialog curriculum={item} />
-            <CurriculumDeleteDialog curriculum={item} triggerText="Remove" />
+          <DropdownMenuContent align="end" className="w-40 p-1">
+            <DropdownMenuItem
+              className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CurriculumEditDialog curriculum={item} />
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="p-0 focus:bg-transparent hover:bg-transparent cursor-pointer"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CurriculumDeleteDialog curriculum={item} triggerText="Remove" />
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

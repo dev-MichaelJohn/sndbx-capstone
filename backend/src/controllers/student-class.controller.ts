@@ -48,12 +48,34 @@ class studentClassController {
   async getStudentClass(req: Request, res: Response, next: NextFunction) {
     try {
       const { studentClassId } = req.params;
-      const parsedId = await this.extractId(studentClassId, "Student class ID is required.");
+      const parsedId = await this.extractId(studentClassId, "Class student ID is required.");
 
       const result = await this.studentClassService.getStudentClass(parsedId);
       const response = createAPIResponse<typeof result>(
         200,
         "Student class record retrieved successfully",
+        result,
+      );
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getEligibleStudentsForOffering(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const search = typeof req.query.search === "string" ? req.query.search : undefined;
+
+      const courseOfferingId = await this.extractId(id, "Course offering ID is required.");
+
+      const result = await this.studentClassService.getEligibleStudentsForOffering(
+        courseOfferingId,
+        search,
+      );
+      const response = createAPIResponse<typeof result>(
+        200,
+        "Eligible students retrieved successfully",
         result,
       );
       res.status(response.status).json(response);

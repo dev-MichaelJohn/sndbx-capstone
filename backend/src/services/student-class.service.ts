@@ -1,5 +1,6 @@
 import {
   StudentClasses,
+  ClassStudents,
   CourseOfferings,
   CourseCurriculums,
   Courses,
@@ -14,8 +15,9 @@ import {
   type StudentClassSearch,
   type StudentClassSelect,
   type StudentClassWithDetails,
+  type EligibleStudentOption,
 } from "@/types/student-class.type.js";
-import { and, asc, desc, eq, getColumns, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getColumns, ilike, isNull, notInArray, or, sql } from "drizzle-orm";
 import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
 import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
 import type { PgTransaction } from "@/configs/db.config.js";
@@ -28,6 +30,10 @@ export interface IStudentClassService {
     searchQuery: StudentClassSearch,
   ): Promise<PaginatedData<StudentClassWithDetails[]>>;
   getStudentClass(id: number, tx?: PgTransaction): Promise<StudentClassWithDetails>;
+  getEligibleStudentsForOffering(
+    courseOfferingId: number,
+    search?: string,
+  ): Promise<EligibleStudentOption[]>;
   enrollStudentIrregular(data: StudentClassInsert): Promise<StudentClassSelect>;
   dropStudentFromOffering(id: number): Promise<void>;
 }
@@ -170,6 +176,76 @@ export class studentClassService implements IStudentClassService {
     return data;
   }
 
+  async getEligibleStudentsForOffering(courseOfferingId: number, search?: string) {
+    const validation = await z.number().int().positive().safeParseAsync(courseOfferingId);
+    if (!validation.success) throw validation.error;
+
+    const parsedId = validation.data;
+
+    // Fetch account IDs of students already enrolled in this offering via GetRecords helper
+    const enrolledRecords = await GetRecords<"StudentClasses", { student_account_id: number }>(
+      "StudentClasses",
+      {
+        select: (StudentClasses) => ({
+          student_account_id: StudentClasses.student_account_id,
+        }),
+        where: (StudentClasses) =>
+          and(eq(StudentClasses.course_offering_id, parsedId), isNull(StudentClasses.deleted_at)),
+      },
+    );
+    const enrolledAccountIds = enrolledRecords.map((r) => r.student_account_id);
+
+    // Query active student accounts with home class/program metadata via GetRecords helper
+    return await GetRecords<"Accounts", EligibleStudentOption>("Accounts", {
+      select: (Accounts) => ({
+        student_account_id: Accounts.id,
+        institutional_id: PersonalDetails.institutional_id,
+        student_name:
+          sql<string>`concat(${PersonalDetails.last_name}, ', ', ${PersonalDetails.first_name}, ' ', COALESCE(${PersonalDetails.middle_name}, ''))`.as(
+            "student_name",
+          ),
+        program_name: Programs.name,
+        class_year_level: Classes.year_level,
+        class_section: Classes.section,
+      }),
+      join: (query) =>
+        query
+          .innerJoin(AccountRoles, eq(AccountRoles.account_id, Accounts.id))
+          .innerJoin(Roles, eq(Roles.id, AccountRoles.role_id))
+          .innerJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id))
+          .leftJoin(
+            ClassStudents,
+            and(
+              eq(ClassStudents.student_account_id, Accounts.id),
+              isNull(ClassStudents.deleted_at),
+            ),
+          )
+          .leftJoin(
+            Classes,
+            and(eq(Classes.id, ClassStudents.class_id), isNull(Classes.deleted_at)),
+          )
+          .leftJoin(
+            Programs,
+            and(eq(Programs.id, Classes.program_id), isNull(Programs.deleted_at)),
+          ),
+      where: (Accounts) =>
+        and(
+          isNull(Accounts.deleted_at),
+          isNull(AccountRoles.deleted_at),
+          isNull(Roles.deleted_at),
+          eq(Roles.system_role, "STUDENT"),
+          enrolledAccountIds.length > 0 ? notInArray(Accounts.id, enrolledAccountIds) : undefined,
+          search
+            ? or(
+                ilike(PersonalDetails.institutional_id, `%${search}%`),
+                ilike(PersonalDetails.first_name, `%${search}%`),
+                ilike(PersonalDetails.last_name, `%${search}%`),
+              )
+            : undefined,
+        ),
+    });
+  }
+
   async enrollStudentIrregular(data: StudentClassInsert) {
     const validation = await StudentClassSchema.insert.safeParseAsync(data);
     if (!validation.success) throw validation.error;
@@ -192,30 +268,6 @@ export class studentClassService implements IStudentClassService {
         tx,
       });
       if (!offering) throw new AppError(404, "Selected course offering was not found.");
-
-      // Upsert ClassStudents — auto-add to class if not yet a member
-      const classMembership = await GetRecord<"ClassStudents">("ClassStudents", {
-        select: (ClassStudents) => ({ id: ClassStudents.id }),
-        where: (ClassStudents) =>
-          and(
-            eq(ClassStudents.class_id, offering.class_id),
-            eq(ClassStudents.student_account_id, parsedData.student_account_id),
-            isNull(ClassStudents.deleted_at),
-          ),
-        tx,
-      });
-
-      if (!classMembership) {
-        const newMembership = await CreateRecord<"ClassStudents">(
-          "ClassStudents",
-          {
-            class_id: offering.class_id,
-            student_account_id: parsedData.student_account_id,
-          },
-          tx,
-        );
-        if (!newMembership) throw new AppError(500, "Failed to add student to class.");
-      }
 
       const result = await CreateRecord<"StudentClasses">("StudentClasses", parsedData, tx);
       if (!result) throw new AppError(500, "Failed to enroll student in course offering.");

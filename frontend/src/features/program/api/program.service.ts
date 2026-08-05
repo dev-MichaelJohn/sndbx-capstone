@@ -161,3 +161,56 @@ export function useChairSelection(initial: ChairCandidateType | null) {
 
   return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
 }
+
+// Helper to fetch total student count by traversing the chain
+export const fetchProgramStudentCount = async (programId: number): Promise<number> => {
+  try {
+    // 1. Get classes for this program
+    const classesRes = await apiClient.get("/protected/classes", {
+      params: { program_id: programId, page: 1 },
+    });
+    const classes = classesRes.data.data.data ?? [];
+
+    if (classes.length === 0) return 0;
+
+    let totalStudents = 0;
+
+    // 2. Loop through classes to find course offerings
+    for (const cls of classes) {
+      const offeringsRes = await apiClient.get("/protected/course-offerings", {
+        params: { class_id: cls.id, page: 1 },
+      });
+      const offerings = offeringsRes.data.data.data ?? [];
+
+      // 3. For each offering, get the student count using pagination total items
+      for (const offering of offerings) {
+        const studentsRes = await apiClient.get(
+          `/protected/course-offerings/${offering.id}/student-classes`,
+          {
+            params: { page: 1, limit: 1 }, // Just request page 1 to read the total pagination count
+          },
+        );
+
+        // If your backend returns pagination metadata with total count:
+        const totalInOffering =
+          studentsRes.data.data.pagination?.totalItems ?? studentsRes.data.data.data?.length ?? 0;
+        totalStudents += totalInOffering;
+      }
+    }
+
+    return totalStudents;
+  } catch (error) {
+    console.error("Failed to calculate program student count:", error);
+    return 0;
+  }
+};
+
+// React Query Hook for your Program Details page
+export const useProgramStudentCount = (programId: number) => {
+  return useQuery({
+    queryKey: ["programs", programId, "calculated-student-count"],
+    queryFn: () => fetchProgramStudentCount(programId),
+    enabled: !!programId && !isNaN(programId),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to avoid excessive queries
+  });
+};

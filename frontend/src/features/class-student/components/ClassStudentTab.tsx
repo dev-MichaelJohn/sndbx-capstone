@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
@@ -18,7 +17,7 @@ import { DataTable } from "@/components/main-data-table";
 
 import { useClassStudents, useDropStudent } from "../api/class-student.service";
 import { getClassStudentColumns } from "./ClassStudentColumns";
-import { ClassStudentEnrollDialog } from "./EnrollStudent.tsx";
+import { ClassStudentEnrollDialog } from "./EnrollStudent";
 import toast from "react-hot-toast";
 
 interface ClassStudentsTabProps {
@@ -34,11 +33,9 @@ export const ClassStudentsTab = ({ classId }: ClassStudentsTabProps) => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
-  // Dialog & Active Selection States
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
 
-  // Queries & Mutations
   const {
     data: studentsResponse,
     isPending: isStudentsPending,
@@ -63,80 +60,73 @@ export const ClassStudentsTab = ({ classId }: ClassStudentsTabProps) => {
     }
   };
 
-  // Table Column Config
   const columns = getClassStudentColumns({
     onDrop: (id, studentName) => setDropTarget({ id, studentName }),
     isDropping: dropMutation.isPending,
   });
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      {/* ── Table Section ───────────────────────────────────────────────── */}
-      <Card className="overflow-hidden rounded-xl shadow-xs gap-0 pb-0">
-        <CardHeader className="flex items-center justify-between border-b px-6 flex-col gap-2.5 sm:flex-row sm:items-center">
-          {/* Search Toolbar */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-              <Input
-                placeholder="Search students..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-8 h-8 rounded-lg text-xs"
-              />
-            </div>
+    <div className="flex flex-1 flex-col gap-4">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+        {/* Search Toolbar */}
+        <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search students..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="h-8 rounded-lg pl-8 text-xs"
+            />
           </div>
 
           <Button
             size="sm"
-            className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto"
+            className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
             onClick={() => setEnrollDialogOpen(true)}
           >
             <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
           </Button>
-        </CardHeader>
+        </div>
 
-        <CardContent className="p-0">
-          <DataTable
-            columns={columns}
-            data={studentsResponse?.data ?? []}
-            getRowId={(row) => row.id}
-            isLoading={isStudentsPending}
-            isError={isStudentsError}
-            error={studentsError}
-            emptyMessage="No enrolled students found matching the criteria."
-          />
-        </CardContent>
-      </Card>
+        {/* Data Table */}
+        <DataTable
+          columns={columns}
+          data={studentsResponse?.data ?? []}
+          getRowId={(row) => row.id}
+          isLoading={isStudentsPending}
+          isError={isStudentsError}
+          error={studentsError}
+          emptyMessage="No enrolled students found matching the criteria."
+        />
 
-      {/* ── Pagination Footer ─────────────────────────────────────────────── */}
-      <div className="shrink-0 border-t bg-card px-6 py-3 rounded-b-xl">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
+        {/* Footer Pagination */}
+        <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
+          <span>
             {studentsResponse?.pagination
               ? `Page ${studentsResponse.pagination.currentPage} of ${studentsResponse.pagination.totalPage}`
               : "Loading page info..."}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
-              size="sm"
-              className="h-7 w-7 rounded-lg p-0"
+              size="icon"
+              className="h-7 w-7 rounded-lg"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={!studentsResponse?.pagination?.hasPrev || isStudentsPending}
             >
               <ChevronLeft className="size-3.5" />
             </Button>
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
+            <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
               {studentsResponse?.pagination?.currentPage ?? 1}
             </span>
             <Button
               variant="outline"
-              size="sm"
-              className="h-7 w-7 rounded-lg p-0"
+              size="icon"
+              className="h-7 w-7 rounded-lg"
               onClick={() => setPage((p) => p + 1)}
               disabled={!studentsResponse?.pagination?.hasNext || isStudentsPending}
             >
@@ -155,24 +145,29 @@ export const ClassStudentsTab = ({ classId }: ClassStudentsTabProps) => {
 
       {/* Drop Confirmation Alert */}
       <AlertDialog open={!!dropTarget} onOpenChange={(open) => !open && setDropTarget(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Drop Student from Class?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-semibold">
+              Drop Student from Class?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               {dropTarget && (
                 <>
-                  Are you sure you want to drop <strong>{dropTarget.studentName}</strong> from this
+                  Are you sure you want to drop{" "}
+                  <strong className="text-foreground">{dropTarget.studentName}</strong> from this
                   class section? This action will unenroll the student.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={dropMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={dropMutation.isPending} className="h-8 rounded-lg text-xs">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDrop}
               disabled={dropMutation.isPending}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="h-8 rounded-lg bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
             >
               {dropMutation.isPending ? "Dropping..." : "Yes, drop student"}
             </AlertDialogAction>

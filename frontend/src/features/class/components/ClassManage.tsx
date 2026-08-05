@@ -14,7 +14,10 @@ export const ClassManageItem = ({ classId }: ClassManageItemProps) => {
   };
 
   return (
-    <DropdownMenuItem className="cursor-pointer" onSelect={handleManage}>
+    <DropdownMenuItem
+      className="w-full cursor-pointer text-xs transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground active:bg-accent/80"
+      onSelect={handleManage}
+    >
       <Eye className="mr-2 size-3.5 text-muted-foreground" />
       <span>Manage</span>
     </DropdownMenuItem>

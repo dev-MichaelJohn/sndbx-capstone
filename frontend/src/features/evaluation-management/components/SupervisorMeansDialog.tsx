@@ -90,23 +90,29 @@ export const SupervisorMeansDialog = ({ questionId, questionText }: SupervisorMe
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-            <FileCheck className="size-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 cursor-pointer gap-1 rounded-lg border-border/60 text-xs font-medium hover:bg-muted"
+          >
+            <FileCheck className="size-3.5 text-muted-foreground" />
             <span>Means of Verification</span>
           </Button>
         </DialogTrigger>
 
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="rounded-xl sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Suggested Means of Verification</DialogTitle>
-            <DialogDescription className="line-clamp-2">
-              Configure verification evidence/documents required for: "{questionText}"
+            <DialogTitle className="text-base font-semibold">
+              Suggested Means of Verification
+            </DialogTitle>
+            <DialogDescription className="line-clamp-2 text-xs text-muted-foreground">
+              Configure verification evidence/documents required for: &quot;{questionText}&quot;
             </DialogDescription>
           </DialogHeader>
 
           {/* Existing Means List */}
-          <div className="space-y-3 my-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="my-2 space-y-3">
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Configured Verification Evidence
             </h4>
 
@@ -117,7 +123,7 @@ export const SupervisorMeansDialog = ({ questionId, questionText }: SupervisorMe
                 No means of verification added for this item yet.
               </div>
             ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
                 {means.map((m) => (
                   <div
                     key={m.id}
@@ -127,13 +133,13 @@ export const SupervisorMeansDialog = ({ questionId, questionText }: SupervisorMe
                       <Badge variant="outline" className="font-mono text-[10px]">
                         ID: {m.id}
                       </Badge>
-                      <span className="font-medium">{m.descriptor}</span>
+                      <span className="font-medium text-foreground">{m.descriptor}</span>
                     </div>
 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      className="size-6 cursor-pointer rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400"
                       onClick={() => setDeleteTarget(m)}
                     >
                       <Trash2 className="size-3.5" />
@@ -153,7 +159,7 @@ export const SupervisorMeansDialog = ({ questionId, questionText }: SupervisorMe
             }}
             className="space-y-3 border-t pt-3"
           >
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Add Verification Evidence
             </h4>
 
@@ -173,7 +179,7 @@ export const SupervisorMeansDialog = ({ questionId, questionText }: SupervisorMe
               type="submit"
               size="sm"
               disabled={addMean.isPending}
-              className="w-full gap-1 mt-2"
+              className="mt-2 h-8 w-full cursor-pointer gap-1 rounded-lg text-xs font-medium"
             >
               <Plus className="size-3.5" />
               <span>{addMean.isPending ? "Adding..." : "Add Verification Means"}</span>
@@ -184,19 +190,24 @@ export const SupervisorMeansDialog = ({ questionId, questionText }: SupervisorMe
 
       {/* Delete Confirmation Alert */}
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Means of Verification?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete verification item "{deleteTarget?.descriptor}"?
+            <AlertDialogTitle className="text-base font-semibold">
+              Delete Means of Verification?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Are you sure you want to delete verification item &quot;{deleteTarget?.descriptor}
+              &quot;?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMean.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMean.isPending} className="h-8 rounded-lg text-xs">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteMean}
               disabled={deleteMean.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-8 rounded-lg bg-rose-600 text-xs text-white hover:bg-rose-500"
             >
               {deleteMean.isPending ? "Deleting..." : "Delete Item"}
             </AlertDialogAction>

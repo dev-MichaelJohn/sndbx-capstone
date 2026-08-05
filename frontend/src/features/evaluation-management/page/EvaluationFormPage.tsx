@@ -12,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from "@/components/main-data-table";
@@ -98,11 +97,13 @@ export const EvaluationFormPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Evaluation Instruments</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage student (SET) and supervisor (SEF) evaluation forms and question items
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              Evaluation Instruments
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+              Manage student (SET) and supervisor (SEF) evaluation forms and question items.
             </p>
           </div>
 
@@ -111,22 +112,27 @@ export const EvaluationFormPage = () => {
             onValueChange={(val) => setActiveType(val as EvaluationType)}
             className="w-full sm:w-auto"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:w-65">
-              <TabsTrigger value="student">Student (SET)</TabsTrigger>
-              <TabsTrigger value="supervisor">Supervisor (SEF)</TabsTrigger>
+            <TabsList className="grid h-9 w-full grid-cols-2 rounded-lg bg-muted/60 p-1 sm:w-64">
+              <TabsTrigger value="student" className="rounded-md text-xs font-medium">
+                Student (SET)
+              </TabsTrigger>
+              <TabsTrigger value="supervisor" className="rounded-md text-xs font-medium">
+                Supervisor (SEF)
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        <Card className="flex flex-col gap-0 overflow-hidden rounded-xl pb-0 shadow-xs">
-          <CardHeader className="flex flex-col items-center justify-between gap-2.5 border-b px-6 sm:flex-row">
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        {/* Table Shell */}
+        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+          <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
               <Input
                 placeholder="Search evaluation forms..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8 rounded-lg pl-8"
+                className="h-8 rounded-lg pl-8 text-xs"
               />
             </div>
 
@@ -135,31 +141,29 @@ export const EvaluationFormPage = () => {
               icon={Plus}
               triggerText="Add Instrument"
             />
-          </CardHeader>
+          </div>
 
-          <CardContent className="p-0">
-            <DataTable
-              columns={columns}
-              data={filteredForms}
-              getRowId={(row) => row.id}
-              isLoading={isLoading}
-              isError={isError}
-              error={error}
-              emptyMessage={`No ${activeType} evaluation forms found.`}
-            />
-          </CardContent>
-        </Card>
+          <DataTable
+            columns={columns}
+            data={filteredForms}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            isError={isError}
+            error={error}
+            emptyMessage={`No ${activeType} evaluation forms found.`}
+          />
+        </div>
       </div>
 
       {/* Delete Modal with Block Guard */}
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              {blockedReason && <AlertTriangle className="size-5 text-destructive shrink-0" />}
+            <AlertDialogTitle className="flex items-center gap-2 text-base font-semibold">
+              {blockedReason && <AlertTriangle className="size-4 shrink-0 text-destructive" />}
               {blockedReason ? "Cannot Delete Form" : "Delete Evaluation Form?"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               {isCheckingBlock ? (
                 "Checking form dependencies..."
               ) : blockedReason ? (
@@ -171,7 +175,7 @@ export const EvaluationFormPage = () => {
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteForm.isPending}>
+            <AlertDialogCancel disabled={deleteForm.isPending} className="h-8 rounded-lg text-xs">
               {blockedReason ? "Understood" : "Cancel"}
             </AlertDialogCancel>
 
@@ -179,7 +183,7 @@ export const EvaluationFormPage = () => {
               <AlertDialogAction
                 onClick={handleConfirmDelete}
                 disabled={deleteForm.isPending || isCheckingBlock}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="h-8 rounded-lg bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
               >
                 {deleteForm.isPending ? "Deleting..." : "Delete Form"}
               </AlertDialogAction>

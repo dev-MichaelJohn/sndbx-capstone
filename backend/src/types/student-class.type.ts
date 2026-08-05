@@ -33,3 +33,13 @@ export type StudentClassWithDetails = StudentClassSelect & {
   class_year_level: string;
   class_section: string;
 };
+
+// Re-use properties derived from StudentClassWithDetails
+export type EligibleStudentOption = Pick<
+  StudentClassWithDetails,
+  "student_account_id" | "institutional_id" | "student_name"
+> & {
+  program_name: string | null;
+  class_year_level: string | null;
+  class_section: string | null;
+};

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import type { LucideIcon } from "lucide-react";
 
-import { formatFullName } from "@/lib/nameFormatter";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -26,14 +25,12 @@ import {
 import { FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 
+import { EligibleStudentSearch } from "./EligibleStudentSearch";
 import {
-  ExistingStudentSearch,
-  type StudentUser,
-} from "@/features/class-student/components/ExistingStudentSearch";
-
-import { useStudentList } from "@/features/user/api/user.service";
-import { useEnrollIrregularStudent } from "../api/student-class.service";
-import type { StudentClassInsert } from "backend/types/student-class.type";
+  useEligibleStudentsForOffering,
+  useEnrollIrregularStudent,
+} from "../api/student-class.service";
+import type { EligibleStudentOption, StudentClassInsert } from "backend/types/student-class.type";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 interface CourseOfferingStudentEnrollDialogProps {
@@ -52,15 +49,14 @@ export const CourseOfferingStudentEnrollDialog = ({
   onOpenChange: setControlledOpen,
 }: CourseOfferingStudentEnrollDialogProps) => {
   const [studentSearch, setStudentSearch] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<StudentUser | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<EligibleStudentOption | null>(null);
 
   const { mutateAsync, isPending } = useEnrollIrregularStudent();
 
-  const { data: studentData, isLoading: isStudentsLoading } = useStudentList({
-    search: studentSearch.trim().length >= 2 ? studentSearch : undefined,
-  });
-
-  const studentList = (studentData?.data ?? []) as StudentUser[];
+  const { data: eligibleStudents, isLoading: isStudentsLoading } = useEligibleStudentsForOffering(
+    courseOfferingId,
+    studentSearch,
+  );
 
   const initialFormData: StudentClassInsert = {
     course_offering_id: courseOfferingId,
@@ -85,14 +81,12 @@ export const CourseOfferingStudentEnrollDialog = ({
     onReset: resetStudentState,
   });
 
-  // Sync internal dialog state to external parent state when dialog closes
   useEffect(() => {
     if (setControlledOpen && controlledOpen !== dialog.open) {
       setControlledOpen(dialog.open);
     }
   }, [dialog.open, controlledOpen, setControlledOpen]);
 
-  // Sync external parent state to internal dialog state when opened
   useEffect(() => {
     if (controlledOpen && !dialog.open) {
       dialog.handleOpenChange(true);
@@ -109,12 +103,7 @@ export const CourseOfferingStudentEnrollDialog = ({
   };
 
   const enrollSummary = selectedStudent
-    ? `${formatFullName({
-        first_name: selectedStudent.first_name,
-        middle_name: selectedStudent.middle_name ?? "",
-        last_name: selectedStudent.last_name,
-        suffix: selectedStudent.suffix ?? "",
-      })} will be manually enrolled into this course offering.`
+    ? `${selectedStudent.student_name} will be enrolled into this course offering.`
     : "Please select a student to enroll.";
 
   return (
@@ -122,36 +111,41 @@ export const CourseOfferingStudentEnrollDialog = ({
       <Dialog open={dialog.open} onOpenChange={handleOpenChange}>
         {Icon && (
           <DialogTrigger asChild>
-            <Button type="button" className="rounded-lg p-4 flex items-center justify-center gap-1">
+            <Button
+              type="button"
+              className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium"
+            >
               <Icon className="size-3.5" />
-              <span className="leading-none text-sm">{triggerText}</span>
+              <span>{triggerText}</span>
             </Button>
           </DialogTrigger>
         )}
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="rounded-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Enroll Irregular Student</DialogTitle>
-            <DialogDescription>
-              Search and select an active student account to manually enroll them in this course
-              offering.
+            <DialogTitle className="text-base font-semibold">
+              Enroll Student in Offering
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Search and select an active student account to enroll them directly into this course
+              offering roster.
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup>
+          <FieldGroup className="py-2">
             <form.Field
               name="student_account_id"
               children={() => (
                 <div className="space-y-2">
-                  <Label>Select Student</Label>
-                  <ExistingStudentSearch
+                  <Label className="text-xs font-medium">Select Student</Label>
+                  <EligibleStudentSearch
                     search={studentSearch}
                     onSearchChange={setStudentSearch}
-                    users={studentList}
-                    isSearching={isStudentsLoading}
+                    students={eligibleStudents}
+                    isLoading={isStudentsLoading}
                     selected={selectedStudent}
-                    onSelect={(user) => {
-                      form.setFieldValue("student_account_id", user.id);
-                      setSelectedStudent(user);
+                    onSelect={(student) => {
+                      form.setFieldValue("student_account_id", student.student_account_id);
+                      setSelectedStudent(student);
                     }}
                     onClear={() => {
                       setSelectedStudent(null);
@@ -169,6 +163,7 @@ export const CourseOfferingStudentEnrollDialog = ({
               variant="outline"
               onClick={dialog.attemptClose}
               disabled={isPending}
+              className="h-8 rounded-lg text-xs"
             >
               Cancel
             </Button>
@@ -177,8 +172,10 @@ export const CourseOfferingStudentEnrollDialog = ({
               children={([canSubmit]) => (
                 <Button
                   type="button"
+                  size="sm"
                   disabled={!canSubmit || !selectedStudent || isPending}
                   onClick={() => form.handleSubmit()}
+                  className="h-8 rounded-lg text-xs"
                 >
                   {isPending ? "Enrolling..." : "Enroll Student"}
                 </Button>
@@ -190,14 +187,24 @@ export const CourseOfferingStudentEnrollDialog = ({
 
       {/* Confirmation Dialogs */}
       <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Student Enrollment?</AlertDialogTitle>
-            <AlertDialogDescription>{enrollSummary}</AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-semibold">
+              Confirm Student Enrollment?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              {enrollSummary}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+            <AlertDialogCancel disabled={isPending} className="h-8 rounded-lg text-xs">
+              Go back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={dialog.confirmSave}
+              disabled={isPending}
+              className="h-8 rounded-lg text-xs"
+            >
               {isPending ? "Enrolling..." : "Yes, enroll student"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -205,16 +212,20 @@ export const CourseOfferingStudentEnrollDialog = ({
       </AlertDialog>
 
       <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-semibold">
+              Discard changes?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               You have selected a student. Closing now will cancel this enrollment action.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDiscard}>Discard</AlertDialogAction>
+            <AlertDialogCancel className="h-8 rounded-lg text-xs">Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDiscard} className="h-8 rounded-lg text-xs">
+              Discard
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -29,7 +30,7 @@ import { formatFullName } from "@/lib/nameFormatter";
 import { getUserColumns } from "../components/UserColumns";
 import { UserCreateDialog } from "../components/UserCreate";
 import { UserEditDialog } from "../components/UserEdit";
-import toast from "react-hot-toast";
+import { UserStatsCards } from "../components/UserStatsCards";
 
 export const UsersPage = () => {
   const [page, setPage] = useState(1);
@@ -70,23 +71,54 @@ export const UsersPage = () => {
     onDelete: (user) => setDeletingUser(user),
   });
 
-  // Hide super-admin accounts from the list view
-  const users = (usersResponse?.data ?? []).filter((user) => !user.roles.includes("SYS_ADMIN"));
+  // Filter out system administrator accounts from display
+  const users = useMemo(
+    () => (usersResponse?.data ?? []).filter((user) => !user.roles.includes("SYS_ADMIN")),
+    [usersResponse?.data],
+  );
+
+  // Compute live metrics for the cards
+  const stats = useMemo(() => {
+    const rawList = usersResponse?.data ?? [];
+    return {
+      total: usersResponse?.pagination?.totalItems ?? rawList.length,
+      students: rawList.filter((u) => u.roles.includes("STUDENT")).length,
+      faculty: rawList.filter((u) => u.roles.includes("FACULTY")).length,
+      supervisors: rawList.filter((u) => u.roles.includes("SUPERVISOR")).length,
+    };
+  }, [usersResponse]);
 
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">User Accounts</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage system accounts, user details, and system role access permissions.
-          </p>
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">User Accounts</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage system accounts, user details, and system role access permissions.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto gap-1.5"
+            onClick={() => setIsCreateOpen(true)}
+          >
+            <Plus className="size-3.5" /> Add User
+          </Button>
         </div>
 
-        {/* ── Table Section ───────────────────────────────────────────────── */}
+        {/* Dedicated Stat Cards Component */}
+        <UserStatsCards
+          total={stats.total}
+          students={stats.students}
+          faculty={stats.faculty}
+          supervisors={stats.supervisors}
+        />
+
+        {/* Table Section */}
         <Card className="overflow-hidden rounded-xl shadow-xs gap-0 pb-0">
           <CardHeader className="flex items-center justify-between border-b px-6 flex-col gap-2.5 sm:flex-row sm:items-center">
-            {/* Filters Toolbar */}
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
@@ -130,14 +162,6 @@ export const UsersPage = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <Button
-              size="sm"
-              className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              <Plus className="mr-1.5 size-3.5" /> Add User
-            </Button>
           </CardHeader>
 
           <CardContent className="p-0">
@@ -154,7 +178,7 @@ export const UsersPage = () => {
         </Card>
       </div>
 
-      {/* ── Pagination Footer ─────────────────────────────────────────────── */}
+      {/* Pagination Footer */}
       <div className="shrink-0 border-t bg-card px-6 py-3">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">

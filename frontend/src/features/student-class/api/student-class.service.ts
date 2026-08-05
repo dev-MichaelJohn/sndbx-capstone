@@ -1,5 +1,6 @@
 import type { APIResponse, PaginatedData } from "backend/utils/response.util";
 import type {
+  EligibleStudentOption,
   StudentClassInsert,
   StudentClassSearch,
   StudentClassSelect,
@@ -22,9 +23,7 @@ export const getCourseOfferingStudents = async (
   } catch (error) {
     throw new Error(
       getErrorMessage(error, "Failed to fetch enrolled students for course offering."),
-      {
-        cause: error,
-      },
+      { cause: error },
     );
   }
 };
@@ -49,6 +48,34 @@ export const useCourseOfferingStudents = (
   });
 };
 
+// Fetch eligible students available for enrollment in a specific course offering
+export const getEligibleStudentsForOffering = async (courseOfferingId: number, search?: string) => {
+  try {
+    const response = await apiClient.get<APIResponse<EligibleStudentOption[]>>(
+      `/protected/course-offerings/${courseOfferingId}/student-classes/eligible-students`,
+      { params: { search: search?.trim() || undefined } },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Failed to fetch eligible students for course offering."),
+      { cause: error },
+    );
+  }
+};
+
+export const useEligibleStudentsForOffering = (
+  courseOfferingId: number,
+  search?: string,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: ["courseOfferings", courseOfferingId, "eligibleStudents", search],
+    queryFn: () => getEligibleStudentsForOffering(courseOfferingId, search),
+    enabled: !!courseOfferingId && (options?.enabled ?? true),
+  });
+};
+
 // Enroll an irregular student in a course offering[cite: 1]
 const enrollIrregularStudentRecord = async (payload: StudentClassInsert) => {
   try {
@@ -58,7 +85,7 @@ const enrollIrregularStudentRecord = async (payload: StudentClassInsert) => {
     );
     return response.data.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to enroll irregular student."), {
+    throw new Error(getErrorMessage(error, "Failed to enroll student."), {
       cause: error,
     });
   }
@@ -72,6 +99,9 @@ export const useEnrollIrregularStudent = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["courseOfferings", variables.course_offering_id, "studentClasses"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["courseOfferings", variables.course_offering_id, "eligibleStudents"],
       });
     },
   });

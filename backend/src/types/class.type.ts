@@ -13,7 +13,7 @@ export type ClassInsert = z.infer<typeof ClassSchema.insert>;
 export type ClassUpdate = z.infer<typeof ClassSchema.update>;
 
 export const ClassSearchSchema = createSearchSchema("Classes").extend({
-  program_id: z.number().int().positive().optional(),
+  program_id: z.coerce.number().int().positive().optional(),
   year_level: z.enum(YearLevelEnum.enumValues).optional(),
   section: z.enum(SectionEnum.enumValues).optional(),
 });

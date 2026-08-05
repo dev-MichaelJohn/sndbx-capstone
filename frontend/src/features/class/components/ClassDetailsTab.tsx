@@ -13,17 +13,17 @@ export const ClassDetailsTabs = ({ classId }: ClassTabsProps) => {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-      <TabsList className="inline-flex h-9 items-center justify-center rounded-xl bg-muted/60 p-1 text-muted-foreground">
+      <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted/60 p-1 text-muted-foreground">
         <TabsTrigger
           value="offerings"
-          className="flex items-center gap-2 text-xs font-medium rounded-xl"
+          className="flex items-center gap-2 rounded-md px-3 text-xs font-medium transition-all"
         >
           <BookOpen className="size-3.5" />
           Course Offerings
         </TabsTrigger>
         <TabsTrigger
           value="students"
-          className="flex items-center gap-2 text-xs font-medium rounded-xl"
+          className="flex items-center gap-2 rounded-md px-3 text-xs font-medium transition-all"
         >
           <Users className="size-3.5" />
           Class List

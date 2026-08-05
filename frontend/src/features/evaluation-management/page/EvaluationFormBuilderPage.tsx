@@ -13,9 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import {
@@ -139,10 +137,10 @@ export const EvaluationFormBuilderPage = () => {
   if (isError || !formTree) {
     return (
       <div className="flex h-full flex-1 flex-col items-center justify-center gap-4 p-6">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {error instanceof Error ? error.message : "Failed to load form tree."}
         </p>
-        <Button variant="outline" onClick={handleBack}>
+        <Button variant="outline" size="sm" onClick={handleBack} className="h-8 rounded-lg text-xs">
           Go Back
         </Button>
       </div>
@@ -152,66 +150,77 @@ export const EvaluationFormBuilderPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        {/* Header Navigation */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="icon"
-              className="h-9 w-9 shrink-0 rounded-lg"
               onClick={handleBack}
+              className="size-9 shrink-0 cursor-pointer rounded-lg border-border/60 hover:bg-muted/80 hover:text-foreground"
+              title="Back"
             >
               <ArrowLeft className="size-4" />
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">{formTree.title}</h1>
-                <Badge variant="outline" className="capitalize text-xs">
+                <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                  {formTree.title}
+                </h1>
+                <span className="inline-flex items-center rounded-md border border-border/50 bg-muted/50 px-2 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">
                   {activeType}
-                </Badge>
+                </span>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                 {formTree.description || "Configure categories and evaluation statements"}
               </p>
             </div>
           </div>
 
-          <EvaluationFormPreview
-            type={activeType}
-            formTree={formTree}
-            triggerText="Preview Form"
-            variant="outline"
-          />
+          <div className="flex items-center gap-2">
+            <EvaluationFormPreview
+              type={activeType}
+              formTree={formTree}
+              triggerText="Preview Form"
+              variant="outline"
+            />
 
-          <CategoryDialog
-            type={activeType}
-            formId={parsedFormId}
-            nextOrder={formTree.categories.length + 1}
-            triggerText="Add Category"
-            triggerIcon={Plus}
-          />
+            <CategoryDialog
+              type={activeType}
+              formId={parsedFormId}
+              nextOrder={formTree.categories.length + 1}
+              triggerText="Add Category"
+              triggerIcon={Plus}
+            />
+          </div>
         </div>
 
         {/* Tree Container */}
         <div className="flex flex-col gap-4">
           {formTree.categories.length === 0 ? (
-            <Card className="p-8 text-center text-sm text-muted-foreground">
-              No criteria categories created yet. Click "Add Category" to begin building.
-            </Card>
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-card p-12 text-center">
+              <p className="text-xs text-muted-foreground">
+                No criteria categories created yet. Click &quot;Add Category&quot; to begin
+                building.
+              </p>
+            </div>
           ) : (
             formTree.categories.map((category, catIdx) => (
-              <Card key={category.id} className="rounded-xl shadow-xs">
-                <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+              <div
+                key={category.id}
+                className="overflow-hidden rounded-xl border bg-card shadow-xs"
+              >
+                <div className="flex items-center justify-between border-b px-4 py-3">
                   <div>
-                    <CardTitle className="text-base font-semibold">
+                    <h3 className="text-sm font-semibold tracking-tight text-foreground">
                       {catIdx + 1}. {category.name}
-                    </CardTitle>
+                    </h3>
                     {category.description && (
-                      <p className="mt-1 text-xs text-muted-foreground">{category.description}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{category.description}</p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <CategoryDialog
                       type={activeType}
                       formId={parsedFormId}
@@ -223,7 +232,7 @@ export const EvaluationFormBuilderPage = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      className="size-7 cursor-pointer rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleInitiateDeleteCategory(category)}
                     >
                       <Trash2 className="size-3.5" />
@@ -239,11 +248,11 @@ export const EvaluationFormBuilderPage = () => {
                       size="sm"
                     />
                   </div>
-                </CardHeader>
+                </div>
 
-                <CardContent className="pt-4">
+                <div className="p-4">
                   {category.questions.length === 0 ? (
-                    <p className="text-xs italic text-muted-foreground">
+                    <p className="text-xs italic text-muted-foreground/60">
                       No question items added under this category.
                     </p>
                   ) : (
@@ -251,21 +260,21 @@ export const EvaluationFormBuilderPage = () => {
                       {category.questions.map((q, qIdx) => (
                         <li
                           key={q.id}
-                          className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 text-sm"
+                          className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-xs"
                         >
-                          <span className="text-sm font-medium">
+                          <span className="font-medium text-foreground">
                             {catIdx + 1}.{qIdx + 1} {q.question}
                           </span>
 
                           <div className="flex items-center gap-2">
-                            {/* Supervisor Mean Descriptors Button */}
                             {activeType === "supervisor" && (
                               <SupervisorMeansDialog questionId={q.id} questionText={q.question} />
                             )}
 
-                            <Badge variant="secondary" className="text-[10px]">
+                            <span className="inline-flex items-center rounded-md border border-border/50 bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                               Max Rating: {q.max_rating}
-                            </Badge>
+                            </span>
+
                             <QuestionDialog
                               type={activeType}
                               formId={parsedFormId}
@@ -278,7 +287,7 @@ export const EvaluationFormBuilderPage = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              className="size-7 cursor-pointer rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => handleInitiateDeleteQuestion(q)}
                             >
                               <Trash2 className="size-3.5" />
@@ -288,8 +297,8 @@ export const EvaluationFormBuilderPage = () => {
                       ))}
                     </ul>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))
           )}
         </div>
@@ -297,15 +306,15 @@ export const EvaluationFormBuilderPage = () => {
 
       {/* Delete / Block Alert Modal */}
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              {blockedReason && <AlertTriangle className="size-5 text-destructive shrink-0" />}
+            <AlertDialogTitle className="flex items-center gap-2 text-base font-semibold">
+              {blockedReason && <AlertTriangle className="size-4 shrink-0 text-destructive" />}
               {blockedReason
                 ? "Cannot Delete Record"
                 : `Delete ${deleteTarget?.type === "category" ? "Category" : "Question Item"}?`}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               {isCheckingBlock ? (
                 "Checking dependent records..."
               ) : blockedReason ? (
@@ -321,7 +330,7 @@ export const EvaluationFormBuilderPage = () => {
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
+            <AlertDialogCancel disabled={isDeleting} className="h-8 rounded-lg text-xs">
               {blockedReason ? "Understood" : "Cancel"}
             </AlertDialogCancel>
 
@@ -329,7 +338,7 @@ export const EvaluationFormBuilderPage = () => {
               <AlertDialogAction
                 onClick={handleConfirmDelete}
                 disabled={isDeleting || isCheckingBlock}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="h-8 rounded-lg bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>

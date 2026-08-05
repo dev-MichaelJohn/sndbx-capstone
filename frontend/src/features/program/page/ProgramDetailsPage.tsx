@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 import { useProgramCourseCount } from "@/features/course/api/course.service";
 import { useProgramClassCount } from "@/features/class/api/class.service";
-import { useProgram } from "../api/program.service";
+import { useProgram, useProgramStudentCount } from "../api/program.service";
 
 import { ProgramDetailsHeader } from "../components/ProgramDetailsHeader";
 import { ProgramDetailsMetrics } from "../components/ProgramDetailsMetrics";
@@ -11,13 +11,13 @@ import { ProgramDetailsTabs } from "../components/ProgramDetailsTabs";
 
 export const ProgramDetailsPage = () => {
   const navigate = useNavigate();
-  // Extract collegeId as well so we can route back to its specific program list
   const { programId } = useParams<{ collegeId: string; programId: string }>();
   const parsedProgramId = Number(programId);
 
-  // Live data connections
   const courseCount = useProgramCourseCount(parsedProgramId);
   const classCount = useProgramClassCount(parsedProgramId);
+  const studentCount = useProgramStudentCount(parsedProgramId);
+
   const {
     data: programData,
     isLoading: isProgramLoading,
@@ -65,7 +65,7 @@ export const ProgramDetailsPage = () => {
         <ProgramDetailsMetrics
           totalCourses={courseCount.data ?? 0}
           totalClasses={classCount.data ?? 0}
-          totalStudents={380}
+          totalStudents={studentCount.data ?? 0}
         />
 
         <ProgramDetailsTabs programId={parsedProgramId} />
