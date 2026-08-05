@@ -2,7 +2,14 @@ import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useUser } from "@/features/auth/context/user.context";
-import { Calendar, ClipboardList, Landmark, SquareTerminal, Users } from "lucide-react";
+import {
+  Calendar,
+  CalendarClock,
+  ClipboardList,
+  Landmark,
+  SquareTerminal,
+  Users,
+} from "lucide-react";
 import { Navigate, Outlet, useLocation } from "react-router";
 
 interface SysDashboardProps {
@@ -20,6 +27,7 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
     { title: "Institution", url: `${basePath}/institution`, icon: Landmark },
     { title: "Semesters", url: `${basePath}/semesters`, icon: Calendar },
     { title: "Evaluation Forms", url: `${basePath}/evaluation/forms`, icon: ClipboardList },
+    { title: "Evaluation Schedules", url: `${basePath}/evaluation/schedules`, icon: CalendarClock },
   ];
 
   const activePageName =
