@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useUser } from "@/features/auth/context/user.context";
 import {
+  BarChart3,
   Calendar,
   CalendarClock,
   ClipboardList,
@@ -30,6 +31,7 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
     { title: "Evaluation Forms", url: `${basePath}/evaluation/forms`, icon: ClipboardList },
     { title: "Evaluation Schedules", url: `${basePath}/evaluation/schedules`, icon: CalendarClock },
     { title: "Evaluation Reports", url: `${basePath}/evaluation/reports`, icon: FileBarChart2 },
+    { title: "Evaluation Analytics", url: `${basePath}/evaluation/analytics`, icon: BarChart3 },
   ];
 
   const activePageName =

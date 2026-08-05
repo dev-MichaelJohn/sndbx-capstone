@@ -31,7 +31,7 @@ export const EvaluationReportPage = () => {
         </div>
 
         <Card className="flex flex-col gap-0 overflow-hidden rounded-xl border border-border/70 bg-card shadow-xs">
-          <CardHeader className="border-b border-border/60 p-3.5">
+          <CardHeader className="border-b border-border/60">
             <h3 className="text-xs font-semibold tracking-tight text-foreground uppercase">
               Faculty Evaluation History & Records
             </h3>

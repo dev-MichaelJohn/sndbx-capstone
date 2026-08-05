@@ -3,6 +3,7 @@ import EvaluationFormPage from "@/features/evaluation-management/page/Evaluation
 import EvaluationFormBuilderPage from "@/features/evaluation-management/page/EvaluationFormBuilderPage";
 import EvaluationSchedulePage from "@/features/evaluation-schedule/page/EvaluationSchedulePage";
 import EvaluationReportPage from "@/features/evaluation-report/page/EvaluationReportPage";
+import EvaluationAnalyticsPage from "@/features/analytics/page/EvaluationAnalyticsPage";
 
 interface EvaluationRoutesProps {
   path?: string;
@@ -17,5 +18,6 @@ export const EvaluationRoutes = ({ path = "evaluation" }: EvaluationRoutesProps 
     </Route>
     <Route path="schedules" element={<EvaluationSchedulePage />} />
     <Route path="reports" element={<EvaluationReportPage />} />
+    <Route path="analytics" element={<EvaluationAnalyticsPage />} />
   </Route>
 );
