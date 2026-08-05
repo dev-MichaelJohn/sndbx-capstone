@@ -6,6 +6,7 @@ import {
   Calendar,
   CalendarClock,
   ClipboardList,
+  FileBarChart2,
   Landmark,
   SquareTerminal,
   Users,
@@ -28,6 +29,7 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
     { title: "Semesters", url: `${basePath}/semesters`, icon: Calendar },
     { title: "Evaluation Forms", url: `${basePath}/evaluation/forms`, icon: ClipboardList },
     { title: "Evaluation Schedules", url: `${basePath}/evaluation/schedules`, icon: CalendarClock },
+    { title: "Evaluation Reports", url: `${basePath}/evaluation/reports`, icon: FileBarChart2 },
   ];
 
   const activePageName =

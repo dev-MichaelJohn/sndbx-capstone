@@ -7,6 +7,7 @@ import { AppError } from "@/utils/error.util.js";
 import { createAPIResponse } from "@/utils/response.util.js";
 
 export interface IEvaluationReportController {
+  getAllReports(req: Request, res: Response, next: NextFunction): Promise<void>;
   generateBatchReports(req: Request, res: Response, next: NextFunction): Promise<void>;
   getReportDetail(req: Request, res: Response, next: NextFunction): Promise<void>;
   getFacultyReports(req: Request, res: Response, next: NextFunction): Promise<void>;
@@ -28,6 +29,17 @@ export class evaluationReportController implements IEvaluationReportController {
 
   private isFacultySelfView(req: Request): boolean {
     return req.user?.roles?.includes(SYSTEM_ROLES.FACULTY) ?? false;
+  }
+
+  async getAllReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await this.reportService.getAllReports();
+      res
+        .status(200)
+        .json(createAPIResponse(200, "All evaluation reports retrieved successfully.", result));
+    } catch (error) {
+      next(error);
+    }
   }
 
   async generateBatchReports(req: Request, res: Response, next: NextFunction): Promise<void> {

@@ -5440,3 +5440,56 @@ params: 4
     at async userService.deleteUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/user.service.ts:701:12)
     at async userController.deleteUser (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/user.controller.ts:105:7)
     at async <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/routers/protrected/user.router.ts:27:5)
+[2026-08-05 20:25:16:2516] [ERROR]: Missing required permission(s): evaluation-report:view-self - Stack: AppError: Missing required permission(s): evaluation-report:view-self
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:25:40:2540] [ERROR]: Missing required permission(s): evaluation-report:view-self - Stack: AppError: Missing required permission(s): evaluation-report:view-self
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:25:53:2553] [ERROR]: Missing required permission(s): evaluation-report:view-all - Stack: AppError: Missing required permission(s): evaluation-report:view-all
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:25:56:2556] [ERROR]: Missing required permission(s): evaluation-report:view-all - Stack: AppError: Missing required permission(s): evaluation-report:view-all
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:25:58:2558] [ERROR]: Missing required permission(s): evaluation-report:view-all - Stack: AppError: Missing required permission(s): evaluation-report:view-all
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:26:02:262] [ERROR]: Missing required permission(s): evaluation-report:view-all - Stack: AppError: Missing required permission(s): evaluation-report:view-all
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:26:03:263] [ERROR]: Missing required permission(s): evaluation-report:view-all - Stack: AppError: Missing required permission(s): evaluation-report:view-all
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:26:05:265] [ERROR]: Missing required permission(s): evaluation-report:view-all - Stack: AppError: Missing required permission(s): evaluation-report:view-all
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:26:09:269] [ERROR]: Missing required permission(s): evaluation-report:view-all - Stack: AppError: Missing required permission(s): evaluation-report:view-all
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/middlewares/rbac.middleware.ts:55:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[2026-08-05 20:29:58:2958] [ERROR]: Database operation failed. - Stack: DrizzleQueryError: Failed query: select "student_evaluations"."comment" from "student_evaluations" inner join "student_classes" on "student_classes"."course_offering_id" = "course_offerings"."id" inner join "course_offerings" on "student_classes"."course_offering_id" = "course_offerings"."id" where (("course_offerings"."semester_id" = $1) and ("course_offerings"."faculty_id" = $2) and ("student_evaluations"."comment" IS NOT NULL))
+params: 1,2
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GetRecords (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:130:18)
+    at async evaluationReportService.getReportDetail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:362:29)
+    at async evaluationReportService.renderIferPdf (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:516:21)
+    at async evaluationReportController.downloadIferPdf (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/evaluation-report.controller.ts:126:25)
+[2026-08-05 20:30:31:3031] [ERROR]: Database operation failed. - Stack: DrizzleQueryError: Failed query: select "student_evaluations"."comment" from "student_evaluations" inner join "student_classes" on "student_classes"."course_offering_id" = "course_offerings"."id" inner join "course_offerings" on "student_classes"."course_offering_id" = "course_offerings"."id" where (("course_offerings"."semester_id" = $1) and ("course_offerings"."faculty_id" = $2) and ("student_evaluations"."comment" IS NOT NULL))
+params: 1,2
+    at <anonymous> (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/node_modules/.pnpm/drizzle-orm@1.0.0-rc.4_@types+pg@8.20.0_pg@8.22.0_zod@4.4.3/node_modules/src/pg-core/async/session.ts:71:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GetRecords (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/db.service.ts:130:18)
+    at async evaluationReportService.getReportDetail (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:362:29)
+    at async evaluationReportService.renderIferPdf (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:516:21)
+    at async evaluationReportController.downloadIferPdf (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/evaluation-report.controller.ts:126:25)
+[2026-08-05 20:37:37:3737] [ERROR]: Cannot generate reports: No submitted student or supervisor evaluations found for this semester. - Stack: AppError: Cannot generate reports: No submitted student or supervisor evaluations found for this semester.
+    at evaluationReportService.validateHasSubmittedEvaluations (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:127:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async evaluationReportService.generateBatchReports (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:262:5)
+    at async evaluationReportController.generateBatchReports (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/evaluation-report.controller.ts:47:22)
+[2026-08-05 20:39:41:3941] [ERROR]: Cannot generate reports: No submitted student or supervisor evaluations found for this semester. - Stack: AppError: Cannot generate reports: No submitted student or supervisor evaluations found for this semester.
+    at evaluationReportService.validateHasSubmittedEvaluations (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:127:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async evaluationReportService.generateBatchReports (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/services/evaluation-report.service.ts:262:5)
+    at async evaluationReportController.generateBatchReports (/home/dev-michaeljohn/Documents/Projects/sndbx-capstone/backend/src/controllers/evaluation-report.controller.ts:47:22)

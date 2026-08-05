@@ -1,27 +1,24 @@
-import db from "@/configs/db.config.js";
-import { CreateRecord, GetRecords, GetRecord } from "./db.service.js";
-import UserService, { type IUserService } from "./user.service.js";
-import { AppError } from "@/utils/error.util.js";
-import { AccountRoles, Roles, SystemRoles } from "@/schemas/auth.schema.js";
-import { logger } from "@/utils/logger.util.js";
-import { CreateUserReqSchema, type RoleSelect } from "@/types/user.type.js";
-import type z from "zod";
 import { and, eq, isNull } from "drizzle-orm";
+import type z from "zod";
+import db from "@/configs/db.config.js";
+import { AccountRoles, Roles, SystemRoles } from "@/schemas/auth.schema.js";
 import {
   PERMISSIONS,
   ROLE_PERMISSION_MATRIX,
   type Permission,
   type RoleName,
 } from "@/types/seeder.type.js";
+import { CreateUserReqSchema } from "@/types/user.type.js";
+import { AppError } from "@/utils/error.util.js";
+import { logger } from "@/utils/logger.util.js";
+import { CreateRecord, GetRecord, GetRecords } from "./db.service.js";
+import UserService, { type IUserService } from "./user.service.js";
 
-/** Payload for seeding the initial super admin account — same shape as
- * a normal user-creation request, minus `role` (always forced to `SYS_ADMIN`). */
 export const SuperAdminSchema = CreateUserReqSchema.omit({
   role: true,
 });
 export type SuperAdminType = z.infer<typeof SuperAdminSchema>;
 
-/** Public surface of {@link SeederService}, for dependency injection/mocking. */
 export interface ISeederService {
   seedRolesAndPermissions(): Promise<{ message: string }>;
   seedSuperAdmin(
@@ -29,25 +26,12 @@ export interface ISeederService {
   ): Promise<Awaited<ReturnType<IUserService["createUser"]>>>;
 }
 
-/**
- * One-time setup operations run against a fresh database: seeding the
- * fixed set of system roles, and creating the initial super admin account.
- * Both operations are idempotent-safe — they refuse to run again once
- * already seeded, rather than creating duplicates.
- */
 class seederService implements ISeederService {
   constructor(
     private client = db,
     private userService: IUserService = UserService,
   ) {}
 
-  /** Checks whether the Roles table has no rows yet. */
-  private async isRolesEmpty() {
-    const result = await GetRecords("Roles");
-    return result.length === 0;
-  }
-
-  /** Checks whether any active (non-deleted) account currently holds the SYS_ADMIN role. */
   private async isSuperAdminEmpty() {
     const result = await GetRecord("AccountRoles", {
       where: (AccountRoles) =>
@@ -58,60 +42,75 @@ class seederService implements ISeederService {
   }
 
   /**
-   * Seeds the system's fixed set of roles, if they haven't been seeded yet.
-   * All inserts run in a single transaction — if any insert fails, none are
-   * committed.
-   *
-   * @returns a success message once seeding completes
-   * @throws {AppError} 409 if roles have already been seeded
-   * @throws {AppError} 500 if the seeding transaction fails
+   * Idempotently syncs system roles, permissions, and role-permission matrices.
+   * Inserts missing records without overwriting or duplicating existing ones.
    */
   async seedRolesAndPermissions() {
-    if (!(await this.isRolesEmpty())) {
-      throw new AppError(409, "System roles are already seeded.");
-    }
-
     try {
       await this.client.transaction(async (tx) => {
-        const roleRecords = {} as Record<RoleName, { id: number }>;
+        // 1. Fetch current DB state
+        const existingRoles = await GetRecords("Roles", { tx });
+        const existingPermissions = await GetRecords("Permissions", { tx });
+        const existingRolePermissions = await GetRecords("RolePermissions", { tx });
+
+        // Maps for quick lookup
+        const roleMap = new Map<string, number>(existingRoles.map((r) => [r.system_role, r.id]));
+        const permissionMap = new Map<string, number>(
+          existingPermissions.map((p) => [p.permission_key, p.id]),
+        );
+
+        // 2. Sync Missing System Roles
         for (const role of SystemRoles.enumValues) {
-          const created = await CreateRecord("Roles", { system_role: role }, tx);
-          roleRecords[role as RoleName] = { id: created.id };
+          if (!roleMap.has(role)) {
+            const created = await CreateRecord("Roles", { system_role: role }, tx);
+            roleMap.set(role, created.id);
+          }
         }
 
-        const permissionRecords = {} as Record<Permission, { id: number }>;
+        // 3. Sync Missing Permissions
         for (const permission of Object.values(PERMISSIONS)) {
-          const created = await CreateRecord("Permissions", { permission_key: permission }, tx);
-          permissionRecords[permission] = { id: created.id };
+          if (!permissionMap.has(permission)) {
+            const created = await CreateRecord("Permissions", { permission_key: permission }, tx);
+            permissionMap.set(permission, created.id);
+          }
         }
+
+        // 4. Sync Missing Role-Permission Mappings
+        const existingRPSet = new Set(
+          existingRolePermissions.map((rp) => `${rp.role_id}:${rp.permission_id}`),
+        );
 
         for (const [roleName, permissions] of Object.entries(ROLE_PERMISSION_MATRIX) as [
           RoleName,
           Permission[],
         ][]) {
-          const role = roleRecords[roleName];
-          for (const permission of permissions) {
-            const key = permissionRecords[permission];
-            await CreateRecord("RolePermissions", { role_id: role.id, permission_id: key.id }, tx);
+          const roleId = roleMap.get(roleName);
+          if (!roleId) continue;
+
+          for (const permissionKey of permissions) {
+            const permissionId = permissionMap.get(permissionKey);
+            if (!permissionId) continue;
+
+            const key = `${roleId}:${permissionId}`;
+            if (!existingRPSet.has(key)) {
+              await CreateRecord(
+                "RolePermissions",
+                { role_id: roleId, permission_id: permissionId },
+                tx,
+              );
+              existingRPSet.add(key);
+            }
           }
         }
       });
 
-      return { message: "Roles, permissions, and role-permissions seeded successfully!" };
+      return { message: "Roles, permissions, and matrix synced successfully!" };
     } catch (error) {
       logger.error(`Seeding transaction failed: ${error instanceof Error ? error.message : error}`);
-      throw new AppError(500, "An unexpected database error occurred during seeding roles.");
+      throw new AppError(500, "An unexpected database error occurred during syncing permissions.");
     }
   }
 
-  /**
-   * Creates the initial super admin account, if one doesn't already exist.
-   *
-   * @param userData - credentials and personal details for the super admin
-   * @returns the created account, personal details, and role-mapping records
-   * @throws {ZodError} if `userData` fails schema validation
-   * @throws {AppError} 409 if a super admin account already exists
-   */
   async seedSuperAdmin(userData: SuperAdminType) {
     const validation = await SuperAdminSchema.safeParseAsync(userData);
     if (!validation.success) throw validation.error;

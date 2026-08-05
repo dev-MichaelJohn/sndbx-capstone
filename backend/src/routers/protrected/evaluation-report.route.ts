@@ -5,6 +5,13 @@ import { PERMISSIONS } from "@/types/seeder.type.js";
 
 const EvaluationReportRouter: IRouter = Router({ mergeParams: true });
 
+// System-wide Read Operation (Admin / Supervisor Dashboard)
+EvaluationReportRouter.get(
+  "/",
+  requirePermission(PERMISSIONS.EVALUATION_REPORT_VIEW_ALL),
+  (req, res, next) => EvaluationReportController.getAllReports(req, res, next),
+);
+
 // Batch Operations
 EvaluationReportRouter.post(
   "/batch-generate",

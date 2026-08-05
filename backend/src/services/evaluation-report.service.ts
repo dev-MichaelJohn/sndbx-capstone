@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import db from "@/configs/db.config.js";
 import { CreateRecord, GetRecord, GetRecords, UpdateRecord } from "./db.service.js";
 import { AppError } from "@/utils/error.util.js";
@@ -35,6 +35,7 @@ import {
 } from "@/types/evaluation-report.type.js";
 
 export interface IEvaluationReportService {
+  getAllReports(): Promise<Array<IferSelect & { faculty_name: string | null }>>;
   generateBatchReports(payload: GenerateBatchIferReq): Promise<{ generated_count: number }>;
   getReportDetail(reportId: number, isSelfView?: boolean): Promise<UnifiedFacultyReportDetail>;
   getFacultyReports(facultyId: number): Promise<IferSelect[]>;
@@ -50,6 +51,201 @@ export class evaluationReportService implements IEvaluationReportService {
     return val.toFixed(RATING_CONFIG.DECIMAL_PLACES);
   }
 
+  private async findActiveReportById(reportId: number): Promise<IferSelect> {
+    const report = (await GetRecord("IndividualFacultyEvaluationReports", {
+      where: (IndividualFacultyEvaluationReports) =>
+        and(
+          eq(IndividualFacultyEvaluationReports.id, reportId),
+          isNull(IndividualFacultyEvaluationReports.deleted_at),
+        ),
+    })) as IferSelect | undefined;
+
+    if (!report) throw new AppError(404, "Report not found.");
+    return report;
+  }
+
+  private async validateNoActiveSchedules(semesterId: number, now: Date): Promise<void> {
+    const activeStudentSchedules = await GetRecords("StudentEvaluationSchedules", {
+      where: (s) =>
+        and(
+          eq(s.semester_id, semesterId),
+          isNull(s.deleted_at),
+          lte(s.open_at, now),
+          gte(s.close_at, now),
+        ),
+    });
+
+    const activeSupervisorSchedules = await GetRecords("SupervisorEvaluationSchedules", {
+      where: (s) =>
+        and(
+          eq(s.semester_id, semesterId),
+          isNull(s.deleted_at),
+          lte(s.open_at, now),
+          gte(s.close_at, now),
+        ),
+    });
+
+    if (activeStudentSchedules.length > 0 || activeSupervisorSchedules.length > 0) {
+      throw new AppError(
+        400,
+        "Cannot generate reports while an evaluation schedule is currently active.",
+      );
+    }
+  }
+
+  private async validateHasSubmittedEvaluations(semesterId: number): Promise<void> {
+    const studentSubmissions = await GetRecords("StudentEvaluations", {
+      select: (StudentEvaluations) => ({ id: StudentEvaluations.id }),
+      where: () =>
+        and(
+          eq(CourseOfferings.semester_id, semesterId),
+          isNull(CourseOfferings.deleted_at),
+          sql`${StudentEvaluations.submitted_at} IS NOT NULL`,
+        ),
+      join: (query) =>
+        query
+          .innerJoin(StudentClasses, eq(StudentEvaluations.student_class_id, StudentClasses.id))
+          .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id)),
+    });
+
+    const supervisorSubmissions = await GetRecords("SupervisorEvaluations", {
+      select: (SupervisorEvaluations) => ({ id: SupervisorEvaluations.id }),
+      where: () =>
+        and(
+          eq(SupervisorEvaluationSchedules.semester_id, semesterId),
+          isNull(SupervisorEvaluationSchedules.deleted_at),
+          sql`${SupervisorEvaluations.submitted_at} IS NOT NULL`,
+        ),
+      join: (query) =>
+        query.innerJoin(
+          SupervisorEvaluationSchedules,
+          eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
+        ),
+    });
+
+    if (studentSubmissions.length === 0 && supervisorSubmissions.length === 0) {
+      throw new AppError(
+        400,
+        "Cannot generate reports: No submitted student or supervisor evaluations found for this semester.",
+      );
+    }
+  }
+
+  private async fetchStudentComments(semesterId: number, facultyId: number): Promise<string[]> {
+    const studentComments = await GetRecords<"StudentEvaluations", { comment: string | null }>(
+      "StudentEvaluations",
+      {
+        select: (StudentEvaluations) => ({ comment: StudentEvaluations.comment }),
+        where: () =>
+          and(
+            eq(CourseOfferings.semester_id, semesterId),
+            eq(CourseOfferings.faculty_id, facultyId),
+            sql`${StudentEvaluations.comment} IS NOT NULL`,
+          ),
+        join: (query) =>
+          query
+            .innerJoin(StudentClasses, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+            .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id)),
+      },
+    );
+
+    return studentComments.map((c) => c.comment!).filter(Boolean);
+  }
+
+  private async fetchSupervisorComments(semesterId: number): Promise<string[]> {
+    const supervisorComments = await GetRecords<
+      "SupervisorEvaluations",
+      { comment: string | null }
+    >("SupervisorEvaluations", {
+      select: (SupervisorEvaluations) => ({ comment: SupervisorEvaluations.comment }),
+      where: () =>
+        and(
+          eq(SupervisorEvaluationSchedules.semester_id, semesterId),
+          sql`${SupervisorEvaluations.comment} IS NOT NULL`,
+        ),
+      join: (query) =>
+        query.innerJoin(
+          SupervisorEvaluationSchedules,
+          eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
+        ),
+    });
+
+    return supervisorComments.map((c) => c.comment!).filter(Boolean);
+  }
+
+  private rollupClassSummaries(
+    classSummaries: UnifiedFacultyReportDetail["class_summaries"],
+  ): UnifiedFacultyReportDetail["class_summaries"] {
+    const courseMap = new Map<string, UnifiedFacultyReportDetail["class_summaries"][number]>();
+
+    for (const item of classSummaries) {
+      const existing = courseMap.get(item.course_code);
+      const studentCount = item.student_count;
+      const avgRating = Number(item.average_set_rating) || 0;
+      const weightedScore = Number(item.weighted_set_score) || studentCount * avgRating;
+
+      if (existing) {
+        const newTotalStudents = existing.student_count + studentCount;
+        const newTotalWeightedScore = Number(existing.weighted_set_score) + weightedScore;
+        const newAvgRating = newTotalStudents > 0 ? newTotalWeightedScore / newTotalStudents : 0;
+
+        existing.student_count = newTotalStudents;
+        existing.average_set_rating = this.formatRating(newAvgRating);
+        existing.weighted_set_score = this.formatRating(newTotalWeightedScore);
+      } else {
+        courseMap.set(item.course_code, {
+          ...item,
+          section: "All Sections",
+          average_set_rating: this.formatRating(avgRating),
+          weighted_set_score: this.formatRating(weightedScore),
+        });
+      }
+    }
+
+    return Array.from(courseMap.values());
+  }
+
+  private computeCombinedRating(setRating: string | null, sefRating: string | null): number | null {
+    if (setRating && sefRating) {
+      return (
+        Number(setRating) * EVALUATION_WEIGHTS.SET_DEFAULT +
+        Number(sefRating) * EVALUATION_WEIGHTS.SEF_DEFAULT
+      );
+    }
+    return setRating ? Number(setRating) : null;
+  }
+
+  async getAllReports(): Promise<Array<IferSelect & { faculty_name: string | null }>> {
+    return await GetRecords<
+      "IndividualFacultyEvaluationReports",
+      IferSelect & { faculty_name: string | null }
+    >("IndividualFacultyEvaluationReports", {
+      select: (t) => ({
+        id: t.id,
+        semester_id: t.semester_id,
+        faculty_id: t.faculty_id,
+        overall_set_rating: t.overall_set_rating,
+        overall_sef_rating: t.overall_sef_rating,
+        average_student_sentiment: t.average_student_sentiment,
+        average_supervisor_sentiment: t.average_supervisor_sentiment,
+        status: t.status,
+        areas_for_improvement: t.areas_for_improvement,
+        proposed_activities: t.proposed_activities,
+        action_plan: t.action_plan,
+        acknowledged_at: t.acknowledged_at,
+        created_at: t.created_at,
+        updated_at: t.updated_at,
+        deleted_at: t.deleted_at,
+        faculty_name: sql<string>`concat(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+      }),
+      where: (t) => isNull(t.deleted_at),
+      join: (query) =>
+        query
+          .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
+          .leftJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id)),
+    });
+  }
+
   async generateBatchReports(payload: GenerateBatchIferReq): Promise<{ generated_count: number }> {
     const validation = await GenerateBatchIferReqSchema.safeParseAsync(payload);
     if (!validation.success) throw validation.error;
@@ -60,6 +256,10 @@ export class evaluationReportService implements IEvaluationReportService {
       where: (Semesters) => eq(Semesters.id, semester_id),
     });
     if (!semester) throw new AppError(404, "Semester not found.");
+
+    const now = new Date();
+    await this.validateNoActiveSchedules(semester_id, now);
+    await this.validateHasSubmittedEvaluations(semester_id);
 
     const facultyOfferings = await GetRecords<"CourseOfferings", { faculty_id: number }>(
       "CourseOfferings",
@@ -228,15 +428,7 @@ export class evaluationReportService implements IEvaluationReportService {
   }
 
   async getReportDetail(reportId: number, isSelfView = false): Promise<UnifiedFacultyReportDetail> {
-    const report = (await GetRecord("IndividualFacultyEvaluationReports", {
-      where: (IndividualFacultyEvaluationReports) =>
-        and(
-          eq(IndividualFacultyEvaluationReports.id, reportId),
-          isNull(IndividualFacultyEvaluationReports.deleted_at),
-        ),
-    })) as IferSelect | undefined;
-
-    if (!report) throw new AppError(404, "Report not found.");
+    const report = await this.findActiveReportById(reportId);
 
     const faculty = await GetRecord<
       "Accounts",
@@ -294,78 +486,16 @@ export class evaluationReportService implements IEvaluationReportService {
           .innerJoin(Programs, eq(Classes.program_id, Programs.id)),
     });
 
-    // Course-Level Rollup for Faculty Self-View (Prevents cohort bias/targeting)
     if (isSelfView) {
-      const courseMap = new Map<string, UnifiedFacultyReportDetail["class_summaries"][number]>();
-
-      for (const item of classSummaries) {
-        const existing = courseMap.get(item.course_code);
-        const studentCount = item.student_count;
-        const avgRating = Number(item.average_set_rating) || 0;
-        const weightedScore = Number(item.weighted_set_score) || studentCount * avgRating;
-
-        if (existing) {
-          const newTotalStudents = existing.student_count + studentCount;
-          const newTotalWeightedScore = Number(existing.weighted_set_score) + weightedScore;
-          const newAvgRating = newTotalStudents > 0 ? newTotalWeightedScore / newTotalStudents : 0;
-
-          existing.student_count = newTotalStudents;
-          existing.average_set_rating = this.formatRating(newAvgRating);
-          existing.weighted_set_score = this.formatRating(newTotalWeightedScore);
-        } else {
-          courseMap.set(item.course_code, {
-            ...item,
-            section: "All Sections",
-            average_set_rating: this.formatRating(avgRating),
-            weighted_set_score: this.formatRating(weightedScore),
-          });
-        }
-      }
-
-      classSummaries = Array.from(courseMap.values());
+      classSummaries = this.rollupClassSummaries(classSummaries);
     }
 
-    const studentComments = await GetRecords<"StudentEvaluations", { comment: string | null }>(
-      "StudentEvaluations",
-      {
-        select: (StudentEvaluations) => ({ comment: StudentEvaluations.comment }),
-        where: () =>
-          and(
-            eq(CourseOfferings.semester_id, report.semester_id),
-            eq(CourseOfferings.faculty_id, report.faculty_id),
-            sql`${StudentEvaluations.comment} IS NOT NULL`,
-          ),
-        join: (query) =>
-          query
-            .innerJoin(StudentClasses, eq(StudentClasses.course_offering_id, CourseOfferings.id))
-            .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id)),
-      },
+    const studentComments = await this.fetchStudentComments(report.semester_id, report.faculty_id);
+    const supervisorComments = await this.fetchSupervisorComments(report.semester_id);
+    const combinedRating = this.computeCombinedRating(
+      report.overall_set_rating,
+      report.overall_sef_rating,
     );
-
-    const supervisorComments = await GetRecords<
-      "SupervisorEvaluations",
-      { comment: string | null }
-    >("SupervisorEvaluations", {
-      select: (SupervisorEvaluations) => ({ comment: SupervisorEvaluations.comment }),
-      where: () =>
-        and(
-          eq(SupervisorEvaluationSchedules.semester_id, report.semester_id),
-          sql`${SupervisorEvaluations.comment} IS NOT NULL`,
-        ),
-      join: (query) =>
-        query.innerJoin(
-          SupervisorEvaluationSchedules,
-          eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
-        ),
-    });
-
-    const combinedRating =
-      report.overall_set_rating && report.overall_sef_rating
-        ? Number(report.overall_set_rating) * EVALUATION_WEIGHTS.SET_DEFAULT +
-          Number(report.overall_sef_rating) * EVALUATION_WEIGHTS.SEF_DEFAULT
-        : report.overall_set_rating
-          ? Number(report.overall_set_rating)
-          : null;
 
     return {
       report,
@@ -383,8 +513,8 @@ export class evaluationReportService implements IEvaluationReportService {
       },
       class_summaries: classSummaries,
       combined_weighted_rating: combinedRating,
-      student_comments: studentComments.map((c) => c.comment!).filter(Boolean),
-      supervisor_comments: supervisorComments.map((c) => c.comment!).filter(Boolean),
+      student_comments: studentComments,
+      supervisor_comments: supervisorComments,
     };
   }
 
@@ -406,14 +536,7 @@ export class evaluationReportService implements IEvaluationReportService {
     const validation = await UpdateDevelopmentPlanReqSchema.safeParseAsync(payload);
     if (!validation.success) throw validation.error;
 
-    const existing = await GetRecord("IndividualFacultyEvaluationReports", {
-      where: (IndividualFacultyEvaluationReports) =>
-        and(
-          eq(IndividualFacultyEvaluationReports.id, reportId),
-          isNull(IndividualFacultyEvaluationReports.deleted_at),
-        ),
-    });
-    if (!existing) throw new AppError(404, "Report not found.");
+    await this.findActiveReportById(reportId);
 
     const updated = await UpdateRecord(
       "IndividualFacultyEvaluationReports",
@@ -430,15 +553,8 @@ export class evaluationReportService implements IEvaluationReportService {
   }
 
   async acknowledgeReport(reportId: number, facultyId: number): Promise<IferSelect> {
-    const existing = (await GetRecord("IndividualFacultyEvaluationReports", {
-      where: (IndividualFacultyEvaluationReports) =>
-        and(
-          eq(IndividualFacultyEvaluationReports.id, reportId),
-          isNull(IndividualFacultyEvaluationReports.deleted_at),
-        ),
-    })) as IferSelect | undefined;
+    const existing = await this.findActiveReportById(reportId);
 
-    if (!existing) throw new AppError(404, "Report not found.");
     if (existing.faculty_id !== facultyId)
       throw new AppError(403, "Forbidden: You can only acknowledge your own report.");
 
@@ -459,14 +575,7 @@ export class evaluationReportService implements IEvaluationReportService {
     const validation = await UpdateIferStatusReqSchema.safeParseAsync(payload);
     if (!validation.success) throw validation.error;
 
-    const existing = await GetRecord("IndividualFacultyEvaluationReports", {
-      where: (IndividualFacultyEvaluationReports) =>
-        and(
-          eq(IndividualFacultyEvaluationReports.id, reportId),
-          isNull(IndividualFacultyEvaluationReports.deleted_at),
-        ),
-    });
-    if (!existing) throw new AppError(404, "Report not found.");
+    await this.findActiveReportById(reportId);
 
     const updated = await UpdateRecord(
       "IndividualFacultyEvaluationReports",
