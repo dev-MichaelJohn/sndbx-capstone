@@ -1,0 +1,307 @@
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { GetRecords } from "./db.service.js";
+import {
+  IndividualFacultyEvaluationReports,
+  IferClassSummaries,
+} from "@/schemas/evaluation-report.schema.js";
+import {
+  Classes,
+  CourseCurriculums,
+  CourseOfferings,
+  Courses,
+  Programs,
+  Semesters,
+} from "@/schemas/institution.schema.js";
+import { Accounts, PersonalDetails } from "@/schemas/auth.schema.js";
+import { RATING_CONFIG } from "@/utils/evaluation-report.util.js";
+import type { EvaluationAnalyticsPayload } from "@/types/evaluation-analytics.type.js";
+
+const ANALYTICS_CONFIG = {
+  DEFAULT_SCORE: 0.0,
+  SENTIMENT_THRESHOLDS: {
+    POSITIVE_MIN: 0.7,
+    NEUTRAL_MIN: 0.4,
+  },
+  PERCENTAGE_FACTOR: 100,
+  DEFAULT_COMPLETION_RATE: 0.0,
+  COURSE_RANKING_LIMIT: 5,
+  DECIMAL_PRECISION: 1,
+} as const;
+
+export interface IEvaluationAnalyticsService {
+  getAnalytics(semesterId?: number): Promise<EvaluationAnalyticsPayload>;
+}
+
+export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
+  private calculateMeanRating(ratingValues: Array<string | null>): number {
+    const numericValues = ratingValues.map((val) => Number(val)).filter(Boolean);
+    if (numericValues.length === 0) return ANALYTICS_CONFIG.DEFAULT_SCORE;
+    const sum = numericValues.reduce((accumulator, current) => accumulator + current, 0);
+    return Number((sum / numericValues.length).toFixed(RATING_CONFIG.DECIMAL_PLACES));
+  }
+
+  private calculateSentimentDistribution(sentimentScores: Array<string | null>): {
+    positive_pct: number;
+    neutral_pct: number;
+    negative_pct: number;
+  } {
+    const validScores = sentimentScores
+      .map((score) => Number(score))
+      .filter((score) => !isNaN(score));
+    const totalCount = validScores.length || 1;
+
+    let positiveCount = 0;
+    let neutralCount = 0;
+    let negativeCount = 0;
+
+    for (const score of validScores) {
+      if (score > ANALYTICS_CONFIG.SENTIMENT_THRESHOLDS.POSITIVE_MIN) {
+        positiveCount++;
+      } else if (score >= ANALYTICS_CONFIG.SENTIMENT_THRESHOLDS.NEUTRAL_MIN) {
+        neutralCount++;
+      } else {
+        negativeCount++;
+      }
+    }
+
+    const { PERCENTAGE_FACTOR, DECIMAL_PRECISION } = ANALYTICS_CONFIG;
+
+    return {
+      positive_pct: Number(
+        ((positiveCount / totalCount) * PERCENTAGE_FACTOR).toFixed(DECIMAL_PRECISION),
+      ),
+      neutral_pct: Number(
+        ((neutralCount / totalCount) * PERCENTAGE_FACTOR).toFixed(DECIMAL_PRECISION),
+      ),
+      negative_pct: Number(
+        ((negativeCount / totalCount) * PERCENTAGE_FACTOR).toFixed(DECIMAL_PRECISION),
+      ),
+    };
+  }
+
+  private async fetchCollegePerformance(): Promise<
+    Array<{ college: string; avg_set: number; avg_sef: number }>
+  > {
+    const collegeRecords = await GetRecords<
+      "IndividualFacultyEvaluationReports",
+      { college: string; avg_set: number; avg_sef: number }
+    >("IndividualFacultyEvaluationReports", {
+      select: () => ({
+        college: Programs.initialism,
+        avg_set: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_set_rating}::numeric), 0)::float`,
+        avg_sef: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_sef_rating}::numeric), 0)::float`,
+      }),
+      where: (reportRecord) => isNull(reportRecord.deleted_at),
+      join: (queryBuilder) =>
+        queryBuilder
+          .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
+          .innerJoin(CourseOfferings, eq(CourseOfferings.faculty_id, Accounts.id))
+          .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
+          .innerJoin(Programs, eq(Classes.program_id, Programs.id))
+          .groupBy(Programs.initialism),
+    });
+
+    return collegeRecords.map((collegeRecord) => ({
+      college: collegeRecord.college,
+      avg_set: Number(collegeRecord.avg_set.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+      avg_sef: Number(collegeRecord.avg_sef.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+    }));
+  }
+
+  private async fetchCourseRankings(): Promise<{
+    top_courses: Array<{ course_code: string; course_title: string; avg_set: number }>;
+    bottom_courses: Array<{ course_code: string; course_title: string; avg_set: number }>;
+  }> {
+    const coursePerformance = await GetRecords<
+      "IferClassSummaries",
+      { course_code: string; course_title: string; avg_set: number }
+    >("IferClassSummaries", {
+      select: () => ({
+        course_code: Courses.initialism,
+        course_title: Courses.name,
+        avg_set: sql<number>`avg(${IferClassSummaries.average_set_rating}::numeric)::float`,
+      }),
+      join: (queryBuilder) =>
+        queryBuilder
+          .innerJoin(CourseOfferings, eq(IferClassSummaries.course_offering_id, CourseOfferings.id))
+          .innerJoin(
+            CourseCurriculums,
+            eq(CourseOfferings.course_curriculum_id, CourseCurriculums.id),
+          )
+          .innerJoin(Courses, eq(CourseCurriculums.course_id, Courses.id))
+          .groupBy(Courses.initialism, Courses.name)
+          .orderBy(sql`avg(${IferClassSummaries.average_set_rating}::numeric) DESC`),
+    });
+
+    const formattedCourses = coursePerformance.map((courseRecord) => ({
+      course_code: courseRecord.course_code,
+      course_title: courseRecord.course_title,
+      avg_set: Number(courseRecord.avg_set.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+    }));
+
+    const limit = ANALYTICS_CONFIG.COURSE_RANKING_LIMIT;
+
+    return {
+      top_courses: formattedCourses.slice(0, limit),
+      bottom_courses: formattedCourses.slice(-limit).reverse(),
+    };
+  }
+
+  private async fetchFacultyRankings(): Promise<{
+    top_faculty: Array<{ faculty_id: number; faculty_name: string; avg_rating: number }>;
+    bottom_faculty: Array<{ faculty_id: number; faculty_name: string; avg_rating: number }>;
+  }> {
+    const facultyPerformance = await GetRecords<
+      "IndividualFacultyEvaluationReports",
+      { faculty_id: number; faculty_name: string; avg_rating: number }
+    >("IndividualFacultyEvaluationReports", {
+      select: (reportRecord) => ({
+        faculty_id: reportRecord.faculty_id,
+        faculty_name: sql<string>`concat(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+        avg_rating: sql<number>`coalesce(${reportRecord.overall_set_rating}::numeric, 0)::float`,
+      }),
+      where: (reportRecord) => isNull(reportRecord.deleted_at),
+      join: (queryBuilder) =>
+        queryBuilder
+          .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
+          .leftJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id))
+          .orderBy(sql`${IndividualFacultyEvaluationReports.overall_set_rating}::numeric DESC`),
+    });
+
+    const formattedFaculty = facultyPerformance.map((facultyRecord) => ({
+      faculty_id: facultyRecord.faculty_id,
+      faculty_name: facultyRecord.faculty_name || "Unknown Faculty",
+      avg_rating: Number(facultyRecord.avg_rating.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+    }));
+
+    const limit = ANALYTICS_CONFIG.COURSE_RANKING_LIMIT;
+
+    return {
+      top_faculty: formattedFaculty.slice(0, limit),
+      bottom_faculty: formattedFaculty.slice(-limit).reverse(),
+    };
+  }
+
+  private async fetchSemesterTrends(): Promise<
+    Array<{ term: string; avg_set: number; avg_sef: number }>
+  > {
+    const historicalRecords = await GetRecords<
+      "Semesters",
+      { term: string; avg_set: number; avg_sef: number }
+    >("Semesters", {
+      select: (semesterTable) => ({
+        term: sql<string>`concat('AY ', ${semesterTable.school_year_start}, '-', ${semesterTable.school_year_end}, ' ', ${semesterTable.semester_term})`,
+        avg_set: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_set_rating}::numeric), 0)::float`,
+        avg_sef: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_sef_rating}::numeric), 0)::float`,
+      }),
+      where: (semesterTable) => isNull(semesterTable.deleted_at),
+      join: (queryBuilder) =>
+        queryBuilder
+          .leftJoin(
+            IndividualFacultyEvaluationReports,
+            and(
+              eq(IndividualFacultyEvaluationReports.semester_id, Semesters.id),
+              isNull(IndividualFacultyEvaluationReports.deleted_at),
+            ),
+          )
+          .groupBy(
+            Semesters.id,
+            Semesters.school_year_start,
+            Semesters.school_year_end,
+            Semesters.semester_term,
+          )
+          .orderBy(Semesters.school_year_start, Semesters.semester_term),
+    });
+
+    return historicalRecords.map((semesterRecord) => ({
+      term: semesterRecord.term,
+      avg_set: Number(semesterRecord.avg_set.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+      avg_sef: Number(semesterRecord.avg_sef.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+    }));
+  }
+
+  private async fetchProgramSemesterTrends(): Promise<
+    Array<{ term: string; program_code: string; avg_set: number; avg_sef: number }>
+  > {
+    const programTrends = await GetRecords<
+      "Semesters",
+      { term: string; program_code: string; avg_set: number; avg_sef: number }
+    >("Semesters", {
+      select: (semesterTable) => ({
+        term: sql<string>`concat('AY ', ${semesterTable.school_year_start}, '-', ${semesterTable.school_year_end}, ' ', ${semesterTable.semester_term})`,
+        program_code: Programs.initialism,
+        avg_set: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_set_rating}::numeric), 0)::float`,
+        avg_sef: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_sef_rating}::numeric), 0)::float`,
+      }),
+      where: (semesterTable) => isNull(semesterTable.deleted_at),
+      join: (queryBuilder) =>
+        queryBuilder
+          .innerJoin(
+            IndividualFacultyEvaluationReports,
+            and(
+              eq(IndividualFacultyEvaluationReports.semester_id, Semesters.id),
+              isNull(IndividualFacultyEvaluationReports.deleted_at),
+            ),
+          )
+          .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
+          .innerJoin(CourseOfferings, eq(CourseOfferings.faculty_id, Accounts.id))
+          .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
+          .innerJoin(Programs, eq(Classes.program_id, Programs.id))
+          .groupBy(
+            Semesters.id,
+            Semesters.school_year_start,
+            Semesters.school_year_end,
+            Semesters.semester_term,
+            Programs.initialism,
+          )
+          .orderBy(Semesters.school_year_start, Semesters.semester_term, Programs.initialism),
+    });
+
+    return programTrends.map((programRecord) => ({
+      term: programRecord.term,
+      program_code: programRecord.program_code,
+      avg_set: Number(programRecord.avg_set.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+      avg_sef: Number(programRecord.avg_sef.toFixed(RATING_CONFIG.DECIMAL_PLACES)),
+    }));
+  }
+
+  async getAnalytics(semesterId?: number): Promise<EvaluationAnalyticsPayload> {
+    const reports = await GetRecords("IndividualFacultyEvaluationReports", {
+      where: (reportRecord) =>
+        and(
+          isNull(reportRecord.deleted_at),
+          semesterId ? eq(reportRecord.semester_id, semesterId) : undefined,
+        ),
+    });
+
+    const meanSet = this.calculateMeanRating(reports.map((report) => report.overall_set_rating));
+    const meanSef = this.calculateMeanRating(reports.map((report) => report.overall_sef_rating));
+
+    const collegePerformance = await this.fetchCollegePerformance();
+    const courseRankings = await this.fetchCourseRankings();
+    const facultyRankings = await this.fetchFacultyRankings();
+    const semesterTrends = await this.fetchSemesterTrends();
+    const programSemesterTrends = await this.fetchProgramSemesterTrends();
+    const sentimentBreakdown = this.calculateSentimentDistribution(
+      reports.map((report) => report.average_student_sentiment),
+    );
+
+    return {
+      kpis: {
+        avg_set_rating: meanSet,
+        avg_sef_rating: meanSef,
+        completion_rate_percentage: ANALYTICS_CONFIG.DEFAULT_COMPLETION_RATE,
+        total_reports_generated: reports.length,
+      },
+      college_performance: collegePerformance,
+      semester_trends: semesterTrends,
+      program_semester_trends: programSemesterTrends,
+      sentiment_breakdown: sentimentBreakdown,
+      course_rankings: courseRankings,
+      faculty_rankings: facultyRankings,
+    };
+  }
+}
+
+const EvaluationAnalyticsServiceInstance = new EvaluationAnalyticsService();
+export default EvaluationAnalyticsServiceInstance;
