@@ -1,13 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProgramCoursesTab } from "./tab-courses";
-import { CurriculumTab } from "./tab-curriculum";
-import { ClassesTab } from "./tab-classes";
+import { ProgramCoursesTab } from "@/srcx/features/course/components/CoursesTab";
+import { CurriculumTab } from "@/srcx/features/curriculum/components/CurriculumTab";
+import { ClassesTab } from "@/srcx/features/class/components/ClassTab";
 
 interface ProgramTabsProps {
   programId: number;
 }
 
-export const ProgramTabs = ({ programId }: ProgramTabsProps) => {
+export const ProgramDetailsTabs = ({ programId }: ProgramTabsProps) => {
   return (
     <Tabs defaultValue="courses" className="flex flex-1 flex-col gap-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">

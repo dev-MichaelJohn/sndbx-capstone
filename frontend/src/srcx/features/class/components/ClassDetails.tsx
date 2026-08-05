@@ -1,11 +1,11 @@
 import { useParams, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 
-import { useClass } from "@/features/sys/class.service";
-import { useProgram } from "@/features/sys/program.service";
+import { useClass } from "../api/class.service";
+import { useProgram } from "@/srcx/features/program/api/program.service";
 
-import { ClassHeader } from "./details/header";
-import { ClassTabs } from "./details/tabs";
+import { ClassDetailsHeader } from "./ClassDetailsHeader";
+import { ClassDetailsTabs } from "./ClassDetailsTab";
 
 // Helper map to convert Roman numeral year levels to numbers
 const YEAR_LEVEL_MAP: Record<string, number> = {
@@ -90,8 +90,8 @@ export const ClassDetailsPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <ClassHeader name={className} onBack={handleBack} />
-        <ClassTabs classId={parsedClassId} />
+        <ClassDetailsHeader name={className} onBack={handleBack} />
+        <ClassDetailsTabs classId={parsedClassId} />
       </div>
     </div>
   );
