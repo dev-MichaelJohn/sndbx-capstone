@@ -78,4 +78,8 @@ textjumper.txt
 Thumnbs.db
 HoldingSmart
 .aider*
+
+# Ignore all log files in backend/logs
+backend/logs/*.txt
+backend/logs/*.log
 backend/logs/
