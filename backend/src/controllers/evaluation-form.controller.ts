@@ -6,6 +6,7 @@ import type { NextFunction, Request, Response } from "express";
 import z from "zod";
 
 export interface IEvaluationFormController {
+  getForms(req: Request, res: Response, next: NextFunction): Promise<void>;
   createForm(req: Request, res: Response, next: NextFunction): Promise<void>;
   getFormTree(req: Request, res: Response, next: NextFunction): Promise<void>;
   getCategories(req: Request, res: Response, next: NextFunction): Promise<void>;
@@ -35,6 +36,16 @@ export class evaluationFormController implements IEvaluationFormController {
     const validation = await EvaluationTypeSchema.safeParseAsync(type);
     if (!validation.success) throw validation.error;
     return validation.data;
+  }
+
+  async getForms(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const type = await this.extractType(req.params.type);
+      const result = await this.evaluationFormService.getForms(type);
+      res.status(200).json(createAPIResponse(200, "Evaluation forms retrieved.", result));
+    } catch (error) {
+      next(error);
+    }
   }
 
   async createForm(req: Request, res: Response, next: NextFunction): Promise<void> {

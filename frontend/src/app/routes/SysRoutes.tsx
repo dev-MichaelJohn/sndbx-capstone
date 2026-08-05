@@ -5,6 +5,7 @@ import UsersPage from "@/features/user/page/UsersPage";
 import SemesterPage from "@/features/semester/page/SemestersPage";
 import { InstitutionRoutes } from "./InstitutionRoutes";
 import type { SystemRole } from "backend/types/user.type";
+import { EvaluationRoutes } from "./EvaluationRoutes";
 
 interface SysRoutesProps {
   basePath?: string;
@@ -23,8 +24,8 @@ export const SysRoutes = ({
         <Route path="users" element={<UsersPage />} />
         <Route path="semesters" element={<SemesterPage />} />
 
-        {/* Reusable Institution Sub-tree */}
         {InstitutionRoutes()}
+        {EvaluationRoutes()}
       </Route>
     </Route>
   );

@@ -2,8 +2,7 @@ import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useUser } from "@/features/auth/context/user.context";
-import { Calendar, Landmark, SquareTerminal, Users } from "lucide-react";
-import { Toaster } from "react-hot-toast";
+import { Calendar, ClipboardList, Landmark, SquareTerminal, Users } from "lucide-react";
 import { Navigate, Outlet, useLocation } from "react-router";
 
 interface SysDashboardProps {
@@ -20,6 +19,7 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
     { title: "Users", url: `${basePath}/users`, icon: Users },
     { title: "Institution", url: `${basePath}/institution`, icon: Landmark },
     { title: "Semesters", url: `${basePath}/semesters`, icon: Calendar },
+    { title: "Evaluation Forms", url: `${basePath}/evaluation/forms`, icon: ClipboardList },
   ];
 
   const activePageName =
@@ -41,7 +41,6 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
 
   return (
     <SidebarProvider>
-      <Toaster />
       <AppSidebar data={data} />
       <SidebarInset>
         <SiteHeader pageName={activePageName} />

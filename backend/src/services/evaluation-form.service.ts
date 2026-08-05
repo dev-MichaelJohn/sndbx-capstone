@@ -38,6 +38,7 @@ import {
 } from "@/types/evaluation-form.type.js";
 
 export interface IEvaluationFormService {
+  getForms(type: EvaluationType): Promise<FormSelect[]>;
   createForm(type: EvaluationType, payload: CreateFormReq): Promise<{ form: FormSelect }>;
   getFormTree(id: number, type: EvaluationType): Promise<EvaluationFormTree>;
   getCategories(type: EvaluationType, formId: number): Promise<CategorySelect[]>;
@@ -74,6 +75,19 @@ export interface IEvaluationFormService {
 }
 
 export class evaluationFormService implements IEvaluationFormService {
+  async getForms(type: EvaluationType): Promise<FormSelect[]> {
+    const isStudent = type === "student";
+    const tableName: SoftDeletableTables = isStudent
+      ? "StudentEvaluationForms"
+      : "SupervisorEvaluationForms";
+    const schemaTable = isStudent ? StudentEvaluationForms : SupervisorEvaluationForms;
+
+    const records = await GetRecords(tableName, {
+      where: () => isNull(schemaTable.deleted_at),
+    });
+    return records as FormSelect[];
+  }
+
   async createForm(type: EvaluationType, payload: CreateFormReq): Promise<{ form: FormSelect }> {
     const validation = await CreateFormReqSchema.safeParseAsync(payload);
     if (!validation.success) throw validation.error;

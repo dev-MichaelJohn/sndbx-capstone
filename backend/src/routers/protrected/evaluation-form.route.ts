@@ -6,6 +6,11 @@ import { PERMISSIONS } from "@/types/seeder.type.js";
 const EvaluationFormRouter: IRouter = Router({ mergeParams: true });
 
 // FORM ROOT
+EvaluationFormRouter.get(
+  "/:type/forms",
+  requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
+  (req, res, next) => EvaluationFormController.getForms(req, res, next),
+);
 EvaluationFormRouter.post(
   "/:type/forms",
   requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
