@@ -1,74 +1,122 @@
-import { Building2, Users, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Users, Landmark, GraduationCap, Calendar } from "lucide-react";
+import { parseISO, isWithinInterval } from "date-fns";
+
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import type { CollegeWithDean } from "backend/types/college.types";
-import type { EvaluationAnalyticsPayload } from "backend/types/evaluation-analytics.type";
+import { Badge } from "@/components/ui/badge";
+import { useUsers } from "@/features/user/api/user.service";
+import { getColleges } from "@/features/college/api/college.service";
+import { getPrograms } from "@/features/program/api/program.service";
+import { useSemesters } from "@/features/semester/api/semester.service";
 
-interface SystemOverviewStatsProps {
-  colleges: CollegeWithDean[];
-  totalColleges: number;
-  kpis?: EvaluationAnalyticsPayload["kpis"];
-}
+export function SystemOverviewStats() {
+  const { data: usersRes } = useUsers({ page: 1 });
+  const { data: collegeRes } = useQuery({
+    queryKey: ["getColleges", 1, ""],
+    queryFn: () => getColleges({ page: 1, search: "" }),
+  });
+  const { data: programRes } = useQuery({
+    queryKey: ["getPrograms", ""],
+    queryFn: () => getPrograms(""),
+  });
+  const { data: semesterRes } = useSemesters({
+    page: 1,
+    search: undefined,
+    orderBy: "id",
+    orderDir: "desc",
+  });
 
-export function SystemOverviewStats({ colleges, totalColleges, kpis }: SystemOverviewStatsProps) {
+  // Compute metrics
+  const totalUsers = usersRes?.pagination?.totalItems ?? usersRes?.data?.length ?? 0;
+  const facultyCount = usersRes?.data?.filter((u) => u.roles.includes("FACULTY")).length ?? 0;
+  const studentCount = usersRes?.data?.filter((u) => u.roles.includes("STUDENT")).length ?? 0;
+
+  const colleges = collegeRes?.data ?? [];
+  const totalColleges = collegeRes?.pagination?.totalItems ?? colleges.length;
   const assignedDeans = colleges.filter((c) => c.account_id).length;
-  const coverageRatio = totalColleges > 0 ? Math.round((assignedDeans / totalColleges) * 100) : 0;
-  const completionRate = kpis?.completion_rate_percentage ?? 0;
+  const deanCoverage = totalColleges > 0 ? Math.round((assignedDeans / totalColleges) * 100) : 0;
 
-  const stats = [
+  const programs = programRes?.data ?? [];
+  const totalPrograms = programRes?.pagination?.totalItems ?? programs.length;
+  const assignedChairs = programs.filter((p) => p.account_id).length;
+  const chairCoverage = totalPrograms > 0 ? Math.round((assignedChairs / totalPrograms) * 100) : 0;
+
+  // Active semester check
+  const today = new Date();
+  const semesters = semesterRes?.data ?? [];
+  const activeSemester =
+    semesters.find((s) => {
+      try {
+        return isWithinInterval(today, {
+          start: parseISO(s.start_date),
+          end: parseISO(s.end_date),
+        });
+      } catch {
+        return false;
+      }
+    }) ?? semesters[0];
+
+  const cards = [
     {
-      label: "Total Colleges",
-      value: totalColleges,
-      subtext: `${assignedDeans} Deans Assigned`,
-      icon: Building2,
-      color: "text-primary",
-      bg: "bg-primary/10",
+      label: "Total Accounts",
+      value: totalUsers,
+      subtext: `${facultyCount} Faculty • ${studentCount} Students`,
+      icon: Users,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
     },
     {
-      label: "Dean Leadership Coverage",
-      value: `${coverageRatio}%`,
-      subtext: "Institutional Coverage",
-      icon: ShieldCheck,
+      label: "Colleges & Deans",
+      value: `${totalColleges} Colleges`,
+      subtext: `${deanCoverage}% Dean Leadership Ratio`,
+      icon: Landmark,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10",
     },
     {
-      label: "Evaluation Completion",
-      value: `${completionRate}%`,
-      subtext: `${kpis?.total_reports_generated ?? 0} Reports Generated`,
-      icon: CheckCircle2,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
-      progress: completionRate,
+      label: "Academic Programs",
+      value: `${totalPrograms} Programs`,
+      subtext: `${chairCoverage}% Chair Assigned Ratio`,
+      icon: GraduationCap,
+      color: "text-violet-500",
+      bg: "bg-violet-500/10",
     },
     {
-      label: "Avg SET / SEF Scores",
-      value: kpis
-        ? `${kpis.avg_set_rating.toFixed(2)} / ${kpis.avg_sef_rating.toFixed(2)}`
-        : "0.00",
-      subtext: "SET / SEF Rating Averages",
-      icon: Users,
+      label: "Active Term",
+      value: activeSemester
+        ? `SY ${activeSemester.school_year_start}–${Number(activeSemester.school_year_start) + 1}`
+        : "N/A",
+      subtext: activeSemester ? `${activeSemester.semester_term} Semester` : "No active term",
+      icon: Calendar,
       color: "text-amber-500",
       bg: "bg-amber-500/10",
+      badge: activeSemester ? "ACTIVE" : "INACTIVE",
     },
   ];
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map((item) => {
+      {cards.map((item) => {
         const Icon = item.icon;
         return (
-          <Card key={item.label} className="rounded-xl border shadow-xs bg-card">
+          <Card key={item.label} className="rounded-xl border bg-card shadow-xs">
             <CardContent className="p-4 flex items-center justify-between gap-3">
               <div className="space-y-1 min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground truncate">
-                  {item.label}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground truncate">
+                    {item.label}
+                  </p>
+                  {item.badge && (
+                    <Badge
+                      variant="outline"
+                      className="px-1.5 py-0 text-[9px] font-mono border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-2xl font-bold tracking-tight text-foreground">{item.value}</p>
-                <p className="text-xs text-muted-foreground/80">{item.subtext}</p>
-                {item.progress !== undefined && (
-                  <Progress value={item.progress} className="h-1 mt-2" />
-                )}
+                <p className="text-xs text-muted-foreground/80 truncate">{item.subtext}</p>
               </div>
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${item.bg}`}

@@ -4,31 +4,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function QuickActionsGrid() {
   const actions = [
-    { title: "Manage Users", desc: "Accounts & Roles", href: "/sys/users", icon: Users },
     {
-      title: "Colleges & Programs",
-      desc: "Academic Structure",
+      title: "User Accounts",
+      desc: "Manage system access and roles",
+      href: "/sys/users",
+      icon: Users,
+    },
+    {
+      title: "Institutional Setup",
+      desc: "Colleges and degree programs",
       href: "/sys/institution",
       icon: Landmark,
     },
     {
       title: "Academic Semesters",
-      desc: "Terms & Schedules",
+      desc: "Terms and date boundaries",
       href: "/sys/semesters",
       icon: Calendar,
     },
     {
       title: "Analytics & Reports",
-      desc: "Performance Reports",
+      desc: "Institutional evaluation insights",
       href: "/sys/evaluation/analytics",
       icon: FileBarChart2,
     },
   ];
 
   return (
-    <Card className="rounded-xl border shadow-xs bg-card">
-      <CardHeader className="pb-3 border-b">
-        <CardTitle className="text-base font-semibold">Quick Administrative Actions</CardTitle>
+    <Card className="rounded-xl border bg-card shadow-xs">
+      <CardHeader className="pb-3 border-b px-5 py-3.5">
+        <CardTitle className="text-sm font-semibold tracking-tight">
+          Quick Management Shortcuts
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {actions.map((act) => {
@@ -37,7 +44,7 @@ export function QuickActionsGrid() {
             <Link
               key={act.title}
               to={act.href}
-              className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/50 hover:border-primary/30 transition-all duration-150 group"
+              className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/60 hover:border-primary/30 transition-all duration-150 group"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
