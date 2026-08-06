@@ -4,6 +4,7 @@ import { SemesterTrendsChart } from "@/features/analytics/components/SemesterTre
 import { CollegePerformanceChart } from "@/features/analytics/components/CollegePerformanceChart";
 import { CourseRankingsChart } from "@/features/analytics/components/CourseRankingChart";
 import { FacultyRankingsChart } from "@/features/analytics/components/FacultyRankingsChart";
+import { LiveSubmissionsWidget } from "@/features/evaluation-execution/components/LiveSubmissionWidget";
 
 import { SystemOverviewStats } from "../components/SystemOverviewStats";
 import { QuickActionsGrid } from "../components/QuickActionsGrid";
@@ -27,18 +28,23 @@ export const SystemAdminOverviewPage = () => {
       {/* 2. Quick Navigation Grid */}
       <QuickActionsGrid />
 
-      {/* 3. Evaluation Evaluation KPIs */}
+      {/* 3. Real-Time Activity Feed & Semester Performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LiveSubmissionsWidget />
+        {analytics && <SemesterTrendsChart semesterTrends={analytics.semester_trends} />}
+      </div>
+
+      {/* 4. Evaluation KPIs */}
       {analytics?.kpis && <KpiMetricsOverview kpis={analytics.kpis} />}
 
-      {/* 4. Chronological Performance & College Comparisons */}
+      {/* 5. College Performance Comparisons */}
       {analytics && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SemesterTrendsChart semesterTrends={analytics.semester_trends} />
+        <div className="grid grid-cols-1 gap-6">
           <CollegePerformanceChart collegePerformance={analytics.college_performance} />
         </div>
       )}
 
-      {/* 5. Institutional Leaderboards */}
+      {/* 6. Institutional Leaderboards */}
       {analytics && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <CourseRankingsChart courseRankings={analytics.course_rankings} />
