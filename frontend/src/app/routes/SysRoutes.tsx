@@ -9,6 +9,7 @@ import { EvaluationRoutes } from "./EvaluationRoutes";
 import EmailVerificationDialog from "@/features/auth/components/EmailVerificationDialog";
 import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
 import SystemAdminOverviewPage from "@/features/overview/page/SystemAdminOverviewPage";
+import SystemLogsPage from "@/features/logs/page/SystemLogsPage";
 
 interface SysRoutesProps {
   basePath?: string;
@@ -35,6 +36,7 @@ export const SysRoutes = ({
         <Route path="users" element={<UsersPage />} />
         <Route path="semesters" element={<SemesterPage />} />
         <Route path="settings" element={<AccountSettingsPage />} />
+        <Route path="logs" element={<SystemLogsPage />} />
 
         {InstitutionRoutes()}
         {EvaluationRoutes()}

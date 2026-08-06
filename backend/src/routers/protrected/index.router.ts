@@ -16,6 +16,7 @@ import EvaluationScheduleRouter from "./evaluation-schedule.router.js";
 import EvaluationExecutionRouter from "./evaluation-execution.router.js";
 import EvaluationReportRouter from "./evaluation-report.route.js";
 import EvaluationAnalyticsRouter from "./evaluation-analytics.route.js";
+import SystemLogRouter from "./system-log.route.js";
 
 const ProtectedRouter: IRouter = Router();
 
@@ -38,6 +39,7 @@ ProtectedRouter.use("/evaluation-schedules", EvaluationScheduleRouter);
 ProtectedRouter.use("/evaluation-execution", EvaluationExecutionRouter);
 ProtectedRouter.use("/evaluation-reports", EvaluationReportRouter);
 ProtectedRouter.use("/evaluation-analytics", EvaluationAnalyticsRouter);
+ProtectedRouter.use("/logs", SystemLogRouter);
 
 ProtectedRouter.get("/", (_req: Request, res: Response, _next: NextFunction) => {
   const response = createAPIResponse(200, "Welcome to Super Admin Routes!.");

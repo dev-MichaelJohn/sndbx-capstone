@@ -1,5 +1,6 @@
 import path from "node:path";
 import winston from "winston";
+import { SSELogTransport } from "./log-stream.util.js";
 
 /**
  * Configured Winston logger for the app. Logs to the console (colorized)
@@ -19,11 +20,11 @@ const levels = {
 
 /** Console colors matching each log level, for the colorized console transport. */
 const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'white',
+  error: "red",
+  warn: "yellow",
+  info: "green",
+  http: "magenta",
+  debug: "white",
 };
 
 winston.addColors(colors);
@@ -34,24 +35,26 @@ winston.addColors(colors);
  * otherwise (development).
  */
 const getLogLevel = () => {
-  const env = process.env.NODE_ENV || 'development';
-  if (env === 'production') return 'info';
-  if (env === 'test') return 'error';
-  return 'debug';
+  const env = process.env.NODE_ENV || "development";
+  if (env === "production") return "info";
+  if (env === "test") return "error";
+  return "debug";
 };
 
 /** Colorized, human-readable format used for console output. */
 const consoleFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss:ms" }),
   winston.format.colorize({ all: true }),
-  winston.format.printf((info) => `[${info.timestamp}] [${info.level}]: ${info.message}`)
+  winston.format.printf((info) => `[${info.timestamp}] [${info.level}]: ${info.message}`),
 );
 
 /** Plain (non-colorized) format used for file output. */
 const fileFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss:ms" }),
   winston.format.uncolorize(),
-  winston.format.printf((info) => `[${info.timestamp}] [${info.level.toUpperCase()}]: ${info.message}`)
+  winston.format.printf(
+    (info) => `[${info.timestamp}] [${info.level.toUpperCase()}]: ${info.message}`,
+  ),
 );
 
 /**
@@ -63,19 +66,21 @@ export const logger = winston.createLogger({
   levels,
   transports: [
     new winston.transports.Console({
-      format: consoleFormat
+      format: consoleFormat,
     }),
 
     new winston.transports.File({
-      filename: path.join('logs', 'combined.txt'),
+      filename: path.join("logs", "combined.txt"),
       level: getLogLevel(),
-      format: fileFormat
+      format: fileFormat,
     }),
 
     new winston.transports.File({
-      filename: path.join('logs', 'error.txt'),
-      level: 'error',
-      format: fileFormat
+      filename: path.join("logs", "error.txt"),
+      level: "error",
+      format: fileFormat,
     }),
+
+    new SSELogTransport({ format: fileFormat }),
   ],
 });

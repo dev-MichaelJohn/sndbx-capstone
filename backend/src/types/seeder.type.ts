@@ -84,6 +84,8 @@ export const PERMISSIONS = {
   ACCOUNT_DELETE: "account:delete",
   ACCOUNT_UPDATE_OWN: "account:update-own",
   ACCOUNT_MANAGE_ROLES: "account:manage-roles",
+
+  SYSTEM_LOG_READ: "log:read",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

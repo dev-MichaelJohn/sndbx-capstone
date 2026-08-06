@@ -91,7 +91,7 @@ export const getProgramColumns = (
               asChild
               className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
             >
-              <Link to={`/sys/institution/${collegeId}/programs/${row.id}`}>
+              <Link to={String(row.id)}>
                 <Eye className="mr-2 size-3.5" />
                 View Details
               </Link>

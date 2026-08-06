@@ -30,7 +30,7 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status) localStorage.removeItem("access_token");
+    if (error.response?.status === 401) localStorage.removeItem("access_token");
     return Promise.reject(error);
   },
 );
