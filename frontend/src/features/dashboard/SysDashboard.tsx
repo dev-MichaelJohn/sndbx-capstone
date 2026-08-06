@@ -13,6 +13,21 @@ import {
   Users,
 } from "lucide-react";
 import { Navigate, Outlet, useLocation } from "react-router";
+import { PERMISSIONS, ROLE_PERMISSION_MATRIX, type Permission } from "backend/types/seeder.type";
+
+const NAV_PERMISSIONS: Record<string, Permission[]> = {
+  Overview: [], // Open to all authorized dashboard users
+  Users: [PERMISSIONS.ACCOUNT_READ],
+  Institution: [PERMISSIONS.COLLEGE_READ, PERMISSIONS.PROGRAM_READ],
+  Semesters: [PERMISSIONS.SEMESTER_READ],
+  "Evaluation Forms": [PERMISSIONS.EVALUATION_FORM_MANAGE],
+  "Evaluation Schedules": [PERMISSIONS.EVALUATION_PERIOD_MANAGE],
+  "Evaluation Reports": [
+    PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
+    PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
+  ],
+  "Evaluation Analytics": [PERMISSIONS.EVALUATION_REPORT_VIEW_ALL],
+};
 
 interface SysDashboardProps {
   basePath?: string;
@@ -23,6 +38,10 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
   const location = useLocation();
   if (!user) return <Navigate to="/auth/login" />;
 
+  const userPermissions = Array.from(
+    new Set((user?.roles ?? []).flatMap((role) => ROLE_PERMISSION_MATRIX[role] ?? [])),
+  );
+
   const navMain: SysSidebarData["navMain"] = [
     { title: "Overview", url: `${basePath}/dashboard`, icon: SquareTerminal },
     { title: "Users", url: `${basePath}/users`, icon: Users },
@@ -32,7 +51,11 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
     { title: "Evaluation Schedules", url: `${basePath}/evaluation/schedules`, icon: CalendarClock },
     { title: "Evaluation Reports", url: `${basePath}/evaluation/reports`, icon: FileBarChart2 },
     { title: "Evaluation Analytics", url: `${basePath}/evaluation/analytics`, icon: BarChart3 },
-  ];
+  ].filter((item) => {
+    const required = NAV_PERMISSIONS[item.title];
+    if (!required || required.length === 0) return true;
+    return required.some((perm) => userPermissions.includes(perm));
+  });
 
   const activePageName =
     navMain.find(

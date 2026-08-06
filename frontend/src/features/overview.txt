@@ -1,0 +1,272 @@
+overview/components/QuickActionsGrid.tsx
+---
+import { Link } from "react-router";
+import { Users, Landmark, Calendar, FileBarChart2, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function QuickActionsGrid() {
+  const actions = [
+    {
+      title: "User Accounts",
+      desc: "Manage system access and roles",
+      href: "/sys/users",
+      icon: Users,
+    },
+    {
+      title: "Institutional Setup",
+      desc: "Colleges and degree programs",
+      href: "/sys/institution",
+      icon: Landmark,
+    },
+    {
+      title: "Academic Semesters",
+      desc: "Terms and date boundaries",
+      href: "/sys/semesters",
+      icon: Calendar,
+    },
+    {
+      title: "Analytics & Reports",
+      desc: "Institutional evaluation insights",
+      href: "/sys/evaluation/analytics",
+      icon: FileBarChart2,
+    },
+  ];
+
+  return (
+    <Card className="rounded-xl border bg-card shadow-xs">
+      <CardHeader className="pb-3 border-b px-5 py-3.5">
+        <CardTitle className="text-sm font-semibold tracking-tight">
+          Quick Management Shortcuts
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {actions.map((act) => {
+          const Icon = act.icon;
+          return (
+            <Link
+              key={act.title}
+              to={act.href}
+              className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/60 hover:border-primary/30 transition-all duration-150 group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                    {act.title}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{act.desc}</p>
+                </div>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            </Link>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+---
+overview/components/SystemOverviewStats.tsx
+---
+import { useQuery } from "@tanstack/react-query";
+import { Users, Landmark, GraduationCap, Calendar } from "lucide-react";
+import { parseISO, isWithinInterval } from "date-fns";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useUsers } from "@/features/user/api/user.service";
+import { getColleges } from "@/features/college/api/college.service";
+import { getPrograms } from "@/features/program/api/program.service";
+import { useSemesters } from "@/features/semester/api/semester.service";
+
+export function SystemOverviewStats() {
+  const { data: usersRes } = useUsers({ page: 1 });
+  const { data: collegeRes } = useQuery({
+    queryKey: ["getColleges", 1, ""],
+    queryFn: () => getColleges({ page: 1, search: "" }),
+  });
+  const { data: programRes } = useQuery({
+    queryKey: ["getPrograms", ""],
+    queryFn: () => getPrograms(""),
+  });
+  const { data: semesterRes } = useSemesters({
+    page: 1,
+    search: undefined,
+    orderBy: "id",
+    orderDir: "desc",
+  });
+
+  // Compute metrics
+  const totalUsers = usersRes?.pagination?.totalItems ?? usersRes?.data?.length ?? 0;
+  const facultyCount = usersRes?.data?.filter((u) => u.roles.includes("FACULTY")).length ?? 0;
+  const studentCount = usersRes?.data?.filter((u) => u.roles.includes("STUDENT")).length ?? 0;
+
+  const colleges = collegeRes?.data ?? [];
+  const totalColleges = collegeRes?.pagination?.totalItems ?? colleges.length;
+  const assignedDeans = colleges.filter((c) => c.account_id).length;
+  const deanCoverage = totalColleges > 0 ? Math.round((assignedDeans / totalColleges) * 100) : 0;
+
+  const programs = programRes?.data ?? [];
+  const totalPrograms = programRes?.pagination?.totalItems ?? programs.length;
+  const assignedChairs = programs.filter((p) => p.account_id).length;
+  const chairCoverage = totalPrograms > 0 ? Math.round((assignedChairs / totalPrograms) * 100) : 0;
+
+  // Active semester check
+  const today = new Date();
+  const semesters = semesterRes?.data ?? [];
+  const activeSemester =
+    semesters.find((s) => {
+      try {
+        return isWithinInterval(today, {
+          start: parseISO(s.start_date),
+          end: parseISO(s.end_date),
+        });
+      } catch {
+        return false;
+      }
+    }) ?? semesters[0];
+
+  const cards = [
+    {
+      label: "Total Accounts",
+      value: totalUsers,
+      subtext: `${facultyCount} Faculty • ${studentCount} Students`,
+      icon: Users,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+    },
+    {
+      label: "Colleges & Deans",
+      value: `${totalColleges} Colleges`,
+      subtext: `${deanCoverage}% Dean Leadership Ratio`,
+      icon: Landmark,
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+    },
+    {
+      label: "Academic Programs",
+      value: `${totalPrograms} Programs`,
+      subtext: `${chairCoverage}% Chair Assigned Ratio`,
+      icon: GraduationCap,
+      color: "text-violet-500",
+      bg: "bg-violet-500/10",
+    },
+    {
+      label: "Active Term",
+      value: activeSemester
+        ? `SY ${activeSemester.school_year_start}–${Number(activeSemester.school_year_start) + 1}`
+        : "N/A",
+      subtext: activeSemester ? `${activeSemester.semester_term} Semester` : "No active term",
+      icon: Calendar,
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+      badge: activeSemester ? "ACTIVE" : "INACTIVE",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {cards.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Card key={item.label} className="rounded-xl border bg-card shadow-xs">
+            <CardContent className="p-4 flex items-center justify-between gap-3">
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground truncate">
+                    {item.label}
+                  </p>
+                  {item.badge && (
+                    <Badge
+                      variant="outline"
+                      className="px-1.5 py-0 text-[9px] font-mono border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-2xl font-bold tracking-tight text-foreground">{item.value}</p>
+                <p className="text-xs text-muted-foreground/80 truncate">{item.subtext}</p>
+              </div>
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${item.bg}`}
+              >
+                <Icon className={`h-5 w-5 ${item.color}`} />
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+
+---
+overview/page/SystemAdminOverviewPage.tsx
+---
+import { useEvaluationAnalytics } from "@/features/analytics/api/evaluation-analytics.service";
+import { KpiMetricsOverview } from "@/features/analytics/components/KpiMetricsOverview";
+import { SemesterTrendsChart } from "@/features/analytics/components/SemesterTrendsChart";
+import { CollegePerformanceChart } from "@/features/analytics/components/CollegePerformanceChart";
+import { CourseRankingsChart } from "@/features/analytics/components/CourseRankingChart";
+import { FacultyRankingsChart } from "@/features/analytics/components/FacultyRankingsChart";
+import { LiveSubmissionsWidget } from "@/features/evaluation-execution/components/LiveSubmissionWidget";
+
+import { SystemOverviewStats } from "../components/SystemOverviewStats";
+import { QuickActionsGrid } from "../components/QuickActionsGrid";
+
+export const SystemAdminOverviewPage = () => {
+  const { data: analytics, isPending: isAnalyticsLoading } = useEvaluationAnalytics();
+
+  if (isAnalyticsLoading) {
+    return (
+      <div className="flex h-full flex-1 items-center justify-center p-6 text-xs text-muted-foreground">
+        Loading system administration overview...
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-1 flex-col overflow-y-auto p-6 gap-6">
+      {/* 1. Live System & Leadership Health */}
+      <SystemOverviewStats />
+
+      {/* 2. Quick Navigation Grid */}
+      <QuickActionsGrid />
+
+      {/* 3. Real-Time Activity Feed & Semester Performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LiveSubmissionsWidget />
+        {analytics && <SemesterTrendsChart semesterTrends={analytics.semester_trends} />}
+      </div>
+
+      {/* 4. Evaluation KPIs */}
+      {analytics?.kpis && <KpiMetricsOverview kpis={analytics.kpis} />}
+
+      {/* 5. College Performance Comparisons */}
+      {analytics && (
+        <div className="grid grid-cols-1 gap-6">
+          <CollegePerformanceChart collegePerformance={analytics.college_performance} />
+        </div>
+      )}
+
+      {/* 6. Institutional Leaderboards */}
+      {analytics && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CourseRankingsChart courseRankings={analytics.course_rankings} />
+          <FacultyRankingsChart facultyRankings={analytics.faculty_rankings} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SystemAdminOverviewPage;
+
+
+---
