@@ -31,8 +31,15 @@ import { getUserColumns } from "../components/UserColumns";
 import { UserCreateDialog } from "../components/UserCreate";
 import { UserEditDialog } from "../components/UserEdit";
 import { UserStatsCards } from "../components/UserStatsCards";
+import { useUser } from "@/features/auth/context/user.context";
 
 export const UsersPage = () => {
+  const { user: currentUser } = useUser();
+  const isSysAdmin = useMemo(
+    () => currentUser?.roles?.includes("SYS_ADMIN") ?? false,
+    [currentUser],
+  );
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Exclude<SystemRole, "SYS_ADMIN"> | "ALL">("ALL");
@@ -69,6 +76,7 @@ export const UsersPage = () => {
   const columns = getUserColumns({
     onEdit: (user) => setEditingUser(user),
     onDelete: (user) => setDeletingUser(user),
+    isSysAdmin,
   });
 
   // Filter out system administrator accounts from display

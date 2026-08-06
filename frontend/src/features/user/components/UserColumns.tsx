@@ -15,6 +15,7 @@ import { formatFullName } from "@/lib/nameFormatter";
 interface GetUserColumnsProps {
   onEdit: (user: UserWithDetails) => void;
   onDelete: (user: UserWithDetails) => void;
+  isSysAdmin: boolean;
 }
 
 const roleBadgeStyles: Record<SystemRole, string> = {
@@ -28,6 +29,7 @@ const roleBadgeStyles: Record<SystemRole, string> = {
 export function getUserColumns({
   onEdit,
   onDelete,
+  isSysAdmin,
 }: GetUserColumnsProps): Array<DataTableColumn<UserWithDetails>> {
   return [
     {
@@ -91,31 +93,44 @@ export function getUserColumns({
     {
       header: "Actions",
       className: "w-px whitespace-nowrap",
-      cell: (row) => (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="size-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36 p-1">
-              <DropdownMenuItem className="cursor-pointer text-xs" onSelect={() => onEdit(row)}>
-                <Pencil className="mr-2 size-3.5 text-muted-foreground" />
-                Edit User
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
-                onSelect={() => onDelete(row)}
-              >
-                <Trash2 className="mr-2 size-3.5" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
+      cell: (row) => {
+        const isAdminTarget = row.roles.includes("ADMIN");
+        const canManage = isSysAdmin || !isAdminTarget;
+
+        if (!canManage) {
+          return (
+            <div className="flex justify-end">
+              <span className="text-[11px] italic text-muted-foreground/60 px-2">Restricted</span>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="size-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36 p-1">
+                <DropdownMenuItem className="cursor-pointer text-xs" onSelect={() => onEdit(row)}>
+                  <Pencil className="mr-2 size-3.5 text-muted-foreground" />
+                  Edit User
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  onSelect={() => onDelete(row)}
+                >
+                  <Trash2 className="mr-2 size-3.5" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
   ];
 }

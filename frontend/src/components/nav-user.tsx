@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useUser } from "@/features/auth/context/user.context";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,6 +32,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useUser();
 
   const handleLogout = async () => {
@@ -40,6 +41,10 @@ export function NavUser({
     }
     navigate("/auth/login", { replace: true });
   };
+
+  // Dynamically extract the current role/panel prefix (e.g., /admin, /sys, /supervisor, /faculty)
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const basePath = pathSegments.length > 0 ? `/${pathSegments[0]}` : "/sys";
 
   return (
     <SidebarMenu>
@@ -81,7 +86,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => navigate("/sys/settings")}>
+              <DropdownMenuItem onClick={() => navigate(`${basePath}/settings`)}>
                 <Settings />
                 Account Settings
               </DropdownMenuItem>
