@@ -1,0 +1,1216 @@
+user/api/user.service.ts
+---
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  CreateUserReqType,
+  UpdateUserReqType,
+  UserSearchType,
+  UserType,
+  UserWithDetails,
+} from "backend/types/user.type";
+
+// ── API Functions ──────────────────────────────────────────────────────────
+
+/**
+ * Fetches a paginated, searchable list of users with role filtering[cite: 6, 8].
+ * Endpoint: GET /protected/users[cite: 6, 8]
+ */
+export const getUsers = async (params: UserSearchType) => {
+  try {
+    const response = await apiClient.get<APIResponse<PaginatedData<UserWithDetails[]>>>(
+      "/protected/users",
+      { params },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch users."), { cause: error });
+  }
+};
+
+/**
+ * Creates a new user account, personal details, and role mapping[cite: 6, 8].
+ * Endpoint: POST /protected/users[cite: 6, 8]
+ */
+export const createUserRecord = async (payload: CreateUserReqType) => {
+  try {
+    const response = await apiClient.post<APIResponse<UserWithDetails>>(
+      "/protected/users",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to create user account."), { cause: error });
+  }
+};
+
+/**
+ * Updates an existing user's email and/or personal details[cite: 6, 8].
+ * Endpoint: PUT /protected/users/:id[cite: 6, 8]
+ */
+export const updateUserRecord = async ({
+  id,
+  payload,
+}: {
+  id: number;
+  payload: UpdateUserReqType;
+}) => {
+  try {
+    const response = await apiClient.put<APIResponse<UserType>>(`/protected/users/${id}`, payload);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update user account."), { cause: error });
+  }
+};
+
+/**
+ * Soft-deletes a user account, personal details, and role mappings[cite: 6, 8].
+ * Endpoint: DELETE /protected/users/:id[cite: 6, 8]
+ */
+export const deleteUserRecord = async (id: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse<null>>(`/protected/users/${id}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete user account."), { cause: error });
+  }
+};
+
+// ── React Query Hooks ──────────────────────────────────────────────────────
+
+/**
+ * Hook to retrieve user accounts with optional filtering and pagination.
+ */
+export const useUsers = (params: Partial<UserSearchType> = {}) => {
+  const fullParams: UserSearchType = {
+    page: 1,
+    orderBy: "id",
+    orderDir: "asc",
+    ...params,
+  };
+
+  return useQuery({
+    queryKey: ["users", fullParams],
+    queryFn: () => getUsers(fullParams),
+  });
+};
+
+/**
+ * Convenience hook for fetching faculty accounts specifically.
+ */
+export const useFacultyList = (params: Partial<Omit<UserSearchType, "role">> = {}) => {
+  return useUsers({
+    role: "FACULTY",
+    ...params,
+  });
+};
+
+/**
+ * Convenience hook for fetching student accounts specifically.
+ */
+export const useStudentList = (params: Partial<Omit<UserSearchType, "role">> = {}) => {
+  return useUsers({
+    role: "STUDENT",
+    ...params,
+  });
+};
+
+/**
+ * Mutation hook for creating a new user account.
+ * Automatically invalidates active user queries on success.
+ */
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createUserRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+};
+
+/**
+ * Mutation hook for updating an existing user account.
+ * Automatically invalidates active user queries on success.
+ */
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateUserRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+};
+
+/**
+ * Mutation hook for deleting a user account.
+ * Automatically invalidates active user queries on success.
+ */
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteUserRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+};
+
+
+---
+user/components/UserColumns.tsx
+---
+import { MoreHorizontal, Pencil, Trash2, Mail } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { DataTableColumn } from "@/components/main-data-table";
+import type { UserWithDetails, SystemRole } from "backend/types/user.type";
+import { formatFullName } from "@/lib/nameFormatter";
+
+interface GetUserColumnsProps {
+  onEdit: (user: UserWithDetails) => void;
+  onDelete: (user: UserWithDetails) => void;
+}
+
+const roleBadgeStyles: Record<SystemRole, string> = {
+  SYS_ADMIN: "border-red-500/30 bg-red-500/10 text-red-400 dark:text-red-300",
+  ADMIN: "border-purple-500/30 bg-purple-500/10 text-purple-400 dark:text-purple-300",
+  SUPERVISOR: "border-indigo-500/30 bg-indigo-500/10 text-indigo-400 dark:text-indigo-300",
+  FACULTY: "border-blue-500/30 bg-blue-500/10 text-blue-400 dark:text-blue-300",
+  STUDENT: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 dark:text-emerald-300",
+};
+
+export function getUserColumns({
+  onEdit,
+  onDelete,
+}: GetUserColumnsProps): Array<DataTableColumn<UserWithDetails>> {
+  return [
+    {
+      header: "User Details",
+      className: "w-auto min-w-[220px]",
+      cell: (row) => {
+        const fullName = formatFullName({
+          first_name: row.first_name,
+          middle_name: row.middle_name ?? "",
+          last_name: row.last_name,
+          suffix: row.suffix ?? "",
+        });
+        const initials = `${row.first_name?.[0] ?? ""}${row.last_name?.[0] ?? ""}`.toUpperCase();
+
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="size-8 border border-border/50">
+              <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
+                {initials || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-foreground">{fullName}</span>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {row.institutional_id || "No ID"}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Email Address",
+      className: "w-auto text-xs text-muted-foreground",
+      cell: (row) => (
+        <div className="flex items-center gap-1.5">
+          <Mail className="size-3.5 shrink-0 text-muted-foreground/70" />
+          <span>{row.email}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Assigned Roles",
+      className: "w-48",
+      cell: (row) => (
+        <div className="flex flex-wrap gap-1">
+          {row.roles.map((role) => (
+            <Badge
+              key={role}
+              variant="outline"
+              className={`rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                roleBadgeStyles[role] ?? "border-border bg-muted text-muted-foreground"
+              }`}
+            >
+              {role.replace("_", " ")}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
+    {
+      header: "Actions",
+      className: "w-px whitespace-nowrap",
+      cell: (row) => (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="size-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36 p-1">
+              <DropdownMenuItem className="cursor-pointer text-xs" onSelect={() => onEdit(row)}>
+                <Pencil className="mr-2 size-3.5 text-muted-foreground" />
+                Edit User
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+                onSelect={() => onDelete(row)}
+              >
+                <Trash2 className="mr-2 size-3.5" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ];
+}
+
+
+---
+user/components/UserCreate.tsx
+---
+import { useMemo } from "react";
+import { useForm } from "@tanstack/react-form";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
+import { FormTextField } from "@/components/form-text-field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCreateUser } from "../api/user.service";
+import type { CreateUserReqType, SystemRole } from "backend/types/user.type";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+import { useUser } from "@/features/auth/context/user.context";
+
+interface UserCreateDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const ALL_SYSTEM_ROLES: { label: string; value: SystemRole }[] = [
+  { label: "Student", value: "STUDENT" },
+  { label: "Faculty", value: "FACULTY" },
+  { label: "Supervisor", value: "SUPERVISOR" },
+  { label: "Administrator", value: "ADMIN" },
+  { label: "System Administrator", value: "SYS_ADMIN" },
+];
+
+export const UserCreateDialog = ({ open, onOpenChange }: UserCreateDialogProps) => {
+  if (!open) return null;
+
+  return <UserCreateFormModal key={open ? "open" : "closed"} onClose={() => onOpenChange(false)} />;
+};
+
+interface UserCreateFormModalProps {
+  onClose: () => void;
+}
+
+const UserCreateFormModal = ({ onClose }: UserCreateFormModalProps) => {
+  const { user: currentUser } = useUser();
+  const createMutation = useCreateUser();
+
+  const availableRoles = useMemo(() => {
+    const userRoles = currentUser?.roles ?? [];
+    const isSysAdmin = userRoles.includes("SYS_ADMIN");
+
+    return ALL_SYSTEM_ROLES.filter((r) => {
+      if (r.value === "SYS_ADMIN") return false;
+      if (r.value === "ADMIN") return isSysAdmin;
+      return true;
+    });
+  }, [currentUser]);
+
+  const initialFormData: CreateUserReqType = {
+    credentials: {
+      email: "",
+      password: "",
+    },
+    personalDetails: {
+      institutional_id: "",
+      first_name: "",
+      last_name: "",
+      middle_name: "",
+      suffix: "",
+    },
+    role: availableRoles[0]?.value ?? "STUDENT",
+  };
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    onSubmit: (values) => dialog.handleFormSubmit(values),
+  });
+
+  const dialog = useEntityDialog<CreateUserReqType>({
+    form,
+    mutationFn: async (payload) => {
+      const { password, email } = payload.credentials;
+
+      const sanitizedPayload: CreateUserReqType = {
+        ...payload,
+        credentials: {
+          email,
+          ...(password?.trim() ? { password: password.trim() } : {}),
+        },
+      };
+
+      const res = await createMutation.mutateAsync(sanitizedPayload);
+      onClose();
+      return res;
+    },
+    loadingText: "Creating user account...",
+    successText: "User account created successfully.",
+  });
+
+  const isPending = createMutation.isPending;
+
+  const handleAttemptClose = () => {
+    if (form.state.isDirty) {
+      dialog.attemptClose();
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    dialog.confirmDiscard();
+    onClose();
+  };
+
+  return (
+    <>
+      <Dialog open={true} onOpenChange={(nextOpen) => !nextOpen && handleAttemptClose()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create User Account</DialogTitle>
+            <DialogDescription>
+              Register a new user account with personal details and assign an initial system role.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup className="space-y-3">
+            <form.Field
+              name="role"
+              children={(field) => (
+                <div className="space-y-1.5">
+                  <Label htmlFor={field.name}>System Role</Label>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(val) => field.handleChange(val as SystemRole)}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger id={field.name} className="w-full text-xs">
+                      <SelectValue placeholder="Select system role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRoles.map((r) => (
+                        <SelectItem key={r.value} value={r.value} className="text-xs">
+                          {r.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="credentials.email"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Email Address"
+                    type="email"
+                    placeholder="user@pit.edu.ph"
+                    disabled={isPending}
+                  />
+                )}
+              />
+              <form.Field
+                name="credentials.password"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Password (Optional)"
+                    type="password"
+                    placeholder="Auto-generated if empty"
+                    disabled={isPending}
+                  />
+                )}
+              />
+            </div>
+
+            <form.Field
+              name="personalDetails.institutional_id"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Institutional ID"
+                  placeholder="e.g. 2024-00123"
+                  disabled={isPending}
+                />
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="personalDetails.first_name"
+                children={(field) => (
+                  <FormTextField field={field} label="First Name" disabled={isPending} />
+                )}
+              />
+              <form.Field
+                name="personalDetails.last_name"
+                children={(field) => (
+                  <FormTextField field={field} label="Last Name" disabled={isPending} />
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="personalDetails.middle_name"
+                children={(field) => (
+                  <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                )}
+              />
+              <form.Field
+                name="personalDetails.suffix"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Suffix"
+                    placeholder="Jr., III"
+                    disabled={isPending}
+                  />
+                )}
+              />
+            </div>
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAttemptClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Creating..." : "Create Account"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create user account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A new account will be created. If no password was provided, an auto-generated password
+              will be emailed to the user.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+              {isPending ? "Creating..." : "Yes, create account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved form entries. Closing now will discard your progress.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+user/components/UserEdit.tsx
+---
+import { useForm } from "@tanstack/react-form";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { FormTextField } from "@/components/form-text-field";
+import { useUpdateUser } from "../api/user.service";
+import type { UserWithDetails, UpdateUserReqType } from "backend/types/user.type";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface UserEditDialogProps {
+  user: UserWithDetails | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const UserEditDialog = ({ user, open, onOpenChange }: UserEditDialogProps) => {
+  if (!user || !open) return null;
+
+  return <UserEditFormModal key={user.id} user={user} onClose={() => onOpenChange(false)} />;
+};
+
+interface UserEditFormModalProps {
+  user: UserWithDetails;
+  onClose: () => void;
+}
+
+const UserEditFormModal = ({ user, onClose }: UserEditFormModalProps) => {
+  const updateMutation = useUpdateUser();
+
+  const initialFormData: UpdateUserReqType = {
+    credentials: {
+      email: user.email ?? "",
+    },
+    personalDetails: {
+      institutional_id: user.institutional_id ?? "",
+      first_name: user.first_name ?? "",
+      last_name: user.last_name ?? "",
+      middle_name: user.middle_name ?? "",
+      suffix: user.suffix ?? "",
+    },
+  };
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    onSubmit: (values) => {
+      dialog.handleFormSubmit(values);
+    },
+  });
+
+  const dialog = useEntityDialog<UpdateUserReqType>({
+    form,
+    mutationFn: async (payload) => {
+      const res = await updateMutation.mutateAsync({ id: user.id, payload });
+      onClose();
+      return res;
+    },
+    loadingText: "Updating user account...",
+    successText: "User account updated successfully.",
+  });
+
+  const isPending = updateMutation.isPending;
+
+  const handleAttemptClose = () => {
+    if (form.state.isDirty) {
+      dialog.attemptClose();
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    dialog.confirmDiscard();
+    onClose();
+  };
+
+  return (
+    <>
+      <Dialog open={true} onOpenChange={(nextOpen) => !nextOpen && handleAttemptClose()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit User Account</DialogTitle>
+            <DialogDescription>
+              Update account email and personal details. System role modifications are managed
+              separately.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup className="space-y-3">
+            <form.Field
+              name="credentials.email"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Email Address"
+                  type="email"
+                  disabled={isPending}
+                />
+              )}
+            />
+
+            <form.Field
+              name="personalDetails.institutional_id"
+              children={(field) => (
+                <FormTextField field={field} label="Institutional ID" disabled={isPending} />
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="personalDetails.first_name"
+                children={(field) => (
+                  <FormTextField field={field} label="First Name" disabled={isPending} />
+                )}
+              />
+              <form.Field
+                name="personalDetails.last_name"
+                children={(field) => (
+                  <FormTextField field={field} label="Last Name" disabled={isPending} />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="personalDetails.middle_name"
+                children={(field) => (
+                  <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                )}
+              />
+              <form.Field
+                name="personalDetails.suffix"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Suffix"
+                    placeholder="Jr., III"
+                    disabled={isPending}
+                  />
+                )}
+              />
+            </div>
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAttemptClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes to user account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              An update notification email will be dispatched to the user regarding these changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+              {isPending ? "Saving..." : "Yes, save changes"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved edits in this form. Closing now will discard your changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+user/components/UserStatsCards.tsx
+---
+import { Users, GraduationCap, UserCheck, ShieldCheck } from "lucide-react";
+import { Card } from "@/components/ui/card";
+
+interface UserStatsCardsProps {
+  total: number;
+  students: number;
+  faculty: number;
+  supervisors: number;
+}
+
+const stats = [
+  {
+    title: "Total Accounts",
+    value: (props: UserStatsCardsProps) => props.total,
+    icon: Users,
+    accent: "violet",
+  },
+  {
+    title: "Students",
+    value: (props: UserStatsCardsProps) => props.students,
+    icon: GraduationCap,
+    accent: "emerald",
+  },
+  {
+    title: "Faculty Members",
+    value: (props: UserStatsCardsProps) => props.faculty,
+    icon: UserCheck,
+    accent: "sky",
+  },
+  {
+    title: "Supervisors",
+    value: (props: UserStatsCardsProps) => props.supervisors,
+    icon: ShieldCheck,
+    accent: "indigo",
+  },
+];
+
+const accentStyles = {
+  violet: {
+    bar: "bg-violet-500",
+    iconBg: "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400",
+    shadow: "hover:shadow-violet-500/20",
+    border: "hover:border-violet-300 dark:hover:border-violet-500/50",
+  },
+  emerald: {
+    bar: "bg-emerald-500",
+    iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+    shadow: "hover:shadow-emerald-500/20",
+    border: "hover:border-emerald-300 dark:hover:border-emerald-500/50",
+  },
+  sky: {
+    bar: "bg-sky-500",
+    iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400",
+    shadow: "hover:shadow-sky-500/20",
+    border: "hover:border-sky-300 dark:hover:border-sky-500/50",
+  },
+  indigo: {
+    bar: "bg-indigo-500",
+    iconBg: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400",
+    shadow: "hover:shadow-indigo-500/20",
+    border: "hover:border-indigo-300 dark:hover:border-indigo-500/50",
+  },
+} as const;
+
+export const UserStatsCards = (props: UserStatsCardsProps) => {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {stats.map((item) => {
+        const Icon = item.icon;
+        const styles = accentStyles[item.accent as keyof typeof accentStyles];
+
+        return (
+          <Card
+            key={item.title}
+            className={`
+              group relative overflow-hidden rounded-lg border bg-card
+              shadow-sm transition-all duration-200
+              hover:-translate-y-1 hover:shadow-md
+              ${styles.shadow} ${styles.border}
+            `}
+          >
+            {/* Accent bar */}
+            <div
+              className={`
+                absolute left-0 top-0 h-1 w-full
+                transition-all duration-300 ease-out
+                group-hover:w-[110%] group-hover:scale-x-105
+                ${styles.bar}
+              `}
+            />
+
+            <div className="flex items-center justify-between p-4">
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+                  {item.title}
+                </p>
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                  {item.value(props)}
+                </h2>
+                <p className="text-[10px] text-muted-foreground/50">Registered users</p>
+              </div>
+
+              {/* Icon container */}
+              <div
+                className={`
+                  flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
+                  transition-all duration-200 ease-out
+                  group-hover:scale-105 group-hover:rotate-1
+                  ${styles.iconBg}
+                `}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+
+---
+user/page/UsersPage.tsx
+---
+import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DataTable } from "@/components/main-data-table";
+
+import type { UserWithDetails, SystemRole } from "backend/types/user.type";
+import { useUsers, useDeleteUser } from "../api/user.service";
+import { formatFullName } from "@/lib/nameFormatter";
+import { getUserColumns } from "../components/UserColumns";
+import { UserCreateDialog } from "../components/UserCreate";
+import { UserEditDialog } from "../components/UserEdit";
+import { UserStatsCards } from "../components/UserStatsCards";
+
+export const UsersPage = () => {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<Exclude<SystemRole, "SYS_ADMIN"> | "ALL">("ALL");
+
+  // Dialog state
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserWithDetails | null>(null);
+  const [deletingUser, setDeletingUser] = useState<UserWithDetails | null>(null);
+
+  const {
+    data: usersResponse,
+    isPending: isUsersPending,
+    isError: isUsersError,
+    error: usersError,
+  } = useUsers({
+    page,
+    search: search.trim() || undefined,
+    role: roleFilter === "ALL" ? undefined : roleFilter,
+  });
+
+  const deleteMutation = useDeleteUser();
+
+  const handleConfirmDelete = async () => {
+    if (!deletingUser) return;
+    try {
+      await deleteMutation.mutateAsync(deletingUser.id);
+      toast.success("User account deleted successfully.");
+      setDeletingUser(null);
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  const columns = getUserColumns({
+    onEdit: (user) => setEditingUser(user),
+    onDelete: (user) => setDeletingUser(user),
+  });
+
+  // Filter out system administrator accounts from display
+  const users = useMemo(
+    () => (usersResponse?.data ?? []).filter((user) => !user.roles.includes("SYS_ADMIN")),
+    [usersResponse?.data],
+  );
+
+  // Compute live metrics for the cards
+  const stats = useMemo(() => {
+    const rawList = usersResponse?.data ?? [];
+    return {
+      total: usersResponse?.pagination?.totalItems ?? rawList.length,
+      students: rawList.filter((u) => u.roles.includes("STUDENT")).length,
+      faculty: rawList.filter((u) => u.roles.includes("FACULTY")).length,
+      supervisors: rawList.filter((u) => u.roles.includes("SUPERVISOR")).length,
+    };
+  }, [usersResponse]);
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">User Accounts</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage system accounts, user details, and system role access permissions.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto gap-1.5"
+            onClick={() => setIsCreateOpen(true)}
+          >
+            <Plus className="size-3.5" /> Add User
+          </Button>
+        </div>
+
+        {/* Dedicated Stat Cards Component */}
+        <UserStatsCards
+          total={stats.total}
+          students={stats.students}
+          faculty={stats.faculty}
+          supervisors={stats.supervisors}
+        />
+
+        {/* Table Section */}
+        <Card className="overflow-hidden rounded-xl shadow-xs gap-0 pb-0">
+          <CardHeader className="flex items-center justify-between border-b px-6 flex-col gap-2.5 sm:flex-row sm:items-center">
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search name or ID..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-8 h-8 rounded-lg text-xs"
+                />
+              </div>
+
+              <Select
+                value={roleFilter}
+                onValueChange={(val) => {
+                  setRoleFilter(val as Exclude<SystemRole, "SYS_ADMIN"> | "ALL");
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="h-8 w-full sm:w-40 text-xs rounded-lg">
+                  <SelectValue placeholder="Filter by Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" className="text-xs">
+                    All Roles
+                  </SelectItem>
+                  <SelectItem value="STUDENT" className="text-xs">
+                    Student
+                  </SelectItem>
+                  <SelectItem value="FACULTY" className="text-xs">
+                    Faculty
+                  </SelectItem>
+                  <SelectItem value="SUPERVISOR" className="text-xs">
+                    Supervisor
+                  </SelectItem>
+                  <SelectItem value="ADMIN" className="text-xs">
+                    Admin
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <DataTable
+              columns={columns}
+              data={users}
+              getRowId={(row) => row.id}
+              isLoading={isUsersPending}
+              isError={isUsersError}
+              error={usersError}
+              emptyMessage="No user accounts found matching the criteria."
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pagination Footer */}
+      <div className="shrink-0 border-t bg-card px-6 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {usersResponse?.pagination
+              ? `Page ${usersResponse.pagination.currentPage} of ${usersResponse.pagination.totalPage}`
+              : "Loading page info..."}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 rounded-lg p-0"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={!usersResponse?.pagination?.hasPrev || isUsersPending}
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
+              {usersResponse?.pagination?.currentPage ?? 1}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 rounded-lg p-0"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!usersResponse?.pagination?.hasNext || isUsersPending}
+            >
+              <ChevronRight className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Dialog Modals */}
+      <UserCreateDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+
+      <UserEditDialog
+        user={editingUser}
+        open={!!editingUser}
+        onOpenChange={(open) => {
+          if (!open) setEditingUser(null);
+        }}
+      />
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingUser && (
+                <>
+                  Are you sure you want to soft-delete the account for{" "}
+                  <strong>
+                    {formatFullName({
+                      first_name: deletingUser.first_name,
+                      middle_name: deletingUser.middle_name ?? "",
+                      last_name: deletingUser.last_name,
+                      suffix: deletingUser.suffix ?? "",
+                    })}
+                  </strong>
+                  ? This action will revoke login credentials and system access.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Yes, delete account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default UsersPage;
+
+
+---

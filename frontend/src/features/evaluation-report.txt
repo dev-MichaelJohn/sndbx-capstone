@@ -1,0 +1,643 @@
+evaluation-report/api/evaluation-report.service.ts
+---
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { APIResponse } from "backend/utils/response.util";
+import type {
+  GenerateBatchIferReq,
+  IferSelect,
+  UnifiedFacultyReportDetail,
+  UpdateDevelopmentPlanReq,
+  UpdateIferStatusReq,
+} from "backend/types/evaluation-report.type";
+
+const BASE = "protected/evaluation-reports";
+
+export const getAllReportsApi = async (): Promise<
+  Array<IferSelect & { faculty_name?: string }>
+> => {
+  try {
+    const res = await apiClient<APIResponse<Array<IferSelect & { faculty_name?: string }>>>(
+      `${BASE}`,
+    );
+    if (!res.data.data) throw new Error("Reports payload is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to load evaluation reports."));
+  }
+};
+
+export const getMyReportsApi = async (): Promise<IferSelect[]> => {
+  try {
+    const res = await apiClient<APIResponse<IferSelect[]>>(`${BASE}/my-reports`);
+    if (!res.data.data) throw new Error("Reports payload is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to load evaluation reports."));
+  }
+};
+
+export const getFacultyReportsApi = async (facultyId: number): Promise<IferSelect[]> => {
+  try {
+    const res = await apiClient<APIResponse<IferSelect[]>>(`${BASE}/faculty/${facultyId}`);
+    if (!res.data.data) throw new Error("Faculty reports payload is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to load faculty evaluation reports."));
+  }
+};
+
+export const getReportDetailApi = async (reportId: number): Promise<UnifiedFacultyReportDetail> => {
+  try {
+    const res = await apiClient<APIResponse<UnifiedFacultyReportDetail>>(`${BASE}/${reportId}`);
+    if (!res.data.data) throw new Error("Report detail payload is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to load evaluation report details."));
+  }
+};
+
+export const generateBatchReportsApi = async (
+  payload: GenerateBatchIferReq,
+): Promise<{ generated_count: number }> => {
+  try {
+    const res = await apiClient.post<APIResponse<{ generated_count: number }>>(
+      `${BASE}/batch-generate`,
+      payload,
+    );
+    if (!res.data.data) throw new Error("Batch generation response is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to generate batch evaluation reports."));
+  }
+};
+
+export const saveDevelopmentPlanApi = async (
+  reportId: number,
+  payload: UpdateDevelopmentPlanReq,
+): Promise<IferSelect> => {
+  try {
+    const res = await apiClient.patch<APIResponse<IferSelect>>(
+      `${BASE}/${reportId}/development-plan`,
+      payload,
+    );
+    if (!res.data.data) throw new Error("Development plan response is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to save FEDAF development plan."));
+  }
+};
+
+export const acknowledgeReportApi = async (reportId: number): Promise<IferSelect> => {
+  try {
+    const res = await apiClient.patch<APIResponse<IferSelect>>(`${BASE}/${reportId}/acknowledge`);
+    if (!res.data.data) throw new Error("Acknowledgment response is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to acknowledge evaluation report."));
+  }
+};
+
+export const updateReportStatusApi = async (
+  reportId: number,
+  payload: UpdateIferStatusReq,
+): Promise<IferSelect> => {
+  try {
+    const res = await apiClient.patch<APIResponse<IferSelect>>(
+      `${BASE}/${reportId}/status`,
+      payload,
+    );
+    if (!res.data.data) throw new Error("Status update response is empty.");
+    return res.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update report status."));
+  }
+};
+
+export const downloadIferPdf = async (reportId: number): Promise<void> => {
+  try {
+    const res = await apiClient.get(`${BASE}/${reportId}/ifer/pdf`, { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `IFER-Report-${reportId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to download IFER document."));
+  }
+};
+
+export const downloadFedafPdf = async (reportId: number): Promise<void> => {
+  try {
+    const res = await apiClient.get(`${BASE}/${reportId}/fedaf/pdf`, { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `FEDAF-Report-${reportId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to download FEDAF document."));
+  }
+};
+
+// ============================================================================
+// 3. REACT QUERY HOOKS (Cache & Lifecycle Management)
+// ============================================================================
+
+export const useAllReports = () => {
+  return useQuery({
+    queryKey: ["getAllReports"],
+    queryFn: getAllReportsApi,
+  });
+};
+
+export const useMyReports = () => {
+  return useQuery({
+    queryKey: ["getMyReports"],
+    queryFn: getMyReportsApi,
+  });
+};
+
+export const useFacultyReports = (facultyId?: number) => {
+  return useQuery({
+    queryKey: ["getFacultyReports", facultyId],
+    queryFn: () => getFacultyReportsApi(facultyId!),
+    enabled: Boolean(facultyId) && !isNaN(facultyId!),
+  });
+};
+
+export const useReportDetail = (reportId: number) => {
+  return useQuery({
+    queryKey: ["getReportDetail", reportId],
+    queryFn: () => getReportDetailApi(reportId),
+    enabled: Boolean(reportId) && !isNaN(reportId),
+  });
+};
+
+export const useGenerateBatchReports = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: generateBatchReportsApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getAllReports"] });
+      queryClient.invalidateQueries({ queryKey: ["getMyReports"] });
+      queryClient.invalidateQueries({ queryKey: ["getFacultyReports"] });
+    },
+  });
+};
+
+export const useSaveDevelopmentPlan = (reportId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateDevelopmentPlanReq) => saveDevelopmentPlanApi(reportId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getReportDetail", reportId] });
+    },
+  });
+};
+
+export const useAcknowledgeReport = (reportId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => acknowledgeReportApi(reportId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getReportDetail", reportId] });
+      queryClient.invalidateQueries({ queryKey: ["getMyReports"] });
+      queryClient.invalidateQueries({ queryKey: ["getAllReports"] });
+    },
+  });
+};
+
+export const useUpdateReportStatus = (reportId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateIferStatusReq) => updateReportStatusApi(reportId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getReportDetail", reportId] });
+      queryClient.invalidateQueries({ queryKey: ["getMyReports"] });
+      queryClient.invalidateQueries({ queryKey: ["getFacultyReports"] });
+      queryClient.invalidateQueries({ queryKey: ["getAllReports"] });
+    },
+  });
+};
+
+
+---
+evaluation-report/components/BatchGenerateReportDialog.tsx
+---
+import { useState } from "react";
+import { Sparkles } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useSemesters } from "@/features/semester/api/semester.service";
+import { useGenerateBatchReports } from "../api/evaluation-report.service";
+
+export const BatchGenerateReportDialog = () => {
+  const [open, setOpen] = useState(false);
+  const [semesterId, setSemesterId] = useState<string>("");
+
+  const { data: semesterData, isLoading: isLoadingSemesters } = useSemesters({
+    page: 1,
+    orderBy: "school_year_start",
+    orderDir: "desc",
+    search: undefined,
+  });
+  const generateBatch = useGenerateBatchReports();
+
+  const semesters = semesterData?.data ?? [];
+
+  const handleGenerate = async () => {
+    if (!semesterId) {
+      toast.error("Please select an academic semester.");
+      return;
+    }
+
+    try {
+      const result = await generateBatch.mutateAsync({
+        semester_id: Number(semesterId),
+        set_weight: 0.6,
+        sef_weight: 0.4,
+      });
+
+      const count = result?.generated_count ?? 0;
+      toast.success(`Generated ${count} evaluation report(s) successfully.`);
+      setOpen(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to generate batch evaluation reports.",
+      );
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          className="h-8 cursor-pointer gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-medium text-white hover:bg-emerald-500"
+        >
+          <Sparkles className="size-3.5" />
+          <span>Generate Batch Reports</span>
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="rounded-xl sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold">Generate Batch Reports</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Calculate and aggregate SET/SEF rating scores for all faculty offering courses in the
+            selected semester.
+          </DialogDescription>
+        </DialogHeader>
+
+        <FieldGroup className="py-2">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-foreground">Target Academic Semester</label>
+            <Select value={semesterId} onValueChange={setSemesterId} disabled={isLoadingSemesters}>
+              <SelectTrigger className="h-8 rounded-lg text-xs bg-muted/20 border-border/60">
+                <SelectValue
+                  placeholder={isLoadingSemesters ? "Loading terms..." : "Select semester..."}
+                />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {semesters.map((s) => (
+                  <SelectItem key={s.id} value={s.id.toString()} className="text-xs">
+                    AY {s.school_year_start}–{s.school_year_end} ({s.semester_term} Semester)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </FieldGroup>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={generateBatch.isPending}
+            className="h-8 rounded-lg text-xs"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleGenerate}
+            disabled={generateBatch.isPending || !semesterId}
+            className="h-8 cursor-pointer rounded-lg bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-500"
+          >
+            {generateBatch.isPending ? "Generating..." : "Run Batch Aggregation"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+
+---
+evaluation-report/components/EvaluationReportColumns.tsx
+---
+import { useNavigate } from "react-router";
+import { Eye, FileText, GraduationCap, MoreHorizontal, User } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { DataTableColumn } from "@/components/main-data-table";
+
+import { EvaluationReportStatusBadge } from "./EvaluationReportStatusBadge";
+import { downloadFedafPdf, downloadIferPdf } from "../api/evaluation-report.service";
+import { useSemester } from "@/features/semester/api/semester.service";
+import type { IferSelect } from "backend/types/evaluation-report.type";
+
+type EvaluationReportRow = IferSelect & { faculty_name?: string };
+
+const SemesterCell = ({ semesterId }: { semesterId: number }) => {
+  const { data: semester } = useSemester(semesterId);
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/40 text-muted-foreground">
+        <GraduationCap className="size-3.5" />
+      </div>
+      <div className="flex flex-col">
+        <span className="text-xs font-semibold text-foreground">
+          {semester
+            ? `AY ${semester.school_year_start}–${semester.school_year_end}`
+            : `Semester #${semesterId}`}
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {semester ? `${semester.semester_term} Term` : `ID: ${semesterId}`}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+export const getEvaluationReportColumns = (): Array<DataTableColumn<EvaluationReportRow>> => [
+  {
+    header: "Report Ref",
+    className: "w-28",
+    cell: (row) => (
+      <span className="inline-flex items-center rounded-md border border-border/50 bg-muted/40 px-2 py-0.5 font-mono text-[11px] font-medium text-foreground">
+        IFER #{row.id}
+      </span>
+    ),
+  },
+  {
+    header: "Faculty Member",
+    className: "w-48",
+    cell: (row) => (
+      <div className="flex items-center gap-2">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/40 text-muted-foreground">
+          <User className="size-3.5" />
+        </div>
+        <div className="flex flex-col min-w-0">
+          <span className="truncate text-xs font-semibold text-foreground">
+            {row.faculty_name ?? `Faculty #${row.faculty_id}`}
+          </span>
+          <span className="font-mono text-[10px] text-muted-foreground/70">
+            ID: {row.faculty_id}
+          </span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    header: "Academic Term",
+    className: "w-44",
+    cell: (row) => <SemesterCell semesterId={row.semester_id} />,
+  },
+  {
+    header: "SET Rating",
+    className: "w-24",
+    cell: (row) => (
+      <span className="font-mono text-xs font-semibold text-emerald-400">
+        {row.overall_set_rating ? `${row.overall_set_rating} / 5.0` : "N/A"}
+      </span>
+    ),
+  },
+  {
+    header: "SEF Rating",
+    className: "w-24",
+    cell: (row) => (
+      <span className="font-mono text-xs font-semibold text-sky-400">
+        {row.overall_sef_rating ? `${row.overall_sef_rating} / 5.0` : "N/A"}
+      </span>
+    ),
+  },
+  {
+    header: "Status",
+    className: "w-32",
+    cell: (row) => <EvaluationReportStatusBadge status={row.status} />,
+  },
+  {
+    header: "Actions",
+    className: "w-px whitespace-nowrap",
+    cell: (row) => {
+      const navigate = useNavigate();
+
+      return (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="size-7 cursor-pointer rounded-lg p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-52 rounded-xl p-1">
+              <DropdownMenuItem
+                className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs focus:bg-accent"
+                onClick={() => navigate(`${row.id}`)}
+              >
+                <Eye className="mr-2 size-3.5 text-muted-foreground" />
+                View Detailed Report
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="my-1" />
+
+              <DropdownMenuItem
+                className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs focus:bg-accent"
+                onClick={() => downloadIferPdf(row.id)}
+              >
+                <FileText className="mr-2 size-3.5 text-emerald-400" />
+                Download IFER Document
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs focus:bg-accent"
+                onClick={() => downloadFedafPdf(row.id)}
+              >
+                <FileText className="mr-2 size-3.5 text-sky-400" />
+                Download FEDAF Action Plan
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      );
+    },
+  },
+];
+
+
+---
+evaluation-report/components/EvaluationReportStatusBadge.tsx
+---
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Clock, FileCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { IferStatus } from "backend/types/evaluation-report.type";
+
+interface StatusBadgeProps {
+  status: IferStatus | string;
+  className?: string;
+}
+
+export const EvaluationReportStatusBadge = ({ status, className }: StatusBadgeProps) => {
+  switch (status) {
+    case "ACKNOWLEDGED":
+      return (
+        <Badge
+          variant="outline"
+          className={cn(
+            "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1.5 font-medium px-2.5 py-0.5 rounded-md text-[11px]",
+            className,
+          )}
+        >
+          <CheckCircle2 className="size-3.5" />
+          Acknowledged
+        </Badge>
+      );
+
+    case "FINALIZED":
+      return (
+        <Badge
+          variant="outline"
+          className={cn(
+            "border-sky-500/30 bg-sky-500/10 text-sky-400 gap-1.5 font-medium px-2.5 py-0.5 rounded-md text-[11px]",
+            className,
+          )}
+        >
+          <FileCheck className="size-3.5" />
+          Finalized
+        </Badge>
+      );
+
+    case "DRAFT":
+    default:
+      return (
+        <Badge
+          variant="outline"
+          className={cn(
+            "border-amber-500/30 bg-amber-500/10 text-amber-400 gap-1.5 font-medium px-2.5 py-0.5 rounded-md text-[11px]",
+            className,
+          )}
+        >
+          <Clock className="size-3.5" />
+          Draft
+        </Badge>
+      );
+  }
+};
+
+
+---
+evaluation-report/page/EvaluationReportPage.tsx
+---
+import { useMemo } from "react";
+
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DataTable } from "@/components/main-data-table";
+
+import { useAllReports } from "../api/evaluation-report.service";
+import { getEvaluationReportColumns } from "../components/EvaluationReportColumns";
+import { BatchGenerateReportDialog } from "../components/BatchGenerateReportDialog";
+
+export const EvaluationReportPage = () => {
+  const { data: reports = [], isPending, isError, error } = useAllReports();
+
+  const columns = useMemo(() => getEvaluationReportColumns(), []);
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                Evaluation Reports
+              </h1>
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+              Consolidated Individual Faculty Evaluation Reports (IFER) and FEDAF development plans.
+            </p>
+          </div>
+
+          <BatchGenerateReportDialog />
+        </div>
+
+        <Card className="flex flex-col gap-0 overflow-hidden rounded-xl border border-border/70 bg-card shadow-xs">
+          <CardHeader className="border-b border-border/60">
+            <h3 className="text-xs font-semibold tracking-tight text-foreground uppercase">
+              Faculty Evaluation History & Records
+            </h3>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <DataTable
+              columns={columns}
+              data={reports}
+              getRowId={(row) => row.id.toString()}
+              isLoading={isPending}
+              isError={isError}
+              error={error}
+              emptyMessage="No evaluation reports generated yet."
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default EvaluationReportPage;
+
+
+---

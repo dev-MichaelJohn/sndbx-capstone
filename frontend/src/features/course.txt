@@ -1,0 +1,879 @@
+course/api/course.service.ts
+---
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type {
+  CourseInsert,
+  CourseSearch,
+  CourseSelect,
+  CourseUpdate,
+} from "backend/types/course.type";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// Fetch paginated courses for a specific program
+export const getCourses = async (params: CourseSearch) => {
+  try {
+    const { program_id, ...queryParams } = params;
+
+    const endpoint = program_id
+      ? `/protected/programs/${program_id}/courses`
+      : "/protected/courses";
+
+    const response = await apiClient.get<APIResponse<PaginatedData<CourseSelect[]>>>(endpoint, {
+      params: queryParams,
+    });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch courses."), { cause: error });
+  }
+};
+
+export const useCourses = (
+  params: Partial<CourseSearch> & { program_id?: number } = {},
+  options?: { enabled?: boolean },
+) => {
+  const fullParams: CourseSearch = {
+    search: undefined,
+    page: 1,
+    orderBy: "id",
+    orderDir: "asc",
+    ...params,
+  };
+
+  return useQuery({
+    queryKey: ["getCourses", fullParams],
+    queryFn: () => getCourses(fullParams),
+    ...options,
+  });
+};
+
+// Inspects query cache to read current program course count without triggering a re-fetch
+export const useProgramCourseCount = (programId: number) => {
+  const { data, isLoading } = useCourses(
+    { program_id: programId, page: 1 },
+    { enabled: !!programId },
+  );
+
+  return {
+    data: data?.pagination?.totalItems ?? 0,
+    isLoading,
+  };
+};
+
+// Fetch single course by ID
+export const getCourse = async (id: number) => {
+  try {
+    const response = await apiClient.get<APIResponse<CourseSelect>>(`/protected/courses/${id}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch course details."), { cause: error });
+  }
+};
+
+export const useCourse = (id: number) => {
+  return useQuery({
+    queryKey: ["getCourse", id],
+    queryFn: () => getCourse(id),
+    enabled: !!id,
+  });
+};
+
+// Create course record
+const createCourseRecord = async (payload: CourseInsert) => {
+  try {
+    const response = await apiClient.post<APIResponse<CourseSelect>>("/protected/courses", payload);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to create course record."), { cause: error });
+  }
+};
+
+export const useCreateCourse = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCourseRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getCourses"] });
+    },
+  });
+};
+
+// Update course record
+const updateCourseRecord = async ({
+  course_id,
+  ...payload
+}: CourseUpdate & { course_id: number }) => {
+  try {
+    const response = await apiClient.put<APIResponse<CourseSelect>>(
+      `/protected/courses/${course_id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update course record."), { cause: error });
+  }
+};
+
+export const useUpdateCourse = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCourseRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getCourses"] });
+    },
+  });
+};
+
+// Delete course record
+const deleteCourseRecord = async (courseId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/protected/courses/${courseId}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete course record."), { cause: error });
+  }
+};
+
+export const useDeleteCourse = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCourseRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getCourses"] });
+    },
+  });
+};
+
+
+---
+course/components/CourseCreate.tsx
+---
+import { useRef } from "react";
+import { useForm } from "@tanstack/react-form";
+import type { LucideIcon } from "lucide-react";
+import { CourseSchema, type CourseInsert } from "backend/types/course.type";
+import { useCreateCourse } from "../api/course.service";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
+import { FormTextField } from "@/components/form-text-field";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface CourseCreateDialogProps {
+  programId: number;
+  icon?: LucideIcon;
+  triggerText?: string;
+}
+
+export const CourseCreateDialog = ({
+  programId,
+  icon: Icon,
+  triggerText = "Add Course",
+}: CourseCreateDialogProps) => {
+  const { mutateAsync, isPending } = useCreateCourse();
+
+  const initialFormData: CourseInsert = {
+    program_id: programId,
+    initialism: "",
+    name: "",
+  };
+
+  const handleFormSubmitRef = useRef<any>(null);
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    validators: {
+      onSubmit: CourseSchema.insert,
+    },
+    onSubmit: (args) => handleFormSubmitRef.current?.(args),
+  });
+
+  const dialog = useEntityDialog<CourseInsert>({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Creating course record...",
+    successText: "Course created successfully.",
+  });
+
+  handleFormSubmitRef.current = dialog.handleFormSubmit;
+
+  const courseSummary = (() => {
+    if (!dialog.pendingValue) return "";
+    return `This will add standard course entry "${dialog.pendingValue.initialism}" (${dialog.pendingValue.name}) to the program curriculum.`;
+  })();
+
+  return (
+    <>
+      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button type="button" className="rounded-lg p-4 flex items-center justify-center gap-1">
+            {Icon && <Icon className="size-3.5" />}
+            <span className="leading-none text-sm">{triggerText}</span>
+          </Button>
+        </DialogTrigger>
+
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Course</DialogTitle>
+            <DialogDescription>Add a new course entry to this program's catalog.</DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <form.Field
+              name="initialism"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Course Code / Initialism"
+                  disabled={isPending}
+                  placeholder="e.g. IT 101"
+                />
+              )}
+            />
+
+            <form.Field
+              name="name"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Course Name"
+                  disabled={isPending}
+                  placeholder="e.g. Introduction to Computing"
+                />
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Creating..." : "Create Course"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Confirmation Modal */}
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create new course?</AlertDialogTitle>
+            <AlertDialogDescription>{courseSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+              {isPending ? "Creating..." : "Yes, create course"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Discard Confirmation Modal */}
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved input in this form. Closing now will discard your entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+course/components/CourseDelete.tsx
+---
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { useDeleteCourse } from "../api/course.service";
+import { useCurriculums } from "@/features/curriculum/api/curriculum.service";
+import { useProgram } from "@/features/program/api/program.service";
+import type { CourseSelect } from "backend/types/course.type";
+import type { CurriculumWithDetails } from "backend/types/curriculum.type";
+import { cn } from "@/lib/utils";
+
+interface CourseDeleteDialogProps {
+  course: CourseSelect;
+  icon?: LucideIcon;
+  triggerText?: string;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+}
+
+// Sub-component to safely call useProgram per item without violating React hook rules
+const CurriculumListItem = ({ item }: { item: CurriculumWithDetails }) => {
+  const { data: programData } = useProgram(item.program_id);
+
+  // Fallback to embedded relation if available, otherwise use data from useProgram hook
+  const programName = programData?.name;
+  const programInitialism = programData?.initialism;
+
+  const displayProgram = programName
+    ? `${programName} (${programInitialism})`
+    : `Program ID: ${item.program_id}`;
+
+  return (
+    <li>
+      {displayProgram} — Year {item.year_level}, {item.semester_term} Semester
+    </li>
+  );
+};
+
+export const CourseDeleteDialog = ({
+  course,
+  icon: Icon = Trash2,
+  triggerText = "Delete",
+  variant = "ghost",
+  className,
+}: CourseDeleteDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const { mutateAsync, isPending: isDeleting } = useDeleteCourse();
+
+  const {
+    data: curriculumsResponse,
+    isLoading: isCheckingCurriculums,
+    isError: isCheckError,
+  } = useCurriculums({ course_id: course.id, page: 1 }, { enabled: open });
+
+  const curriculums = curriculumsResponse?.data ?? [];
+  const hasCurriculums = curriculums.length > 0;
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (hasCurriculums || isCheckingCurriculums) return;
+
+    const toastId = toast.loading(`Deleting ${course.initialism}...`);
+    try {
+      await mutateAsync(course.id);
+      toast.success("Course record deleted successfully.", { id: toastId });
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete course record.", {
+        id: toastId,
+      });
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant={variant}
+          size="sm"
+          className={cn(
+            "w-full h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-destructive hover:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive focus-visible:outline-none",
+            className,
+          )}
+        >
+          <Icon className="mr-2 size-3.5 shrink-0" />
+          <span>{triggerText}</span>
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {course.name}?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 pt-1 text-sm text-muted-foreground">
+              <p>
+                This action cannot be undone. This will permanently remove the course record from
+                the system.
+              </p>
+
+              {/* Loader while checking database */}
+              {isCheckingCurriculums && (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                  Checking for curriculum entries referencing this course...
+                </div>
+              )}
+
+              {/* Blocked state visual callout */}
+              {!isCheckingCurriculums && hasCurriculums && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">Cannot delete course record</p>
+                    <p className="text-destructive/90">
+                      This course is currently referenced in <strong>{curriculums.length}</strong>{" "}
+                      curriculum entry(ies):
+                    </p>
+                    <ul className="list-disc pl-4 font-medium space-y-0.5">
+                      {curriculums.slice(0, 3).map((item) => (
+                        <CurriculumListItem key={item.id} item={item} />
+                      ))}
+                      {curriculums.length > 3 && <li>...and {curriculums.length - 3} more</li>}
+                    </ul>
+                    <p className="pt-1 text-destructive/80">
+                      Please remove this course from all program curricula before deleting it.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error fallback if checking failed */}
+              {isCheckError && (
+                <p className="text-xs text-destructive">
+                  Failed to verify linked curriculum entries. Please try again or check your network
+                  connection.
+                </p>
+              )}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>
+            {hasCurriculums ? "Close" : "Cancel"}
+          </AlertDialogCancel>
+
+          {!hasCurriculums && (
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting || isCheckingCurriculums || isCheckError}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Yes, delete course"}
+            </AlertDialogAction>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
+
+---
+course/components/CourseEdit.tsx
+---
+import { useRef } from "react";
+import { useForm } from "@tanstack/react-form";
+import { CourseSchema, type CourseSelect, type CourseUpdate } from "backend/types/course.type";
+import { useUpdateCourse } from "../api/course.service";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
+import { FormTextField } from "@/components/form-text-field";
+import { Pencil } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface CourseEditDialogProps {
+  course: CourseSelect;
+  triggerAsDropdownItem?: boolean;
+}
+
+export const CourseEditDialog = ({ course }: CourseEditDialogProps) => {
+  const { mutateAsync, isPending } = useUpdateCourse();
+
+  const initialFormData: CourseUpdate = {
+    initialism: course.initialism,
+    name: course.name,
+  };
+
+  const handleFormSubmitRef = useRef<any>(null);
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    validators: {
+      onSubmit: CourseSchema.update,
+    },
+    onSubmit: (args) => handleFormSubmitRef.current?.(args),
+  });
+
+  const dialog = useEntityDialog<CourseUpdate>({
+    form,
+    mutationFn: (values) =>
+      mutateAsync({
+        course_id: course.id,
+        ...values,
+      }),
+    loadingText: "Updating course record...",
+    successText: "Course updated successfully.",
+    onReset: () => form.reset(initialFormData),
+  });
+
+  handleFormSubmitRef.current = dialog.handleFormSubmit;
+
+  const courseSummary = (() => {
+    if (!dialog.pendingValue) return "";
+    return `This will update details for "${course.initialism}" to "${dialog.pendingValue.initialism}" (${dialog.pendingValue.name}).`;
+  })();
+
+  return (
+    <>
+      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-full justify-start px-2 py-1.5 text-xs font-normal"
+          >
+            <Pencil className="mr-2 size-3.5 text-muted-foreground" />
+            <span>Edit</span>
+          </Button>
+        </DialogTrigger>
+
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Course</DialogTitle>
+            <DialogDescription>
+              Update the course code or title for standard curriculum cataloging.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            {/* Initialism / Course Code Field */}
+            <form.Field
+              name="initialism"
+              validators={{
+                onChange: ({ value }) =>
+                  !value || !value.trim() ? "Course code is required" : undefined,
+              }}
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Course Code / Initialism"
+                  disabled={isPending}
+                  placeholder="e.g. IT 101"
+                />
+              )}
+            />
+
+            {/* Course Name Field */}
+            <form.Field
+              name="name"
+              validators={{
+                onChange: ({ value }) =>
+                  !value || !value.trim() ? "Course name is required" : undefined,
+              }}
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Course Name"
+                  disabled={isPending}
+                  placeholder="e.g. Introduction to Computing"
+                />
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isDirty] as const}
+              children={([canSubmit, isDirty]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || !isDirty || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Confirmation Modal */}
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes to course?</AlertDialogTitle>
+            <AlertDialogDescription>{courseSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
+              {isPending ? "Saving..." : "Yes, save changes"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Discard Confirmation Modal */}
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved edits in this form. Closing now will discard your changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+course/components/CoursesTab.tsx
+---
+import { useState } from "react";
+import { useCourses } from "../api/course.service";
+import { DataTable, type DataTableColumn } from "@/components/main-data-table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Trash2,
+  BookMarked,
+} from "lucide-react";
+import type { CourseSelect } from "backend/types/course.type";
+import { CourseCreateDialog } from "./CourseCreate";
+import { CourseEditDialog } from "./CourseEdit";
+import { CourseDeleteDialog } from "./CourseDelete";
+
+interface ProgramCoursesTabProps {
+  programId: number;
+}
+
+export const ProgramCoursesTab = ({ programId }: ProgramCoursesTabProps) => {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+
+  const {
+    data: coursesData,
+    isLoading,
+    isError,
+    error,
+  } = useCourses({
+    program_id: programId,
+    search: search.trim() || undefined,
+    page,
+    orderBy: "id",
+    orderDir: "asc",
+  });
+
+  const courses = coursesData?.data ?? [];
+  const pagination = coursesData?.pagination;
+
+  const columns: Array<DataTableColumn<CourseSelect>> = [
+    {
+      header: "Course Details",
+      className: "w-auto min-w-[240px]",
+      cell: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <BookMarked className="size-4" />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-semibold tracking-tight text-foreground">{row.name}</span>
+            <span className="inline-block font-mono text-[10px] font-medium text-muted-foreground/80">
+              {row.initialism}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: "Actions",
+      className: "w-px whitespace-nowrap text-right",
+      cell: (row) => (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 cursor-pointer rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <MoreHorizontal className="size-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-40 rounded-xl p-1">
+              <DropdownMenuItem
+                className="cursor-pointer p-0 focus:bg-transparent hover:bg-transparent"
+                onSelect={(e) => e.preventDefault()}
+              >
+                <CourseEditDialog course={row} />
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                className="cursor-pointer p-0 focus:bg-transparent hover:bg-transparent"
+                onSelect={(e) => e.preventDefault()}
+              >
+                <CourseDeleteDialog course={row} icon={Trash2} triggerText="Delete" />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+      {/* Search & Action Toolbar */}
+      <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:w-64">
+          <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search courses..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="h-8 rounded-lg pl-8 text-xs"
+          />
+        </div>
+
+        <CourseCreateDialog icon={Plus} triggerText="Add Course" programId={programId} />
+      </div>
+
+      {/* Data Table */}
+      <DataTable
+        columns={columns}
+        data={courses}
+        getRowId={(row) => String(row.id)}
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        emptyMessage="No courses found for this program."
+      />
+
+      {/* Pagination Footer */}
+      <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
+        <span>
+          {pagination
+            ? `Page ${pagination.currentPage} of ${pagination.totalPage}`
+            : "Loading page info..."}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-7 w-7 rounded-lg"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={!pagination?.hasPrev || isLoading}
+          >
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <span className="flex h-7 min-w-[28px] items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
+            {pagination?.currentPage ?? 1}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-7 w-7 rounded-lg"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!pagination?.hasNext || isLoading}
+          >
+            <ChevronRight className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+---

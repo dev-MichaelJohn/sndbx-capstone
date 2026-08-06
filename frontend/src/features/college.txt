@@ -1,0 +1,2974 @@
+college/college.txt
+---
+./college.txt
+---
+
+
+---
+./api/college.service.ts
+---
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type {
+  CollegeDeanSelect,
+  CollegeSelect,
+  CollegeWithDean,
+  CreateCollegeRecordType,
+  DeanCandidate,
+  UpdateCollegeRecordType,
+} from "backend/types/college.types";
+import { apiClient, getErrorMessage, type BasicSearchProps } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+
+export const getColleges = async ({ page, search }: BasicSearchProps) => {
+  try {
+    const response = await apiClient<APIResponse<PaginatedData<CollegeWithDean[]>>>(
+      `/protected/colleges?page=${page}&search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const searchDeanCandidates = async (search?: string) => {
+  try {
+    const response = await apiClient<APIResponse<DeanCandidate[]>>(
+      `/protected/colleges/available-deans?search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const useSearchDeanCandidates = (search?: string) => {
+  return useQuery({
+    queryKey: ["searchDeanCandidates", search],
+    queryFn: () => searchDeanCandidates(search),
+    enabled: !!search && search.length >= 2,
+  });
+};
+
+const updateCollegeRecord = async ({ collegeId, college, dean }: UpdateCollegeRecordType) => {
+  try {
+    const response = await apiClient.put<
+      APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
+    >(`/protected/colleges/${collegeId}`, {
+      college,
+      dean,
+    });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update college record."), { cause: error });
+  }
+};
+
+export const useUpdateCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+const deleteCollegeRecord = async (collegeId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/protected/colleges/${collegeId}`, {});
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete college record."), { cause: error });
+  }
+};
+
+export const useDeleteCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+const createCollegeRecord = async ({ college, dean }: CreateCollegeRecordType) => {
+  try {
+    const response = await apiClient.post<
+      APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
+    >("/protected/colleges", { college, dean });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to create college record."), { cause: error });
+  }
+};
+
+export const useCreateCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+export function useDeanSelection(initial: DeanCandidate | null) {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selected, setSelected] = useState<DeanCandidate | null>(initial);
+
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(handle);
+  }, [search]);
+
+  const { data: candidates, isFetching: isSearching } = useSearchDeanCandidates(debouncedSearch);
+
+  const reset = (next: DeanCandidate | null = initial) => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelected(next);
+  };
+
+  return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
+}
+
+
+---
+./components/CollegeColumns.tsx
+---
+import { Eye, MoreHorizontal, Pencil, Trash2, Building2, User } from "lucide-react";
+import { Link } from "react-router";
+
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { DataTableColumn } from "@/components/main-data-table";
+import type { CollegeWithDean } from "backend/types/college.types";
+
+import { formatFullName } from "@/lib/nameFormatter";
+import { CollegeEditDialog } from "./CollegeEdit";
+import { CollegeDeleteDialog } from "./CollegeDelete";
+
+export const collegeColumns: Array<DataTableColumn<CollegeWithDean>> = [
+  {
+    header: "College Details",
+    className: "w-auto min-w-[240px]",
+    cell: (row) => {
+      return (
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Building2 className="size-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold text-foreground">{row.name}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{row.initialism}</span>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    header: "College Dean",
+    className: "w-auto min-w-[200px]",
+    cell: (row) => {
+      const deanName = formatFullName({
+        first_name: row.first_name,
+        last_name: row.last_name,
+        middle_name: row.middle_name,
+        suffix: row.suffix,
+      });
+
+      const initials = `${row.first_name?.[0] ?? ""}${row.last_name?.[0] ?? ""}`.toUpperCase();
+
+      if (!deanName) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs italic text-muted-foreground/60">
+            <User className="size-3.5" /> Unassigned
+          </span>
+        );
+      }
+
+      return (
+        <div className="flex items-center gap-2.5">
+          <Avatar className="size-7 border border-border/50">
+            <AvatarFallback className="bg-muted text-[10px] font-semibold text-foreground">
+              {initials || "D"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs font-medium text-foreground">{deanName}</span>
+        </div>
+      );
+    },
+  },
+  {
+    header: "Actions",
+    className: "w-px whitespace-nowrap",
+    cell: (row) => (
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="size-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-40 p-1">
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
+            >
+              <Link to={`${row.id}/programs`}>
+                <Eye className="mr-2 size-3.5" />
+                View Programs
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              className="cursor-pointer p-0 hover:bg-transparent focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CollegeEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="cursor-pointer p-0 hover:bg-transparent focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CollegeDeleteDialog college={row} icon={Trash2} triggerText="Delete" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    ),
+  },
+];
+
+
+---
+./components/CollegeCreate.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatFullName } from "@/lib/nameFormatter";
+import { useForm } from "@tanstack/react-form";
+import { CreateCollegeRecord, type CreateCollegeRecordType } from "backend/types/college.types";
+import type { LucideIcon } from "lucide-react";
+import { ExistingDeanSearch } from "./ExistingDeanSearch";
+import { FormTextField } from "@/components/form-text-field";
+import { useCreateCollege, useDeanSelection } from "@/features/college/api/college.service";
+import { Label } from "@/components/ui/label";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface CollegeCreateDialogProps {
+  icon: LucideIcon;
+  triggerText: string;
+}
+
+type DeanTabValue = "no-dean" | "existing" | "new";
+
+const initialFormData: CreateCollegeRecordType = {
+  college: {
+    name: "",
+    initialism: "",
+  },
+  dean: undefined,
+};
+
+export const CollegeCreateDialog = ({ icon: Icon, triggerText }: CollegeCreateDialogProps) => {
+  const { mutateAsync, isPending } = useCreateCollege();
+  const dean = useDeanSelection(null);
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    validators: { onSubmit: CreateCollegeRecord },
+    onSubmit: ({ value }) => handleFormSubmit({ value }),
+  });
+
+  const {
+    open,
+    confirmSaveOpen,
+    setConfirmSaveOpen,
+    confirmDiscardOpen,
+    setConfirmDiscardOpen,
+    pendingValue,
+    handleOpenChange,
+    attemptClose,
+    confirmDiscard,
+    confirmSave,
+    handleFormSubmit,
+  } = useEntityDialog({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Creating college record...",
+    successText: "College created successfully.",
+    onReset: () => dean.reset(null),
+  });
+
+  const deanChangeSummary = (() => {
+    if (!pendingValue?.dean) {
+      return "This college will be created without an assigned dean.";
+    }
+    if (pendingValue.dean.type === "existing") {
+      return dean.selected
+        ? `${formatFullName({
+            first_name: dean.selected.first_name,
+            middle_name: dean.selected.middle_name,
+            last_name: dean.selected.last_name,
+            suffix: dean.selected.suffix,
+          })} will be assigned as the dean.`
+        : "The selected faculty member will be assigned as the dean.";
+    }
+    const { first_name, last_name } = pendingValue.dean.details.personalDetails;
+    return `A new faculty record for ${first_name} ${last_name} will be created and assigned as dean.`;
+  })();
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button size="sm" className="h-8 rounded-lg text-xs font-medium">
+            <Icon className="mr-1.5 size-3.5" />
+            <span className="leading-none text-sm">{triggerText}</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create College</DialogTitle>
+            <DialogDescription>
+              Add a new college record and optionally assign a dean.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <form.Field
+              name="college.name"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="College Name"
+                  disabled={isPending}
+                  placeholder="e.g. College of Technology and Engineering"
+                />
+              )}
+            />
+            <form.Field
+              name="college.initialism"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Initialism"
+                  disabled={isPending}
+                  placeholder="e.g. COTE"
+                />
+              )}
+            />
+
+            <form.Subscribe
+              selector={(state): DeanTabValue => state.values.dean?.type ?? "no-dean"}
+              children={(activeTab) => (
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => {
+                    if (v !== "no-dean" && v !== "existing" && v !== "new") return;
+
+                    if (v === "no-dean") {
+                      form.setFieldValue("dean", undefined);
+                    } else if (v === "existing") {
+                      form.setFieldValue("dean", { type: "existing", id: 0 });
+                    } else {
+                      form.setFieldValue("dean", {
+                        type: "new",
+                        details: {
+                          credentials: { email: "" },
+                          personalDetails: {
+                            institutional_id: "",
+                            first_name: "",
+                            last_name: "",
+                            middle_name: "",
+                            suffix: "",
+                          },
+                        },
+                      });
+                    }
+                    dean.reset(v === "existing" ? dean.selected : null);
+                  }}
+                  className="w-full mt-2"
+                >
+                  <Label>Assign College Dean</Label>
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="no-dean">No Dean</TabsTrigger>
+                    <TabsTrigger value="existing">Existing Faculty</TabsTrigger>
+                    <TabsTrigger value="new">New Faculty</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="existing" className="space-y-2 mt-3">
+                    <ExistingDeanSearch
+                      search={dean.search}
+                      onSearchChange={dean.setSearch}
+                      candidates={dean.candidates}
+                      isSearching={dean.isSearching}
+                      selected={dean.selected}
+                      onSelect={(candidate) => {
+                        form.setFieldValue("dean", {
+                          type: "existing",
+                          id: candidate.account_id,
+                        });
+                        dean.setSelected(candidate);
+                      }}
+                      onClear={() => {
+                        dean.setSelected(null);
+                        form.setFieldValue("dean", { type: "existing", id: 0 });
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="new" className="space-y-3 mt-3">
+                    <form.Field
+                      name="dean.details.credentials.email"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Email"
+                            type="email"
+                            disabled={isPending}
+                            placeholder="dean@school.edu"
+                          />
+                        )
+                      }
+                    />
+                    <form.Field
+                      name="dean.details.personalDetails.institutional_id"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Institutional ID"
+                            disabled={isPending}
+                            placeholder="e.g. 2021-00123"
+                          />
+                        )
+                      }
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.first_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="First Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.last_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Last Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.middle_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.suffix"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField
+                              field={field}
+                              label="Suffix"
+                              disabled={isPending}
+                              placeholder="Jr., Sr., III"
+                            />
+                          )
+                        }
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Creating..." : "Create College"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Confirmation Modal */}
+      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create new college?</AlertDialogTitle>
+            <AlertDialogDescription>{deanChangeSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} disabled={isPending}>
+              {isPending ? "Creating..." : "Yes, create college"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Discard Confirmation Modal */}
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved input in this form. Closing now will discard your entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+./components/CollegeDelete.tsx
+---
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { useDeleteCollege } from "@/features/college/api/college.service";
+import type { CollegeWithDean } from "backend/types/college.types";
+import { getProgramsViaCollegeID } from "@/features/program/api/program.service";
+import { cn } from "@/lib/utils";
+
+interface CollegeDeleteDialogProps {
+  college: CollegeWithDean;
+  icon?: LucideIcon;
+  triggerText?: string;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+}
+
+export const CollegeDeleteDialog = ({
+  college,
+  icon: Icon = Trash2,
+  triggerText = "Delete",
+  variant = "ghost",
+  className,
+}: CollegeDeleteDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const { mutateAsync, isPending: isDeleting } = useDeleteCollege();
+
+  const {
+    data: programsResponse,
+    isLoading: isCheckingPrograms,
+    isError: isCheckError,
+  } = useQuery({
+    queryKey: ["getCollegePrograms", college.id],
+    queryFn: () => getProgramsViaCollegeID(college.id),
+    enabled: open,
+  });
+
+  const programs = programsResponse?.data ?? [];
+  const hasPrograms = programs.length > 0;
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (hasPrograms || isCheckingPrograms) return;
+
+    const toastId = toast.loading(`Deleting ${college.initialism}...`);
+    try {
+      await mutateAsync(college.id);
+      toast.success("College record deleted successfully.", { id: toastId });
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete college record.", {
+        id: toastId,
+      });
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant={variant}
+          size="sm"
+          className={cn(
+            "w-full h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-destructive hover:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive focus-visible:outline-none",
+            className,
+          )}
+        >
+          <Icon className="mr-2 size-3.5 shrink-0" />
+          <span>{triggerText}</span>
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {college.name}?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 pt-1 text-sm text-muted-foreground">
+              <p>
+                This action cannot be undone. This will permanently remove the college record from
+                the system.
+              </p>
+
+              {/* Loader while checking database */}
+              {isCheckingPrograms && (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                  Checking for existing programs linked to this college...
+                </div>
+              )}
+
+              {/* Blocked state visual callout */}
+              {!isCheckingPrograms && hasPrograms && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">Cannot delete college record</p>
+                    <p className="text-destructive/90">
+                      This college has <strong>{programs.length} program(s)</strong> linked to it:
+                    </p>
+                    <ul className="list-disc pl-4 font-medium">
+                      {programs.slice(0, 3).map((prog) => (
+                        <li key={prog.id}>
+                          {prog.name} ({prog.initialism})
+                        </li>
+                      ))}
+                      {programs.length > 3 && <li>...and {programs.length - 3} more</li>}
+                    </ul>
+                    <p className="pt-1 text-destructive/80">
+                      Please reassign or delete these programs before deleting this college.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error fallback if checking failed */}
+              {isCheckError && (
+                <p className="text-xs text-destructive">
+                  Failed to verify linked programs. Please try again or check your network
+                  connection.
+                </p>
+              )}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>
+            {hasPrograms ? "Close" : "Cancel"}
+          </AlertDialogCancel>
+
+          {!hasPrograms && (
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting || isCheckingPrograms || isCheckError}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Yes, delete college"}
+            </AlertDialogAction>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
+
+---
+./components/CollegeEdit.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatFullName } from "@/lib/nameFormatter";
+import { useForm } from "@tanstack/react-form";
+import {
+  UpdateCollegeRecord,
+  type CollegeWithDean,
+  type UpdateCollegeRecordType,
+} from "backend/types/college.types";
+import type { LucideIcon } from "lucide-react";
+import { ExistingDeanSearch } from "./ExistingDeanSearch";
+import { FormTextField } from "@/components/form-text-field";
+import { useDeanSelection, useUpdateCollege } from "@/features/college/api/college.service";
+import type { DeanCandidate } from "backend/types/college.types";
+import { cn } from "@/lib/utils";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface CollegeEditDialogProps {
+  icon: LucideIcon;
+  triggerText: string;
+  defaultData: CollegeWithDean;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+}
+
+type DeanTabValue = "no-dean" | "existing" | "new";
+
+export const CollegeEditDialog = ({
+  icon: Icon,
+  triggerText,
+  defaultData,
+  variant = "ghost",
+  className,
+}: CollegeEditDialogProps) => {
+  const { mutateAsync, isPending } = useUpdateCollege();
+
+  const defaultSelectedDean: DeanCandidate | null = defaultData.account_id
+    ? {
+        account_id: defaultData.account_id,
+        first_name: defaultData.first_name,
+        last_name: defaultData.last_name,
+        middle_name: defaultData.middle_name,
+        suffix: defaultData.suffix,
+        institutional_id: defaultData.institutional_id,
+        is_college_dean: true,
+      }
+    : null;
+
+  const dean = useDeanSelection(defaultSelectedDean);
+
+  const defaultFormData: UpdateCollegeRecordType = {
+    collegeId: defaultData.id,
+    college: {
+      name: defaultData.name,
+      initialism: defaultData.initialism,
+    },
+    dean: defaultData.account_id ? { type: "existing", id: defaultData.account_id } : undefined,
+  };
+
+  const form = useForm({
+    defaultValues: defaultFormData,
+    validators: {
+      onSubmit: UpdateCollegeRecord,
+    },
+    onSubmit: ({ value }) => handleFormSubmit({ value }),
+  });
+
+  const {
+    open,
+    confirmSaveOpen,
+    setConfirmSaveOpen,
+    confirmDiscardOpen,
+    setConfirmDiscardOpen,
+    pendingValue,
+    handleOpenChange,
+    attemptClose,
+    confirmDiscard,
+    confirmSave,
+    handleFormSubmit,
+  } = useEntityDialog({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Saving college changes...",
+    successText: "Changes saved successfully.",
+    onReset: () => dean.reset(defaultSelectedDean),
+  });
+
+  const deanChangeSummary = (() => {
+    if (!pendingValue?.dean) {
+      return "This college will be left without an assigned dean.";
+    }
+    if (pendingValue.dean.type === "existing") {
+      return dean.selected
+        ? `${formatFullName({
+            first_name: dean.selected.first_name,
+            middle_name: dean.selected.middle_name,
+            last_name: dean.selected.last_name,
+            suffix: dean.selected.suffix,
+          })} will be assigned as dean of this college.`
+        : "The selected faculty member will be assigned as dean of this college.";
+    }
+    const { first_name, last_name } = pendingValue.dean.details.personalDetails;
+    return `A new faculty record for ${first_name} ${last_name} will be created and assigned as dean.`;
+  })();
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant={variant}
+            size="sm"
+            className={cn(
+              "w-full h-full min-h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-primary hover:bg-primary/10 hover:text-primary focus-visible:outline-none",
+              className,
+            )}
+          >
+            <Icon className="mr-2 size-3.5" />
+            {triggerText}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit College</DialogTitle>
+            <DialogDescription>
+              Update college information or reassign the college dean.
+            </DialogDescription>
+          </DialogHeader>
+          <FieldGroup>
+            <form.Field
+              name="college.name"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Name"
+                  disabled={isPending}
+                  placeholder="e.g. College of Technology and Engineering"
+                />
+              )}
+            />
+            <form.Field
+              name="college.initialism"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Initialism"
+                  disabled={isPending}
+                  placeholder="e.g. COTE"
+                />
+              )}
+            />
+            <Field>
+              <Label htmlFor="college-dean">College Dean</Label>
+              <Input
+                type="text"
+                id="college-dean"
+                value={
+                  formatFullName({
+                    first_name: defaultData.first_name,
+                    middle_name: defaultData.middle_name,
+                    last_name: defaultData.last_name,
+                    suffix: defaultData.suffix,
+                  }) ?? "-"
+                }
+                disabled
+              />
+            </Field>
+
+            <form.Subscribe
+              selector={(state): DeanTabValue => state.values.dean?.type ?? "no-dean"}
+              children={(activeTab) => (
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => {
+                    if (v !== "no-dean" && v !== "existing" && v !== "new") return;
+
+                    if (v === "no-dean") {
+                      form.setFieldValue("dean", undefined);
+                      dean.setSelected(null);
+                    } else if (v === "existing") {
+                      const existingId = dean.selected?.account_id ?? defaultData.account_id;
+                      if (existingId) {
+                        form.setFieldValue("dean", { type: "existing", id: Number(existingId) });
+                        if (!dean.selected && defaultSelectedDean) {
+                          dean.setSelected(defaultSelectedDean);
+                        }
+                      } else {
+                        form.setFieldValue("dean", { type: "existing", id: 0 });
+                      }
+                    } else {
+                      form.setFieldValue("dean", {
+                        type: "new",
+                        details: {
+                          credentials: { email: "" },
+                          personalDetails: {
+                            institutional_id: "",
+                            first_name: "",
+                            last_name: "",
+                            middle_name: "",
+                            suffix: "",
+                          },
+                        },
+                      });
+                      dean.setSelected(null);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  <Label>Assign College Dean</Label>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="no-dean">Keep Record</TabsTrigger>
+                    <TabsTrigger value="existing">Existing Faculty</TabsTrigger>
+                    <TabsTrigger value="new">New Faculty</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="existing" className="space-y-2">
+                    <form.Field
+                      name="dean"
+                      validators={{
+                        onChange: ({ value }) => {
+                          if (value?.type === "existing" && (!value.id || value.id <= 0)) {
+                            return "Please select a faculty member.";
+                          }
+                          return undefined;
+                        },
+                      }}
+                      children={(field) => (
+                        <div>
+                          <ExistingDeanSearch
+                            search={dean.search}
+                            onSearchChange={dean.setSearch}
+                            candidates={dean.candidates}
+                            isSearching={dean.isSearching}
+                            selected={dean.selected}
+                            onSelect={(candidate) => {
+                              const rawId = candidate.account_id ?? (candidate as any).id;
+                              const parsedId = Number(rawId);
+
+                              if (!parsedId || parsedId <= 0) return;
+
+                              dean.setSelected(candidate);
+                              form.setFieldValue("dean", {
+                                type: "existing",
+                                id: parsedId,
+                              });
+                            }}
+                            onClear={() => {
+                              dean.setSelected(null);
+                              form.setFieldValue("dean", { type: "existing", id: 0 });
+                            }}
+                          />
+                          {field.state.meta.errors.length > 0 && (
+                            <p className="mt-1 text-xs text-destructive">
+                              {field.state.meta.errors.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="new" className="space-y-4">
+                    <form.Field
+                      name="dean.details.credentials.email"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Email"
+                            type="email"
+                            disabled={isPending}
+                            placeholder="dean@school.edu"
+                          />
+                        )
+                      }
+                    />
+                    <form.Field
+                      name="dean.details.personalDetails.institutional_id"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Institutional ID"
+                            disabled={isPending}
+                            placeholder="e.g. 2021-00123"
+                          />
+                        )
+                      }
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.first_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="First Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.last_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Last Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.middle_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.suffix"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField
+                              field={field}
+                              label="Suffix"
+                              disabled={isPending}
+                              placeholder="Jr., Sr., III"
+                            />
+                          )
+                        }
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
+              Discard changes
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Saving..." : "Save changes"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm college changes?</AlertDialogTitle>
+            <AlertDialogDescription>{deanChangeSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} disabled={isPending}>
+              {isPending ? "Saving..." : "Yes, save changes"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved edits to this college record. Closing now will lose them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Discard changes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+./components/CollegeStatsCards.tsx
+---
+import { Building2, UserCheck, ShieldCheck } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import type { CollegeWithDean } from "backend/types/college.types";
+
+interface CollegeStatsCardsProps {
+  colleges: CollegeWithDean[];
+  total: number;
+}
+
+const stats = [
+  {
+    title: "Total Colleges",
+    value: (props: CollegeStatsCardsProps) => props.total,
+    subtitle: "Institutions",
+    icon: Building2,
+    accent: "primary",
+  },
+  {
+    title: "Assigned Deans",
+    value: (props: CollegeStatsCardsProps) => props.colleges.filter((c) => c.account_id).length,
+    subtitle: "Active leadership",
+    icon: UserCheck,
+    accent: "emerald",
+  },
+  {
+    title: "Dean Coverage",
+    value: (props: CollegeStatsCardsProps) => {
+      if (!props.total || props.total === 0) return "0%";
+      const assigned = props.colleges.filter((c) => c.account_id).length;
+      return `${Math.round((assigned / props.total) * 100)}%`;
+    },
+    subtitle: "Coverage ratio",
+    icon: ShieldCheck,
+    accent: "blue",
+  },
+];
+
+const accentStyles = {
+  primary: {
+    bar: "bg-primary",
+    iconBg: "bg-primary/10 text-primary",
+    shadow: "hover:shadow-primary/20",
+    border: "hover:border-primary/40",
+  },
+  emerald: {
+    bar: "bg-emerald-500",
+    iconBg: "bg-emerald-500/10 text-emerald-500",
+    shadow: "hover:shadow-emerald-500/20",
+    border: "hover:border-emerald-500/40",
+  },
+  blue: {
+    bar: "bg-blue-500",
+    iconBg: "bg-blue-500/10 text-blue-500",
+    shadow: "hover:shadow-blue-500/20",
+    border: "hover:border-blue-500/40",
+  },
+} as const;
+
+export const CollegeStatsCards = ({ colleges, total }: CollegeStatsCardsProps) => {
+  const props = { colleges, total };
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {stats.map((item) => {
+        const Icon = item.icon;
+        const styles = accentStyles[item.accent as keyof typeof accentStyles];
+
+        return (
+          <Card
+            key={item.title}
+            className={`
+              group relative overflow-hidden rounded-lg border bg-card
+              shadow-sm transition-all duration-200
+              hover:-translate-y-1 hover:shadow-md
+              ${styles.shadow} ${styles.border}
+            `}
+          >
+            {/* Accent bar */}
+            <div
+              className={`
+                absolute left-0 top-0 h-1 w-full
+                transition-all duration-300 ease-out
+                group-hover:w-[110%] group-hover:scale-x-105
+                ${styles.bar}
+              `}
+            />
+
+            <div className="flex items-center justify-between p-4">
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+                  {item.title}
+                </p>
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                  {item.value(props)}
+                </h2>
+                <p className="text-[10px] text-muted-foreground/50">{item.subtitle}</p>
+              </div>
+
+              {/* Icon container */}
+              <div
+                className={`
+                  flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
+                  transition-all duration-200 ease-out
+                  group-hover:scale-105 group-hover:rotate-1
+                  ${styles.iconBg}
+                `}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+
+---
+./components/ExistingDeanSearch.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { formatFullName } from "@/lib/nameFormatter";
+import type { DeanCandidate } from "backend/types/college.types";
+
+interface ExistingDeanSearchProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  candidates: DeanCandidate[] | undefined;
+  isSearching: boolean;
+  selected: DeanCandidate | null;
+  onSelect: (candidate: DeanCandidate) => void;
+  onClear: () => void;
+}
+
+export function ExistingDeanSearch({
+  search,
+  onSearchChange,
+  candidates,
+  isSearching,
+  selected,
+  onSelect,
+  onClear,
+}: ExistingDeanSearchProps) {
+  if (selected) {
+    return (
+      <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2 text-sm">
+        <span>
+          {formatFullName({
+            first_name: selected.first_name,
+            middle_name: selected.middle_name,
+            last_name: selected.last_name,
+            suffix: selected.suffix,
+          })}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={onClear}
+        >
+          Change
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Command className="w-full rounded-lg border" shouldFilter={false}>
+      <CommandInput
+        placeholder="Search via name or institution ID..."
+        value={search}
+        onValueChange={onSearchChange}
+      />
+      <CommandList>
+        {search.length < 2 ? (
+          <CommandEmpty>Type at least 2 characters to search.</CommandEmpty>
+        ) : isSearching ? (
+          <CommandEmpty>Searching...</CommandEmpty>
+        ) : !candidates?.length ? (
+          <CommandEmpty>No matching faculty found.</CommandEmpty>
+        ) : (
+          <CommandGroup>
+            {candidates.map((candidate) => (
+              <CommandItem
+                key={candidate.account_id}
+                value={String(candidate.account_id)}
+                disabled={candidate.is_college_dean}
+                onSelect={() => onSelect(candidate)}
+                className="flex items-center justify-between"
+              >
+                <span>
+                  {formatFullName({
+                    first_name: candidate.first_name,
+                    middle_name: candidate.middle_name,
+                    last_name: candidate.last_name,
+                    suffix: candidate.suffix,
+                  })}
+                </span>
+                {candidate.is_college_dean && (
+                  <span className="text-xs text-muted-foreground">Already a dean</span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+      </CommandList>
+    </Command>
+  );
+}
+
+
+---
+./page/CollegePage.tsx
+---
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Search } from "lucide-react";
+
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { DataTable } from "@/components/main-data-table";
+import { TablePagination } from "@/components/table-pagination";
+
+import { getColleges } from "../api/college.service";
+import { collegeColumns } from "../components/CollegeColumns";
+import { CollegeCreateDialog } from "../components/CollegeCreate";
+import { CollegeStatsCards } from "../components/CollegeStatsCards";
+
+export const CollegePage = () => {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+
+  const {
+    data: collegeResponse,
+    isPending: isCollegesPending,
+    isError: isCollegesError,
+    error: collegeError,
+  } = useQuery({
+    queryKey: ["getColleges", page, search],
+    queryFn: () => getColleges({ page, search }),
+    placeholderData: (previousData) => previousData,
+  });
+
+  const colleges = useMemo(() => collegeResponse?.data ?? [], [collegeResponse?.data]);
+  const totalColleges = collegeResponse?.pagination?.totalItems ?? colleges.length;
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Colleges</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              View and manage all college records
+            </p>
+          </div>
+          <CollegeCreateDialog icon={Plus} triggerText="Add College" />
+        </div>
+
+        {/* KPI Summary Cards */}
+        <CollegeStatsCards colleges={colleges} total={totalColleges} />
+
+        {/* Table Section */}
+        <Card className="flex flex-col gap-0 overflow-hidden rounded-xl pb-0 shadow-xs">
+          <CardHeader className="flex flex-col items-center justify-between gap-2.5 border-b px-6 sm:flex-row">
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search colleges..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1); // Reset to page 1 on new search
+                }}
+                className="h-8 rounded-lg pl-8 text-xs"
+              />
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <DataTable
+              columns={collegeColumns}
+              data={colleges}
+              getRowId={(row) => row.id.toString()}
+              isLoading={isCollegesPending}
+              isError={isCollegesError}
+              error={collegeError}
+              emptyMessage="No colleges found."
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pagination Footer */}
+      <TablePagination
+        pagination={collegeResponse?.pagination}
+        isPending={isCollegesPending}
+        onPageChange={setPage}
+      />
+    </div>
+  );
+};
+
+export default CollegePage;
+
+
+---
+
+
+---
+college/api/college.service.ts
+---
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type {
+  CollegeDeanSelect,
+  CollegeSelect,
+  CollegeWithDean,
+  CreateCollegeRecordType,
+  DeanCandidate,
+  UpdateCollegeRecordType,
+} from "backend/types/college.types";
+import { apiClient, getErrorMessage, type BasicSearchProps } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+
+export const getColleges = async ({ page, search }: BasicSearchProps) => {
+  try {
+    const response = await apiClient<APIResponse<PaginatedData<CollegeWithDean[]>>>(
+      `/protected/colleges?page=${page}&search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const searchDeanCandidates = async (search?: string) => {
+  try {
+    const response = await apiClient<APIResponse<DeanCandidate[]>>(
+      `/protected/colleges/available-deans?search=${search || ""}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Something went wrong."), { cause: error });
+  }
+};
+
+export const useSearchDeanCandidates = (search?: string) => {
+  return useQuery({
+    queryKey: ["searchDeanCandidates", search],
+    queryFn: () => searchDeanCandidates(search),
+    enabled: !!search && search.length >= 2,
+  });
+};
+
+const updateCollegeRecord = async ({ collegeId, college, dean }: UpdateCollegeRecordType) => {
+  try {
+    const response = await apiClient.put<
+      APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
+    >(`/protected/colleges/${collegeId}`, {
+      college,
+      dean,
+    });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update college record."), { cause: error });
+  }
+};
+
+export const useUpdateCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+const deleteCollegeRecord = async (collegeId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/protected/colleges/${collegeId}`, {});
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete college record."), { cause: error });
+  }
+};
+
+export const useDeleteCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+const createCollegeRecord = async ({ college, dean }: CreateCollegeRecordType) => {
+  try {
+    const response = await apiClient.post<
+      APIResponse<Promise<{ college?: CollegeSelect; dean?: CollegeDeanSelect }>>
+    >("/protected/colleges", { college, dean });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to create college record."), { cause: error });
+  }
+};
+
+export const useCreateCollege = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCollegeRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+    },
+  });
+};
+
+export function useDeanSelection(initial: DeanCandidate | null) {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selected, setSelected] = useState<DeanCandidate | null>(initial);
+
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(handle);
+  }, [search]);
+
+  const { data: candidates, isFetching: isSearching } = useSearchDeanCandidates(debouncedSearch);
+
+  const reset = (next: DeanCandidate | null = initial) => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelected(next);
+  };
+
+  return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
+}
+
+
+---
+college/components/CollegeColumns.tsx
+---
+import { Eye, MoreHorizontal, Pencil, Trash2, Building2, User } from "lucide-react";
+import { Link } from "react-router";
+
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { DataTableColumn } from "@/components/main-data-table";
+import type { CollegeWithDean } from "backend/types/college.types";
+
+import { formatFullName } from "@/lib/nameFormatter";
+import { CollegeEditDialog } from "./CollegeEdit";
+import { CollegeDeleteDialog } from "./CollegeDelete";
+
+export const collegeColumns: Array<DataTableColumn<CollegeWithDean>> = [
+  {
+    header: "College Details",
+    className: "w-auto min-w-[240px]",
+    cell: (row) => {
+      return (
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Building2 className="size-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold text-foreground">{row.name}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{row.initialism}</span>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    header: "College Dean",
+    className: "w-auto min-w-[200px]",
+    cell: (row) => {
+      const deanName = formatFullName({
+        first_name: row.first_name,
+        last_name: row.last_name,
+        middle_name: row.middle_name,
+        suffix: row.suffix,
+      });
+
+      const initials = `${row.first_name?.[0] ?? ""}${row.last_name?.[0] ?? ""}`.toUpperCase();
+
+      if (!deanName) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs italic text-muted-foreground/60">
+            <User className="size-3.5" /> Unassigned
+          </span>
+        );
+      }
+
+      return (
+        <div className="flex items-center gap-2.5">
+          <Avatar className="size-7 border border-border/50">
+            <AvatarFallback className="bg-muted text-[10px] font-semibold text-foreground">
+              {initials || "D"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs font-medium text-foreground">{deanName}</span>
+        </div>
+      );
+    },
+  },
+  {
+    header: "Actions",
+    className: "w-px whitespace-nowrap",
+    cell: (row) => (
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="size-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-40 p-1">
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer text-xs focus:bg-accent focus:text-accent-foreground"
+            >
+              <Link to={`${row.id}/programs`}>
+                <Eye className="mr-2 size-3.5" />
+                View Programs
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              className="cursor-pointer p-0 hover:bg-transparent focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CollegeEditDialog icon={Pencil} triggerText="Edit" defaultData={row} />
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="cursor-pointer p-0 hover:bg-transparent focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <CollegeDeleteDialog college={row} icon={Trash2} triggerText="Delete" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    ),
+  },
+];
+
+
+---
+college/components/CollegeCreate.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatFullName } from "@/lib/nameFormatter";
+import { useForm } from "@tanstack/react-form";
+import { CreateCollegeRecord, type CreateCollegeRecordType } from "backend/types/college.types";
+import type { LucideIcon } from "lucide-react";
+import { ExistingDeanSearch } from "./ExistingDeanSearch";
+import { FormTextField } from "@/components/form-text-field";
+import { useCreateCollege, useDeanSelection } from "@/features/college/api/college.service";
+import { Label } from "@/components/ui/label";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface CollegeCreateDialogProps {
+  icon: LucideIcon;
+  triggerText: string;
+}
+
+type DeanTabValue = "no-dean" | "existing" | "new";
+
+const initialFormData: CreateCollegeRecordType = {
+  college: {
+    name: "",
+    initialism: "",
+  },
+  dean: undefined,
+};
+
+export const CollegeCreateDialog = ({ icon: Icon, triggerText }: CollegeCreateDialogProps) => {
+  const { mutateAsync, isPending } = useCreateCollege();
+  const dean = useDeanSelection(null);
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    validators: { onSubmit: CreateCollegeRecord },
+    onSubmit: ({ value }) => handleFormSubmit({ value }),
+  });
+
+  const {
+    open,
+    confirmSaveOpen,
+    setConfirmSaveOpen,
+    confirmDiscardOpen,
+    setConfirmDiscardOpen,
+    pendingValue,
+    handleOpenChange,
+    attemptClose,
+    confirmDiscard,
+    confirmSave,
+    handleFormSubmit,
+  } = useEntityDialog({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Creating college record...",
+    successText: "College created successfully.",
+    onReset: () => dean.reset(null),
+  });
+
+  const deanChangeSummary = (() => {
+    if (!pendingValue?.dean) {
+      return "This college will be created without an assigned dean.";
+    }
+    if (pendingValue.dean.type === "existing") {
+      return dean.selected
+        ? `${formatFullName({
+            first_name: dean.selected.first_name,
+            middle_name: dean.selected.middle_name,
+            last_name: dean.selected.last_name,
+            suffix: dean.selected.suffix,
+          })} will be assigned as the dean.`
+        : "The selected faculty member will be assigned as the dean.";
+    }
+    const { first_name, last_name } = pendingValue.dean.details.personalDetails;
+    return `A new faculty record for ${first_name} ${last_name} will be created and assigned as dean.`;
+  })();
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button size="sm" className="h-8 rounded-lg text-xs font-medium">
+            <Icon className="mr-1.5 size-3.5" />
+            <span className="leading-none text-sm">{triggerText}</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create College</DialogTitle>
+            <DialogDescription>
+              Add a new college record and optionally assign a dean.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <form.Field
+              name="college.name"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="College Name"
+                  disabled={isPending}
+                  placeholder="e.g. College of Technology and Engineering"
+                />
+              )}
+            />
+            <form.Field
+              name="college.initialism"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Initialism"
+                  disabled={isPending}
+                  placeholder="e.g. COTE"
+                />
+              )}
+            />
+
+            <form.Subscribe
+              selector={(state): DeanTabValue => state.values.dean?.type ?? "no-dean"}
+              children={(activeTab) => (
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => {
+                    if (v !== "no-dean" && v !== "existing" && v !== "new") return;
+
+                    if (v === "no-dean") {
+                      form.setFieldValue("dean", undefined);
+                    } else if (v === "existing") {
+                      form.setFieldValue("dean", { type: "existing", id: 0 });
+                    } else {
+                      form.setFieldValue("dean", {
+                        type: "new",
+                        details: {
+                          credentials: { email: "" },
+                          personalDetails: {
+                            institutional_id: "",
+                            first_name: "",
+                            last_name: "",
+                            middle_name: "",
+                            suffix: "",
+                          },
+                        },
+                      });
+                    }
+                    dean.reset(v === "existing" ? dean.selected : null);
+                  }}
+                  className="w-full mt-2"
+                >
+                  <Label>Assign College Dean</Label>
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="no-dean">No Dean</TabsTrigger>
+                    <TabsTrigger value="existing">Existing Faculty</TabsTrigger>
+                    <TabsTrigger value="new">New Faculty</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="existing" className="space-y-2 mt-3">
+                    <ExistingDeanSearch
+                      search={dean.search}
+                      onSearchChange={dean.setSearch}
+                      candidates={dean.candidates}
+                      isSearching={dean.isSearching}
+                      selected={dean.selected}
+                      onSelect={(candidate) => {
+                        form.setFieldValue("dean", {
+                          type: "existing",
+                          id: candidate.account_id,
+                        });
+                        dean.setSelected(candidate);
+                      }}
+                      onClear={() => {
+                        dean.setSelected(null);
+                        form.setFieldValue("dean", { type: "existing", id: 0 });
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="new" className="space-y-3 mt-3">
+                    <form.Field
+                      name="dean.details.credentials.email"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Email"
+                            type="email"
+                            disabled={isPending}
+                            placeholder="dean@school.edu"
+                          />
+                        )
+                      }
+                    />
+                    <form.Field
+                      name="dean.details.personalDetails.institutional_id"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Institutional ID"
+                            disabled={isPending}
+                            placeholder="e.g. 2021-00123"
+                          />
+                        )
+                      }
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.first_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="First Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.last_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Last Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.middle_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.suffix"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField
+                              field={field}
+                              label="Suffix"
+                              disabled={isPending}
+                              placeholder="Jr., Sr., III"
+                            />
+                          )
+                        }
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Creating..." : "Create College"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Confirmation Modal */}
+      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create new college?</AlertDialogTitle>
+            <AlertDialogDescription>{deanChangeSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} disabled={isPending}>
+              {isPending ? "Creating..." : "Yes, create college"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Discard Confirmation Modal */}
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved input in this form. Closing now will discard your entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+college/components/CollegeDelete.tsx
+---
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, Loader2, Trash2, type LucideIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { useDeleteCollege } from "@/features/college/api/college.service";
+import type { CollegeWithDean } from "backend/types/college.types";
+import { getProgramsViaCollegeID } from "@/features/program/api/program.service";
+import { cn } from "@/lib/utils";
+
+interface CollegeDeleteDialogProps {
+  college: CollegeWithDean;
+  icon?: LucideIcon;
+  triggerText?: string;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+}
+
+export const CollegeDeleteDialog = ({
+  college,
+  icon: Icon = Trash2,
+  triggerText = "Delete",
+  variant = "ghost",
+  className,
+}: CollegeDeleteDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const { mutateAsync, isPending: isDeleting } = useDeleteCollege();
+
+  const {
+    data: programsResponse,
+    isLoading: isCheckingPrograms,
+    isError: isCheckError,
+  } = useQuery({
+    queryKey: ["getCollegePrograms", college.id],
+    queryFn: () => getProgramsViaCollegeID(college.id),
+    enabled: open,
+  });
+
+  const programs = programsResponse?.data ?? [];
+  const hasPrograms = programs.length > 0;
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (hasPrograms || isCheckingPrograms) return;
+
+    const toastId = toast.loading(`Deleting ${college.initialism}...`);
+    try {
+      await mutateAsync(college.id);
+      toast.success("College record deleted successfully.", { id: toastId });
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete college record.", {
+        id: toastId,
+      });
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant={variant}
+          size="sm"
+          className={cn(
+            "w-full h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-destructive hover:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive focus-visible:outline-none",
+            className,
+          )}
+        >
+          <Icon className="mr-2 size-3.5 shrink-0" />
+          <span>{triggerText}</span>
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {college.name}?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 pt-1 text-sm text-muted-foreground">
+              <p>
+                This action cannot be undone. This will permanently remove the college record from
+                the system.
+              </p>
+
+              {/* Loader while checking database */}
+              {isCheckingPrograms && (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                  Checking for existing programs linked to this college...
+                </div>
+              )}
+
+              {/* Blocked state visual callout */}
+              {!isCheckingPrograms && hasPrograms && (
+                <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">Cannot delete college record</p>
+                    <p className="text-destructive/90">
+                      This college has <strong>{programs.length} program(s)</strong> linked to it:
+                    </p>
+                    <ul className="list-disc pl-4 font-medium">
+                      {programs.slice(0, 3).map((prog) => (
+                        <li key={prog.id}>
+                          {prog.name} ({prog.initialism})
+                        </li>
+                      ))}
+                      {programs.length > 3 && <li>...and {programs.length - 3} more</li>}
+                    </ul>
+                    <p className="pt-1 text-destructive/80">
+                      Please reassign or delete these programs before deleting this college.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error fallback if checking failed */}
+              {isCheckError && (
+                <p className="text-xs text-destructive">
+                  Failed to verify linked programs. Please try again or check your network
+                  connection.
+                </p>
+              )}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>
+            {hasPrograms ? "Close" : "Cancel"}
+          </AlertDialogCancel>
+
+          {!hasPrograms && (
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting || isCheckingPrograms || isCheckError}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Yes, delete college"}
+            </AlertDialogAction>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
+
+---
+college/components/CollegeEdit.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatFullName } from "@/lib/nameFormatter";
+import { useForm } from "@tanstack/react-form";
+import {
+  UpdateCollegeRecord,
+  type CollegeWithDean,
+  type UpdateCollegeRecordType,
+} from "backend/types/college.types";
+import type { LucideIcon } from "lucide-react";
+import { ExistingDeanSearch } from "./ExistingDeanSearch";
+import { FormTextField } from "@/components/form-text-field";
+import { useDeanSelection, useUpdateCollege } from "@/features/college/api/college.service";
+import type { DeanCandidate } from "backend/types/college.types";
+import { cn } from "@/lib/utils";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface CollegeEditDialogProps {
+  icon: LucideIcon;
+  triggerText: string;
+  defaultData: CollegeWithDean;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  className?: string;
+}
+
+type DeanTabValue = "no-dean" | "existing" | "new";
+
+export const CollegeEditDialog = ({
+  icon: Icon,
+  triggerText,
+  defaultData,
+  variant = "ghost",
+  className,
+}: CollegeEditDialogProps) => {
+  const { mutateAsync, isPending } = useUpdateCollege();
+
+  const defaultSelectedDean: DeanCandidate | null = defaultData.account_id
+    ? {
+        account_id: defaultData.account_id,
+        first_name: defaultData.first_name,
+        last_name: defaultData.last_name,
+        middle_name: defaultData.middle_name,
+        suffix: defaultData.suffix,
+        institutional_id: defaultData.institutional_id,
+        is_college_dean: true,
+      }
+    : null;
+
+  const dean = useDeanSelection(defaultSelectedDean);
+
+  const defaultFormData: UpdateCollegeRecordType = {
+    collegeId: defaultData.id,
+    college: {
+      name: defaultData.name,
+      initialism: defaultData.initialism,
+    },
+    dean: defaultData.account_id ? { type: "existing", id: defaultData.account_id } : undefined,
+  };
+
+  const form = useForm({
+    defaultValues: defaultFormData,
+    validators: {
+      onSubmit: UpdateCollegeRecord,
+    },
+    onSubmit: ({ value }) => handleFormSubmit({ value }),
+  });
+
+  const {
+    open,
+    confirmSaveOpen,
+    setConfirmSaveOpen,
+    confirmDiscardOpen,
+    setConfirmDiscardOpen,
+    pendingValue,
+    handleOpenChange,
+    attemptClose,
+    confirmDiscard,
+    confirmSave,
+    handleFormSubmit,
+  } = useEntityDialog({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Saving college changes...",
+    successText: "Changes saved successfully.",
+    onReset: () => dean.reset(defaultSelectedDean),
+  });
+
+  const deanChangeSummary = (() => {
+    if (!pendingValue?.dean) {
+      return "This college will be left without an assigned dean.";
+    }
+    if (pendingValue.dean.type === "existing") {
+      return dean.selected
+        ? `${formatFullName({
+            first_name: dean.selected.first_name,
+            middle_name: dean.selected.middle_name,
+            last_name: dean.selected.last_name,
+            suffix: dean.selected.suffix,
+          })} will be assigned as dean of this college.`
+        : "The selected faculty member will be assigned as dean of this college.";
+    }
+    const { first_name, last_name } = pendingValue.dean.details.personalDetails;
+    return `A new faculty record for ${first_name} ${last_name} will be created and assigned as dean.`;
+  })();
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant={variant}
+            size="sm"
+            className={cn(
+              "w-full h-full min-h-8 justify-start px-2 py-1.5 text-xs font-normal cursor-pointer rounded-sm text-primary hover:bg-primary/10 hover:text-primary focus-visible:outline-none",
+              className,
+            )}
+          >
+            <Icon className="mr-2 size-3.5" />
+            {triggerText}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit College</DialogTitle>
+            <DialogDescription>
+              Update college information or reassign the college dean.
+            </DialogDescription>
+          </DialogHeader>
+          <FieldGroup>
+            <form.Field
+              name="college.name"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Name"
+                  disabled={isPending}
+                  placeholder="e.g. College of Technology and Engineering"
+                />
+              )}
+            />
+            <form.Field
+              name="college.initialism"
+              children={(field) => (
+                <FormTextField
+                  field={field}
+                  label="Initialism"
+                  disabled={isPending}
+                  placeholder="e.g. COTE"
+                />
+              )}
+            />
+            <Field>
+              <Label htmlFor="college-dean">College Dean</Label>
+              <Input
+                type="text"
+                id="college-dean"
+                value={
+                  formatFullName({
+                    first_name: defaultData.first_name,
+                    middle_name: defaultData.middle_name,
+                    last_name: defaultData.last_name,
+                    suffix: defaultData.suffix,
+                  }) ?? "-"
+                }
+                disabled
+              />
+            </Field>
+
+            <form.Subscribe
+              selector={(state): DeanTabValue => state.values.dean?.type ?? "no-dean"}
+              children={(activeTab) => (
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => {
+                    if (v !== "no-dean" && v !== "existing" && v !== "new") return;
+
+                    if (v === "no-dean") {
+                      form.setFieldValue("dean", undefined);
+                      dean.setSelected(null);
+                    } else if (v === "existing") {
+                      const existingId = dean.selected?.account_id ?? defaultData.account_id;
+                      if (existingId) {
+                        form.setFieldValue("dean", { type: "existing", id: Number(existingId) });
+                        if (!dean.selected && defaultSelectedDean) {
+                          dean.setSelected(defaultSelectedDean);
+                        }
+                      } else {
+                        form.setFieldValue("dean", { type: "existing", id: 0 });
+                      }
+                    } else {
+                      form.setFieldValue("dean", {
+                        type: "new",
+                        details: {
+                          credentials: { email: "" },
+                          personalDetails: {
+                            institutional_id: "",
+                            first_name: "",
+                            last_name: "",
+                            middle_name: "",
+                            suffix: "",
+                          },
+                        },
+                      });
+                      dean.setSelected(null);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  <Label>Assign College Dean</Label>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="no-dean">Keep Record</TabsTrigger>
+                    <TabsTrigger value="existing">Existing Faculty</TabsTrigger>
+                    <TabsTrigger value="new">New Faculty</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="existing" className="space-y-2">
+                    <form.Field
+                      name="dean"
+                      validators={{
+                        onChange: ({ value }) => {
+                          if (value?.type === "existing" && (!value.id || value.id <= 0)) {
+                            return "Please select a faculty member.";
+                          }
+                          return undefined;
+                        },
+                      }}
+                      children={(field) => (
+                        <div>
+                          <ExistingDeanSearch
+                            search={dean.search}
+                            onSearchChange={dean.setSearch}
+                            candidates={dean.candidates}
+                            isSearching={dean.isSearching}
+                            selected={dean.selected}
+                            onSelect={(candidate) => {
+                              const rawId = candidate.account_id ?? (candidate as any).id;
+                              const parsedId = Number(rawId);
+
+                              if (!parsedId || parsedId <= 0) return;
+
+                              dean.setSelected(candidate);
+                              form.setFieldValue("dean", {
+                                type: "existing",
+                                id: parsedId,
+                              });
+                            }}
+                            onClear={() => {
+                              dean.setSelected(null);
+                              form.setFieldValue("dean", { type: "existing", id: 0 });
+                            }}
+                          />
+                          {field.state.meta.errors.length > 0 && (
+                            <p className="mt-1 text-xs text-destructive">
+                              {field.state.meta.errors.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="new" className="space-y-4">
+                    <form.Field
+                      name="dean.details.credentials.email"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Email"
+                            type="email"
+                            disabled={isPending}
+                            placeholder="dean@school.edu"
+                          />
+                        )
+                      }
+                    />
+                    <form.Field
+                      name="dean.details.personalDetails.institutional_id"
+                      children={(field) =>
+                        field.state.value === undefined ? null : (
+                          <FormTextField
+                            field={field}
+                            label="Institutional ID"
+                            disabled={isPending}
+                            placeholder="e.g. 2021-00123"
+                          />
+                        )
+                      }
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.first_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="First Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.last_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Last Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <form.Field
+                        name="dean.details.personalDetails.middle_name"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField field={field} label="Middle Name" disabled={isPending} />
+                          )
+                        }
+                      />
+                      <form.Field
+                        name="dean.details.personalDetails.suffix"
+                        children={(field) =>
+                          field.state.value === undefined ? null : (
+                            <FormTextField
+                              field={field}
+                              label="Suffix"
+                              disabled={isPending}
+                              placeholder="Jr., Sr., III"
+                            />
+                          )
+                        }
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={attemptClose} disabled={isPending}>
+              Discard changes
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit || isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {isPending ? "Saving..." : "Save changes"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm college changes?</AlertDialogTitle>
+            <AlertDialogDescription>{deanChangeSummary}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} disabled={isPending}>
+              {isPending ? "Saving..." : "Yes, save changes"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved edits to this college record. Closing now will lose them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Discard changes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+college/components/CollegeStatsCards.tsx
+---
+import { Building2, UserCheck, ShieldCheck } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import type { CollegeWithDean } from "backend/types/college.types";
+
+interface CollegeStatsCardsProps {
+  colleges: CollegeWithDean[];
+  total: number;
+}
+
+const stats = [
+  {
+    title: "Total Colleges",
+    value: (props: CollegeStatsCardsProps) => props.total,
+    subtitle: "Institutions",
+    icon: Building2,
+    accent: "primary",
+  },
+  {
+    title: "Assigned Deans",
+    value: (props: CollegeStatsCardsProps) => props.colleges.filter((c) => c.account_id).length,
+    subtitle: "Active leadership",
+    icon: UserCheck,
+    accent: "emerald",
+  },
+  {
+    title: "Dean Coverage",
+    value: (props: CollegeStatsCardsProps) => {
+      if (!props.total || props.total === 0) return "0%";
+      const assigned = props.colleges.filter((c) => c.account_id).length;
+      return `${Math.round((assigned / props.total) * 100)}%`;
+    },
+    subtitle: "Coverage ratio",
+    icon: ShieldCheck,
+    accent: "blue",
+  },
+];
+
+const accentStyles = {
+  primary: {
+    bar: "bg-primary",
+    iconBg: "bg-primary/10 text-primary",
+    shadow: "hover:shadow-primary/20",
+    border: "hover:border-primary/40",
+  },
+  emerald: {
+    bar: "bg-emerald-500",
+    iconBg: "bg-emerald-500/10 text-emerald-500",
+    shadow: "hover:shadow-emerald-500/20",
+    border: "hover:border-emerald-500/40",
+  },
+  blue: {
+    bar: "bg-blue-500",
+    iconBg: "bg-blue-500/10 text-blue-500",
+    shadow: "hover:shadow-blue-500/20",
+    border: "hover:border-blue-500/40",
+  },
+} as const;
+
+export const CollegeStatsCards = ({ colleges, total }: CollegeStatsCardsProps) => {
+  const props = { colleges, total };
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {stats.map((item) => {
+        const Icon = item.icon;
+        const styles = accentStyles[item.accent as keyof typeof accentStyles];
+
+        return (
+          <Card
+            key={item.title}
+            className={`
+              group relative overflow-hidden rounded-lg border bg-card
+              shadow-sm transition-all duration-200
+              hover:-translate-y-1 hover:shadow-md
+              ${styles.shadow} ${styles.border}
+            `}
+          >
+            {/* Accent bar */}
+            <div
+              className={`
+                absolute left-0 top-0 h-1 w-full
+                transition-all duration-300 ease-out
+                group-hover:w-[110%] group-hover:scale-x-105
+                ${styles.bar}
+              `}
+            />
+
+            <div className="flex items-center justify-between p-4">
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+                  {item.title}
+                </p>
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                  {item.value(props)}
+                </h2>
+                <p className="text-[10px] text-muted-foreground/50">{item.subtitle}</p>
+              </div>
+
+              {/* Icon container */}
+              <div
+                className={`
+                  flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
+                  transition-all duration-200 ease-out
+                  group-hover:scale-105 group-hover:rotate-1
+                  ${styles.iconBg}
+                `}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+
+---
+college/components/ExistingDeanSearch.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { formatFullName } from "@/lib/nameFormatter";
+import type { DeanCandidate } from "backend/types/college.types";
+
+interface ExistingDeanSearchProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  candidates: DeanCandidate[] | undefined;
+  isSearching: boolean;
+  selected: DeanCandidate | null;
+  onSelect: (candidate: DeanCandidate) => void;
+  onClear: () => void;
+}
+
+export function ExistingDeanSearch({
+  search,
+  onSearchChange,
+  candidates,
+  isSearching,
+  selected,
+  onSelect,
+  onClear,
+}: ExistingDeanSearchProps) {
+  if (selected) {
+    return (
+      <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2 text-sm">
+        <span>
+          {formatFullName({
+            first_name: selected.first_name,
+            middle_name: selected.middle_name,
+            last_name: selected.last_name,
+            suffix: selected.suffix,
+          })}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={onClear}
+        >
+          Change
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Command className="w-full rounded-lg border" shouldFilter={false}>
+      <CommandInput
+        placeholder="Search via name or institution ID..."
+        value={search}
+        onValueChange={onSearchChange}
+      />
+      <CommandList>
+        {search.length < 2 ? (
+          <CommandEmpty>Type at least 2 characters to search.</CommandEmpty>
+        ) : isSearching ? (
+          <CommandEmpty>Searching...</CommandEmpty>
+        ) : !candidates?.length ? (
+          <CommandEmpty>No matching faculty found.</CommandEmpty>
+        ) : (
+          <CommandGroup>
+            {candidates.map((candidate) => (
+              <CommandItem
+                key={candidate.account_id}
+                value={String(candidate.account_id)}
+                disabled={candidate.is_college_dean}
+                onSelect={() => onSelect(candidate)}
+                className="flex items-center justify-between"
+              >
+                <span>
+                  {formatFullName({
+                    first_name: candidate.first_name,
+                    middle_name: candidate.middle_name,
+                    last_name: candidate.last_name,
+                    suffix: candidate.suffix,
+                  })}
+                </span>
+                {candidate.is_college_dean && (
+                  <span className="text-xs text-muted-foreground">Already a dean</span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+      </CommandList>
+    </Command>
+  );
+}
+
+
+---
+college/page/CollegePage.tsx
+---
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Search } from "lucide-react";
+
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { DataTable } from "@/components/main-data-table";
+import { TablePagination } from "@/components/table-pagination";
+
+import { getColleges } from "../api/college.service";
+import { collegeColumns } from "../components/CollegeColumns";
+import { CollegeCreateDialog } from "../components/CollegeCreate";
+import { CollegeStatsCards } from "../components/CollegeStatsCards";
+
+export const CollegePage = () => {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+
+  const {
+    data: collegeResponse,
+    isPending: isCollegesPending,
+    isError: isCollegesError,
+    error: collegeError,
+  } = useQuery({
+    queryKey: ["getColleges", page, search],
+    queryFn: () => getColleges({ page, search }),
+    placeholderData: (previousData) => previousData,
+  });
+
+  const colleges = useMemo(() => collegeResponse?.data ?? [], [collegeResponse?.data]);
+  const totalColleges = collegeResponse?.pagination?.totalItems ?? colleges.length;
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Colleges</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              View and manage all college records
+            </p>
+          </div>
+          <CollegeCreateDialog icon={Plus} triggerText="Add College" />
+        </div>
+
+        {/* KPI Summary Cards */}
+        <CollegeStatsCards colleges={colleges} total={totalColleges} />
+
+        {/* Table Section */}
+        <Card className="flex flex-col gap-0 overflow-hidden rounded-xl pb-0 shadow-xs">
+          <CardHeader className="flex flex-col items-center justify-between gap-2.5 border-b px-6 sm:flex-row">
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search colleges..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1); // Reset to page 1 on new search
+                }}
+                className="h-8 rounded-lg pl-8 text-xs"
+              />
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <DataTable
+              columns={collegeColumns}
+              data={colleges}
+              getRowId={(row) => row.id.toString()}
+              isLoading={isCollegesPending}
+              isError={isCollegesError}
+              error={collegeError}
+              emptyMessage="No colleges found."
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pagination Footer */}
+      <TablePagination
+        pagination={collegeResponse?.pagination}
+        isPending={isCollegesPending}
+        onPageChange={setPage}
+      />
+    </div>
+  );
+};
+
+export default CollegePage;
+
+
+---

@@ -8,6 +8,7 @@ import type { SystemRole } from "backend/types/user.type";
 import { EvaluationRoutes } from "./EvaluationRoutes";
 import EmailVerificationDialog from "@/features/auth/components/EmailVerificationDialog";
 import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
+import SystemAdminOverviewPage from "@/features/overview/page/SystemAdminOverviewPage";
 
 interface SysRoutesProps {
   basePath?: string;
@@ -30,7 +31,7 @@ export const SysRoutes = ({
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<h1>Dashboard</h1>} />
+        <Route path="dashboard" element={<SystemAdminOverviewPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="semesters" element={<SemesterPage />} />
         <Route path="settings" element={<AccountSettingsPage />} />

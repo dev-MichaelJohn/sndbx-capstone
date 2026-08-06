@@ -1,0 +1,1658 @@
+auth/auth.txt
+---
+./auth.tsx
+---
+
+
+---
+./api/auth.service.ts
+---
+import type {
+  AccountSelect,
+  PersonalDetailsSelect,
+  SystemRole,
+  UserLoginType,
+} from "backend/types/user.type";
+import { type APIResponse } from "backend/utils/response.util";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { VerifyOTPType } from "backend/types/otp.type";
+
+const validateLogin = async (credentials: UserLoginType) => {
+  try {
+    const response = await apiClient.post<
+      APIResponse<Pick<AccountSelect, "email"> & { resendAt: number }>
+    >("/auth/login", credentials);
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Login failed."), { cause: error });
+  }
+};
+
+export const useValidateLogin = () => {
+  return useMutation({
+    mutationFn: validateLogin,
+  });
+};
+
+const validateOTP = async (credentials: VerifyOTPType) => {
+  try {
+    const response = await apiClient.post<
+      APIResponse<{
+        token: string;
+        user: Pick<AccountSelect, "id" | "email"> & {
+          personalDetails: PersonalDetailsSelect;
+          roles: SystemRole[];
+        };
+      }>
+    >("/auth/verify-otp", credentials);
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Verifying OTP failed."), { cause: error });
+  }
+};
+
+export const useValidateOTP = () => {
+  return useMutation({
+    mutationFn: validateOTP,
+  });
+};
+
+export const setBearerToken = (token: string) => {
+  localStorage.setItem("access_token", token);
+};
+
+export const fetchCurrentUser = async () => {
+  try {
+    const response = await apiClient.get<
+      APIResponse<
+        Pick<AccountSelect, "id" | "email"> & {
+          personalDetails: PersonalDetailsSelect;
+          roles: SystemRole[];
+        }
+      >
+    >("/auth/me");
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch current user."), { cause: error });
+  }
+};
+
+export const logoutRecord = async () => {
+  try {
+    const response = await apiClient.post<APIResponse<null>>("/auth/logout");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to log out."), { cause: error });
+  }
+};
+
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: logoutRecord,
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
+};
+
+
+---
+./components/EmailVerificationDialog.tsx
+---
+import { useEffect, useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+import {
+  useVerificationStatus,
+  useRequestEmailVerification,
+  useConfirmEmailVerification,
+} from "@/features/account-settings/api/account-settings.service";
+import { VerifyEmailConfirmSchema } from "backend/types/auth.type";
+
+export default function EmailVerificationDialog() {
+  const { data: status, isLoading: isCheckingStatus } = useVerificationStatus();
+  const requestOtpMutation = useRequestEmailVerification();
+  const confirmOtpMutation = useConfirmEmailVerification();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<"PROMPT" | "VERIFY">("PROMPT");
+  const [resendAt, setResendAt] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState(0);
+
+  // Auto-open dialog if authenticated user is unverified
+  useEffect(() => {
+    if (!isCheckingStatus && status && !status.isVerified) {
+      setIsOpen(true);
+    } else if (status?.isVerified) {
+      setIsOpen(false);
+    }
+  }, [status, isCheckingStatus]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (!resendAt) return;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((resendAt - Date.now()) / 1000));
+      setCountdown(remaining);
+      if (remaining === 0) setResendAt(null);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendAt]);
+
+  const handleRequestOtp = () => {
+    requestOtpMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        toast.success("Verification code sent to your registered email.");
+        if (data?.resendAt) setResendAt(data.resendAt);
+        setStep("VERIFY");
+      },
+      onError: (error) => toast.error(error.message),
+    });
+  };
+
+  const form = useForm({
+    defaultValues: {
+      code: "",
+    },
+    onSubmit: async ({ value }) => {
+      const validation = VerifyEmailConfirmSchema.safeParse(value);
+      if (!validation.success) {
+        toast.error(validation.error.issues[0]?.message ?? "Invalid OTP code format.");
+        return;
+      }
+
+      try {
+        await confirmOtpMutation.mutateAsync(value);
+        toast.success("Email verified successfully!");
+        setIsOpen(false);
+      } catch (error: any) {
+        toast.error(error?.message ?? "Failed to verify code.");
+      }
+    },
+  });
+
+  if (isCheckingStatus) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && setIsOpen(true)}>
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Account Verification Required</DialogTitle>
+          <DialogDescription>
+            {step === "PROMPT"
+              ? "Your email address is currently unverified. You must verify your institutional account to proceed."
+              : "Enter the 8-character verification code sent to your email address."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === "PROMPT" ? (
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
+              onClick={handleRequestOtp}
+              disabled={requestOtpMutation.isPending || countdown > 0}
+            >
+              {requestOtpMutation.isPending
+                ? "Sending code..."
+                : countdown > 0
+                  ? `Resend code in ${countdown}s`
+                  : "Send Verification Code"}
+            </Button>
+          </div>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            className="space-y-4 mt-2"
+          >
+            <form.Field
+              name="code"
+              children={(field) => (
+                <div className="space-y-1.5">
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="ENTER 8-CHAR OTP"
+                    className="text-center tracking-widest font-mono uppercase"
+                    maxLength={8}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="text-xs text-destructive">{field.state.meta.errors.join(", ")}</p>
+                  )}
+                </div>
+              )}
+            />
+
+            <div className="flex flex-col gap-2 pt-2">
+              <Button type="submit" disabled={confirmOtpMutation.isPending}>
+                {confirmOtpMutation.isPending ? "Verifying..." : "Confirm Verification"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleRequestOtp}
+                disabled={requestOtpMutation.isPending || countdown > 0}
+              >
+                {countdown > 0 ? `Resend code in ${countdown}s` : "Resend Code"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+---
+./components/LoginCard.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LoginForm } from "./LoginForm";
+
+export const LoginCard = () => {
+  return (
+    <Card className="w-full max-w-sm shadow">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Login to you account</CardTitle>
+        <CardDescription className="text-md">
+          Enter your email below to login to your account.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <LoginForm />
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        <Button type="submit" form="form-login" className="w-full text-sm font-bold">
+          Login
+        </Button>
+        <a
+          href="#"
+          className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-chart-5"
+        >
+          Back to home
+        </a>
+      </CardFooter>
+    </Card>
+  );
+};
+
+
+---
+./components/LoginForm.tsx
+---
+import { UserLoginSchema } from "backend/types/user.type";
+import { useForm } from "@tanstack/react-form";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import toast from "react-hot-toast";
+import { useValidateLogin } from "@/features/auth/api/auth.service";
+import { useAuth } from "@/features/auth/context/auth.context";
+import { useNavigate } from "react-router";
+
+export const LoginForm = () => {
+  const { mutateAsync, isPending } = useValidateLogin();
+  const { setPendingAuth } = useAuth();
+  const navigate = useNavigate();
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    validators: {
+      onSubmit: UserLoginSchema,
+    },
+    onSubmit: async ({ value }) => {
+      let toastId: string | undefined;
+      try {
+        toastId = toast.loading("Logging in...");
+        const result = await mutateAsync(value);
+        const { data, message } = result;
+        if (!data) throw new Error("Unexpected response from server.");
+
+        setPendingAuth({ email: data.email, password: value.password, resendAt: data.resendAt });
+        toast.success(message, { id: toastId });
+        navigate("/auth/otp");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Login failed.";
+        toast.error(message, { id: toastId });
+        form.setFieldMeta("email", (meta) => ({
+          ...meta,
+          errorMap: { onSubmit: message },
+        }));
+        form.setFieldMeta("password", (meta) => ({
+          ...meta,
+          errorMap: { onSubmit: message },
+        }));
+      }
+    },
+  });
+
+  return (
+    <form
+      id="form-login"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
+      <FieldGroup>
+        <form.Field
+          name="email"
+          children={(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                <Input
+                  type="email"
+                  id={field.name}
+                  name={field.name}
+                  value={field.state.value}
+                  disabled={isPending}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={isInvalid}
+                  placeholder="m@example.com"
+                />
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        />
+        <form.Field
+          name="password"
+          children={(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                <Input
+                  type="password"
+                  id={field.name}
+                  name={field.name}
+                  value={field.state.value}
+                  disabled={isPending}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={isInvalid}
+                />
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        />
+      </FieldGroup>
+    </form>
+  );
+};
+
+
+---
+./components/OTPCard.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { OTPForm } from "./OTPForm";
+import { useAuth } from "@/features/auth/context/auth.context";
+import { Link, Navigate } from "react-router";
+import { ResendBtn } from "./ResendBtn";
+import { useValidateLogin } from "@/features/auth/api/auth.service";
+import toast from "react-hot-toast";
+
+export const OTPCard = () => {
+  const { pendingAuth, setPendingAuth } = useAuth();
+  const login = useValidateLogin();
+  if (!pendingAuth) return <Navigate to="/auth/login" replace></Navigate>;
+
+  const handleResend = async () => {
+    let toastId: string | undefined;
+    try {
+      toastId = toast.loading("Resending...");
+      setPendingAuth((prev) => (prev ? { ...prev, isLoading: true } : null));
+      const result = await login.mutateAsync({
+        email: pendingAuth.email,
+        password: pendingAuth.password,
+      });
+
+      const { data, message } = result;
+      if (!data) throw new Error("Unexpected response from server.");
+
+      setPendingAuth((prev) =>
+        prev
+          ? {
+              ...prev,
+              resendAt: data.resendAt,
+              isLoading: false,
+            }
+          : null,
+      );
+      toast.success(message, { id: toastId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Resend failed.";
+      setPendingAuth((prev) => (prev ? { ...prev, isLoading: false } : null));
+      toast.error(message, { id: toastId });
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-sm shadow">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Login to your account</CardTitle>
+        <CardDescription className="text-md">
+          Enter the one-time code sent to your email
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <OTPForm />
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        <Button type="submit" form="form-otp" className="w-full text-sm font-bold">
+          Login
+        </Button>
+        {pendingAuth.resendAt && (
+          <ResendBtn
+            resendAt={pendingAuth.resendAt}
+            onResend={handleResend}
+            isLoading={login.isPending || pendingAuth.isLoading}
+          />
+        )}
+        <Link
+          to="/auth/login"
+          className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+        >
+          Back to login
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+};
+
+
+---
+./components/OTPForm.tsx
+---
+import { VerifyOTPSchema } from "backend/types/otp.type";
+import { useForm } from "@tanstack/react-form";
+import toast from "react-hot-toast";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { useAuth } from "@/features/auth/context/auth.context";
+import { useNavigate } from "react-router";
+import { setBearerToken, useValidateOTP } from "@/features/auth/api/auth.service";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
+
+export const OTPForm = () => {
+  const { pendingAuth, setPendingAuth } = useAuth();
+  const { mutateAsync, isPending } = useValidateOTP();
+  const navigate = useNavigate();
+  const { setUser } = useUser();
+  const form = useForm({
+    defaultValues: {
+      email: pendingAuth?.email ?? "",
+      code: "",
+    },
+    validators: {
+      onSubmit: VerifyOTPSchema,
+    },
+    onSubmit: async ({ value }) => {
+      let toastId: string | undefined;
+      try {
+        toastId = toast.loading("Verifying OTP...");
+        const result = await mutateAsync(value);
+        const { data, message } = result;
+        if (!data) throw new Error("Unexpected response from server.");
+
+        setBearerToken(data.token);
+
+        setUser(data.user);
+        setPendingAuth(null);
+        toast.success(message, { id: toastId });
+        navigate(getHomeRouteForRoles(data.user.roles), { replace: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Login failed.";
+        toast.error(message, { id: toastId });
+      }
+    },
+  });
+
+  const MAX_OTP_LENGTH = 8;
+  const OTPSlots = () =>
+    Array.from({ length: MAX_OTP_LENGTH }, (_, index) => (
+      <InputOTPSlot key={index} index={index} className="flex-1" />
+    ));
+
+  return (
+    <form
+      id="form-otp"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
+      <FieldGroup>
+        <form.Field
+          name="code"
+          children={(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>OTP Code</FieldLabel>
+                <InputOTP
+                  id={field.name}
+                  name={field.name}
+                  maxLength={MAX_OTP_LENGTH}
+                  pattern={REGEXP_ONLY_DIGITS}
+                  containerClassName="w-full"
+                  value={field.state.value}
+                  disabled={isPending}
+                  onChange={(value) => field.handleChange(value)}
+                  onBlur={field.handleBlur}
+                >
+                  <InputOTPGroup className="w-full">{OTPSlots()}</InputOTPGroup>
+                </InputOTP>
+                {isInvalid && (
+                  <FieldError
+                    errors={field.state.meta.errors}
+                    className="[&_ul]:list-none [&_ul]:pl-0 [&_ul]:ps-0"
+                  />
+                )}
+              </Field>
+            );
+          }}
+        />
+      </FieldGroup>
+    </form>
+  );
+};
+
+
+---
+./components/RedirectIfAuthenticated.tsx
+---
+import { Navigate, Outlet } from "react-router";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
+
+export const RedirectIfAuthenticated = () => {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) return <div className="grid h-screen place-items-center">Loading...</div>;
+  if (user) return <Navigate to={getHomeRouteForRoles(user.roles)} replace />;
+
+  return <Outlet />;
+};
+
+
+---
+./components/RequireRole.tsx
+---
+import { Navigate, Outlet } from "react-router";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
+import type { SystemRole } from "backend/types/user.type";
+
+export const RequireRole = ({ allowed }: { allowed: SystemRole[] }) => {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) return <div className="grid h-screen place-items-center">Loading...</div>;
+  if (!user) return <Navigate to="/auth/login" replace />;
+
+  const hasAccess = user.roles.some((role) => allowed.includes(role));
+  if (!hasAccess) return <Navigate to={getHomeRouteForRoles(user.roles)} replace />;
+
+  return <Outlet />;
+};
+
+
+---
+./components/ResendBtn.tsx
+---
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+
+interface ResendBtnProps {
+  resendAt: number;
+  onResend: () => void;
+  isLoading?: boolean;
+}
+
+export const ResendBtn = ({ resendAt, onResend, isLoading }: ResendBtnProps) => {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const diff = Math.max(0, Math.ceil(resendAt - Date.now()) / 1000);
+      setTimeLeft(diff);
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(interval);
+  }, [resendAt]);
+
+  if (timeLeft > 0) {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = Math.floor(timeLeft % 60);
+    const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+    return (
+      <p className="text-xs text-muted-foreground text-center">
+        Resend code in <span className="font-semibold text-foreground">{formattedTime}</span>
+      </p>
+    );
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="link"
+      onClick={onResend}
+      disabled={isLoading}
+      className="text-xs h-auto font-normal text-chart-5 underline-offset-4 hover:underline"
+    >
+      Didn't get a code? Resend
+    </Button>
+  );
+};
+
+
+---
+./context/auth.context.tsx
+---
+import type { UserLoginType } from "backend/types/user.type";
+import {
+  createContext,
+  useContext,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
+
+type PendingAuth =
+  | (UserLoginType & {
+      resendAt: number;
+      isLoading?: boolean;
+    })
+  | null;
+type AuthContextType = {
+  pendingAuth: PendingAuth;
+  setPendingAuth: Dispatch<SetStateAction<PendingAuth>>;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [pendingAuth, setPendingAuth] = useState<PendingAuth>(null);
+
+  return (
+    <AuthContext.Provider value={{ pendingAuth, setPendingAuth }}>{children}</AuthContext.Provider>
+  );
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuthFlow must be used within AuthFlowProvider.");
+  return context;
+};
+
+
+---
+./context/user.context.tsx
+---
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AccountSelect, PersonalDetailsSelect, SystemRole } from "backend/types/user.type";
+import { createContext, useContext, type ReactNode } from "react";
+import { fetchCurrentUser, logoutRecord } from "@/features/auth/api/auth.service";
+
+type CurrentUser =
+  | (Pick<AccountSelect, "id" | "email"> & {
+      personalDetails: PersonalDetailsSelect;
+      roles: SystemRole[];
+    })
+  | null;
+
+type UserContextType = {
+  user: CurrentUser;
+  isLoading: boolean;
+  setUser: (user: CurrentUser | null) => void;
+  logout: () => Promise<void>;
+};
+
+const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      try {
+        const result = await fetchCurrentUser();
+        return result.data;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const setUser = (newUser: CurrentUser | null) => {
+    queryClient.setQueryData(["currentUser"], newUser);
+  };
+
+  const logout = async () => {
+    try {
+      await logoutRecord();
+    } catch {
+      // Proceed with cache invalidation even if logout request fails
+    } finally {
+      queryClient.setQueryData(["currentUser"], null);
+      queryClient.clear();
+    }
+  };
+
+  return (
+    <UserContext.Provider value={{ user: user ?? null, isLoading, setUser, logout }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (!context) throw new Error("useUser must be used within UserProvider");
+  return context;
+};
+
+
+---
+./page/AuthPage.tsx
+---
+import { Outlet } from "react-router";
+import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "@/features/auth/context/auth.context";
+
+export const AuthPage = () => {
+  return (
+    <div className="flex items-center justify-center h-screen w-screen">
+      <Toaster />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    </div>
+  );
+};
+
+
+---
+
+
+---
+auth/api/auth.service.ts
+---
+import type {
+  AccountSelect,
+  PersonalDetailsSelect,
+  SystemRole,
+  UserLoginType,
+} from "backend/types/user.type";
+import { type APIResponse } from "backend/utils/response.util";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { VerifyOTPType } from "backend/types/otp.type";
+
+const validateLogin = async (credentials: UserLoginType) => {
+  try {
+    const response = await apiClient.post<
+      APIResponse<Pick<AccountSelect, "email"> & { resendAt: number }>
+    >("/auth/login", credentials);
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Login failed."), { cause: error });
+  }
+};
+
+export const useValidateLogin = () => {
+  return useMutation({
+    mutationFn: validateLogin,
+  });
+};
+
+const validateOTP = async (credentials: VerifyOTPType) => {
+  try {
+    const response = await apiClient.post<
+      APIResponse<{
+        token: string;
+        user: Pick<AccountSelect, "id" | "email"> & {
+          personalDetails: PersonalDetailsSelect;
+          roles: SystemRole[];
+        };
+      }>
+    >("/auth/verify-otp", credentials);
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Verifying OTP failed."), { cause: error });
+  }
+};
+
+export const useValidateOTP = () => {
+  return useMutation({
+    mutationFn: validateOTP,
+  });
+};
+
+export const setBearerToken = (token: string) => {
+  localStorage.setItem("access_token", token);
+};
+
+export const fetchCurrentUser = async () => {
+  try {
+    const response = await apiClient.get<
+      APIResponse<
+        Pick<AccountSelect, "id" | "email"> & {
+          personalDetails: PersonalDetailsSelect;
+          roles: SystemRole[];
+        }
+      >
+    >("/auth/me");
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch current user."), { cause: error });
+  }
+};
+
+export const logoutRecord = async () => {
+  try {
+    const response = await apiClient.post<APIResponse<null>>("/auth/logout");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to log out."), { cause: error });
+  }
+};
+
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: logoutRecord,
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
+};
+
+
+---
+auth/components/EmailVerificationDialog.tsx
+---
+import { useEffect, useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+import {
+  useVerificationStatus,
+  useRequestEmailVerification,
+  useConfirmEmailVerification,
+} from "@/features/account-settings/api/account-settings.service";
+import { VerifyEmailConfirmSchema } from "backend/types/auth.type";
+
+export default function EmailVerificationDialog() {
+  const { data: status, isLoading: isCheckingStatus } = useVerificationStatus();
+  const requestOtpMutation = useRequestEmailVerification();
+  const confirmOtpMutation = useConfirmEmailVerification();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<"PROMPT" | "VERIFY">("PROMPT");
+  const [resendAt, setResendAt] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState(0);
+
+  // Auto-open dialog if authenticated user is unverified
+  useEffect(() => {
+    if (!isCheckingStatus && status && !status.isVerified) {
+      setIsOpen(true);
+    } else if (status?.isVerified) {
+      setIsOpen(false);
+    }
+  }, [status, isCheckingStatus]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (!resendAt) return;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((resendAt - Date.now()) / 1000));
+      setCountdown(remaining);
+      if (remaining === 0) setResendAt(null);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendAt]);
+
+  const handleRequestOtp = () => {
+    requestOtpMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        toast.success("Verification code sent to your registered email.");
+        if (data?.resendAt) setResendAt(data.resendAt);
+        setStep("VERIFY");
+      },
+      onError: (error) => toast.error(error.message),
+    });
+  };
+
+  const form = useForm({
+    defaultValues: {
+      code: "",
+    },
+    onSubmit: async ({ value }) => {
+      const validation = VerifyEmailConfirmSchema.safeParse(value);
+      if (!validation.success) {
+        toast.error(validation.error.issues[0]?.message ?? "Invalid OTP code format.");
+        return;
+      }
+
+      try {
+        await confirmOtpMutation.mutateAsync(value);
+        toast.success("Email verified successfully!");
+        setIsOpen(false);
+      } catch (error: any) {
+        toast.error(error?.message ?? "Failed to verify code.");
+      }
+    },
+  });
+
+  if (isCheckingStatus) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && setIsOpen(true)}>
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Account Verification Required</DialogTitle>
+          <DialogDescription>
+            {step === "PROMPT"
+              ? "Your email address is currently unverified. You must verify your institutional account to proceed."
+              : "Enter the 8-character verification code sent to your email address."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === "PROMPT" ? (
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
+              onClick={handleRequestOtp}
+              disabled={requestOtpMutation.isPending || countdown > 0}
+            >
+              {requestOtpMutation.isPending
+                ? "Sending code..."
+                : countdown > 0
+                  ? `Resend code in ${countdown}s`
+                  : "Send Verification Code"}
+            </Button>
+          </div>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            className="space-y-4 mt-2"
+          >
+            <form.Field
+              name="code"
+              children={(field) => (
+                <div className="space-y-1.5">
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="ENTER 8-CHAR OTP"
+                    className="text-center tracking-widest font-mono uppercase"
+                    maxLength={8}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="text-xs text-destructive">{field.state.meta.errors.join(", ")}</p>
+                  )}
+                </div>
+              )}
+            />
+
+            <div className="flex flex-col gap-2 pt-2">
+              <Button type="submit" disabled={confirmOtpMutation.isPending}>
+                {confirmOtpMutation.isPending ? "Verifying..." : "Confirm Verification"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleRequestOtp}
+                disabled={requestOtpMutation.isPending || countdown > 0}
+              >
+                {countdown > 0 ? `Resend code in ${countdown}s` : "Resend Code"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+---
+auth/components/LoginCard.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LoginForm } from "./LoginForm";
+
+export const LoginCard = () => {
+  return (
+    <Card className="w-full max-w-sm shadow">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Login to you account</CardTitle>
+        <CardDescription className="text-md">
+          Enter your email below to login to your account.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <LoginForm />
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        <Button type="submit" form="form-login" className="w-full text-sm font-bold">
+          Login
+        </Button>
+        <a
+          href="#"
+          className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-chart-5"
+        >
+          Back to home
+        </a>
+      </CardFooter>
+    </Card>
+  );
+};
+
+
+---
+auth/components/LoginForm.tsx
+---
+import { UserLoginSchema } from "backend/types/user.type";
+import { useForm } from "@tanstack/react-form";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import toast from "react-hot-toast";
+import { useValidateLogin } from "@/features/auth/api/auth.service";
+import { useAuth } from "@/features/auth/context/auth.context";
+import { useNavigate } from "react-router";
+
+export const LoginForm = () => {
+  const { mutateAsync, isPending } = useValidateLogin();
+  const { setPendingAuth } = useAuth();
+  const navigate = useNavigate();
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    validators: {
+      onSubmit: UserLoginSchema,
+    },
+    onSubmit: async ({ value }) => {
+      let toastId: string | undefined;
+      try {
+        toastId = toast.loading("Logging in...");
+        const result = await mutateAsync(value);
+        const { data, message } = result;
+        if (!data) throw new Error("Unexpected response from server.");
+
+        setPendingAuth({ email: data.email, password: value.password, resendAt: data.resendAt });
+        toast.success(message, { id: toastId });
+        navigate("/auth/otp");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Login failed.";
+        toast.error(message, { id: toastId });
+        form.setFieldMeta("email", (meta) => ({
+          ...meta,
+          errorMap: { onSubmit: message },
+        }));
+        form.setFieldMeta("password", (meta) => ({
+          ...meta,
+          errorMap: { onSubmit: message },
+        }));
+      }
+    },
+  });
+
+  return (
+    <form
+      id="form-login"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
+      <FieldGroup>
+        <form.Field
+          name="email"
+          children={(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                <Input
+                  type="email"
+                  id={field.name}
+                  name={field.name}
+                  value={field.state.value}
+                  disabled={isPending}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={isInvalid}
+                  placeholder="m@example.com"
+                />
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        />
+        <form.Field
+          name="password"
+          children={(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                <Input
+                  type="password"
+                  id={field.name}
+                  name={field.name}
+                  value={field.state.value}
+                  disabled={isPending}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={isInvalid}
+                />
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        />
+      </FieldGroup>
+    </form>
+  );
+};
+
+
+---
+auth/components/OTPCard.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { OTPForm } from "./OTPForm";
+import { useAuth } from "@/features/auth/context/auth.context";
+import { Link, Navigate } from "react-router";
+import { ResendBtn } from "./ResendBtn";
+import { useValidateLogin } from "@/features/auth/api/auth.service";
+import toast from "react-hot-toast";
+
+export const OTPCard = () => {
+  const { pendingAuth, setPendingAuth } = useAuth();
+  const login = useValidateLogin();
+  if (!pendingAuth) return <Navigate to="/auth/login" replace></Navigate>;
+
+  const handleResend = async () => {
+    let toastId: string | undefined;
+    try {
+      toastId = toast.loading("Resending...");
+      setPendingAuth((prev) => (prev ? { ...prev, isLoading: true } : null));
+      const result = await login.mutateAsync({
+        email: pendingAuth.email,
+        password: pendingAuth.password,
+      });
+
+      const { data, message } = result;
+      if (!data) throw new Error("Unexpected response from server.");
+
+      setPendingAuth((prev) =>
+        prev
+          ? {
+              ...prev,
+              resendAt: data.resendAt,
+              isLoading: false,
+            }
+          : null,
+      );
+      toast.success(message, { id: toastId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Resend failed.";
+      setPendingAuth((prev) => (prev ? { ...prev, isLoading: false } : null));
+      toast.error(message, { id: toastId });
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-sm shadow">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Login to your account</CardTitle>
+        <CardDescription className="text-md">
+          Enter the one-time code sent to your email
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <OTPForm />
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        <Button type="submit" form="form-otp" className="w-full text-sm font-bold">
+          Login
+        </Button>
+        {pendingAuth.resendAt && (
+          <ResendBtn
+            resendAt={pendingAuth.resendAt}
+            onResend={handleResend}
+            isLoading={login.isPending || pendingAuth.isLoading}
+          />
+        )}
+        <Link
+          to="/auth/login"
+          className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+        >
+          Back to login
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+};
+
+
+---
+auth/components/OTPForm.tsx
+---
+import { VerifyOTPSchema } from "backend/types/otp.type";
+import { useForm } from "@tanstack/react-form";
+import toast from "react-hot-toast";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { useAuth } from "@/features/auth/context/auth.context";
+import { useNavigate } from "react-router";
+import { setBearerToken, useValidateOTP } from "@/features/auth/api/auth.service";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
+
+export const OTPForm = () => {
+  const { pendingAuth, setPendingAuth } = useAuth();
+  const { mutateAsync, isPending } = useValidateOTP();
+  const navigate = useNavigate();
+  const { setUser } = useUser();
+  const form = useForm({
+    defaultValues: {
+      email: pendingAuth?.email ?? "",
+      code: "",
+    },
+    validators: {
+      onSubmit: VerifyOTPSchema,
+    },
+    onSubmit: async ({ value }) => {
+      let toastId: string | undefined;
+      try {
+        toastId = toast.loading("Verifying OTP...");
+        const result = await mutateAsync(value);
+        const { data, message } = result;
+        if (!data) throw new Error("Unexpected response from server.");
+
+        setBearerToken(data.token);
+
+        setUser(data.user);
+        setPendingAuth(null);
+        toast.success(message, { id: toastId });
+        navigate(getHomeRouteForRoles(data.user.roles), { replace: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Login failed.";
+        toast.error(message, { id: toastId });
+      }
+    },
+  });
+
+  const MAX_OTP_LENGTH = 8;
+  const OTPSlots = () =>
+    Array.from({ length: MAX_OTP_LENGTH }, (_, index) => (
+      <InputOTPSlot key={index} index={index} className="flex-1" />
+    ));
+
+  return (
+    <form
+      id="form-otp"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
+      <FieldGroup>
+        <form.Field
+          name="code"
+          children={(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>OTP Code</FieldLabel>
+                <InputOTP
+                  id={field.name}
+                  name={field.name}
+                  maxLength={MAX_OTP_LENGTH}
+                  pattern={REGEXP_ONLY_DIGITS}
+                  containerClassName="w-full"
+                  value={field.state.value}
+                  disabled={isPending}
+                  onChange={(value) => field.handleChange(value)}
+                  onBlur={field.handleBlur}
+                >
+                  <InputOTPGroup className="w-full">{OTPSlots()}</InputOTPGroup>
+                </InputOTP>
+                {isInvalid && (
+                  <FieldError
+                    errors={field.state.meta.errors}
+                    className="[&_ul]:list-none [&_ul]:pl-0 [&_ul]:ps-0"
+                  />
+                )}
+              </Field>
+            );
+          }}
+        />
+      </FieldGroup>
+    </form>
+  );
+};
+
+
+---
+auth/components/RedirectIfAuthenticated.tsx
+---
+import { Navigate, Outlet } from "react-router";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
+
+export const RedirectIfAuthenticated = () => {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) return <div className="grid h-screen place-items-center">Loading...</div>;
+  if (user) return <Navigate to={getHomeRouteForRoles(user.roles)} replace />;
+
+  return <Outlet />;
+};
+
+
+---
+auth/components/RequireRole.tsx
+---
+import { Navigate, Outlet } from "react-router";
+import { useUser } from "@/features/auth/context/user.context";
+import { getHomeRouteForRoles } from "@/lib/role-route";
+import type { SystemRole } from "backend/types/user.type";
+
+export const RequireRole = ({ allowed }: { allowed: SystemRole[] }) => {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) return <div className="grid h-screen place-items-center">Loading...</div>;
+  if (!user) return <Navigate to="/auth/login" replace />;
+
+  const hasAccess = user.roles.some((role) => allowed.includes(role));
+  if (!hasAccess) return <Navigate to={getHomeRouteForRoles(user.roles)} replace />;
+
+  return <Outlet />;
+};
+
+
+---
+auth/components/ResendBtn.tsx
+---
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+
+interface ResendBtnProps {
+  resendAt: number;
+  onResend: () => void;
+  isLoading?: boolean;
+}
+
+export const ResendBtn = ({ resendAt, onResend, isLoading }: ResendBtnProps) => {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const diff = Math.max(0, Math.ceil(resendAt - Date.now()) / 1000);
+      setTimeLeft(diff);
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(interval);
+  }, [resendAt]);
+
+  if (timeLeft > 0) {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = Math.floor(timeLeft % 60);
+    const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+    return (
+      <p className="text-xs text-muted-foreground text-center">
+        Resend code in <span className="font-semibold text-foreground">{formattedTime}</span>
+      </p>
+    );
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="link"
+      onClick={onResend}
+      disabled={isLoading}
+      className="text-xs h-auto font-normal text-chart-5 underline-offset-4 hover:underline"
+    >
+      Didn't get a code? Resend
+    </Button>
+  );
+};
+
+
+---
+auth/context/auth.context.tsx
+---
+import type { UserLoginType } from "backend/types/user.type";
+import {
+  createContext,
+  useContext,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
+
+type PendingAuth =
+  | (UserLoginType & {
+      resendAt: number;
+      isLoading?: boolean;
+    })
+  | null;
+type AuthContextType = {
+  pendingAuth: PendingAuth;
+  setPendingAuth: Dispatch<SetStateAction<PendingAuth>>;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [pendingAuth, setPendingAuth] = useState<PendingAuth>(null);
+
+  return (
+    <AuthContext.Provider value={{ pendingAuth, setPendingAuth }}>{children}</AuthContext.Provider>
+  );
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuthFlow must be used within AuthFlowProvider.");
+  return context;
+};
+
+
+---
+auth/context/user.context.tsx
+---
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AccountSelect, PersonalDetailsSelect, SystemRole } from "backend/types/user.type";
+import { createContext, useContext, type ReactNode } from "react";
+import { fetchCurrentUser, logoutRecord } from "@/features/auth/api/auth.service";
+
+type CurrentUser =
+  | (Pick<AccountSelect, "id" | "email"> & {
+      personalDetails: PersonalDetailsSelect;
+      roles: SystemRole[];
+    })
+  | null;
+
+type UserContextType = {
+  user: CurrentUser;
+  isLoading: boolean;
+  setUser: (user: CurrentUser | null) => void;
+  logout: () => Promise<void>;
+};
+
+const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      try {
+        const result = await fetchCurrentUser();
+        return result.data;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const setUser = (newUser: CurrentUser | null) => {
+    queryClient.setQueryData(["currentUser"], newUser);
+  };
+
+  const logout = async () => {
+    try {
+      await logoutRecord();
+    } catch {
+      // Proceed with cache invalidation even if logout request fails
+    } finally {
+      queryClient.setQueryData(["currentUser"], null);
+      queryClient.clear();
+    }
+  };
+
+  return (
+    <UserContext.Provider value={{ user: user ?? null, isLoading, setUser, logout }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (!context) throw new Error("useUser must be used within UserProvider");
+  return context;
+};
+
+
+---
+auth/page/AuthPage.tsx
+---
+import { Outlet } from "react-router";
+import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "@/features/auth/context/auth.context";
+
+export const AuthPage = () => {
+  return (
+    <div className="flex items-center justify-center h-screen w-screen">
+      <Toaster />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    </div>
+  );
+};
+
+
+---

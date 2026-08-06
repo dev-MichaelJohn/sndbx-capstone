@@ -1,0 +1,1096 @@
+semester/api/semester.service.ts
+---
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type {
+  SemesterInsert,
+  SemesterSearch,
+  SemesterSelect,
+  SemesterUpdate,
+} from "backend/types/semester.type";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// Fetch paginated semesters
+export const getSemesters = async (params: SemesterSearch) => {
+  try {
+    const response = await apiClient.get<APIResponse<PaginatedData<SemesterSelect[]>>>(
+      "/protected/semesters",
+      { params },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch semesters."), { cause: error });
+  }
+};
+
+export const useSemesters = (params: SemesterSearch) => {
+  return useQuery({
+    queryKey: ["getSemesters", params],
+    queryFn: () => getSemesters(params),
+  });
+};
+
+// Fetch single semester by ID
+export const getSemester = async (id: number) => {
+  try {
+    const response = await apiClient.get<APIResponse<SemesterSelect>>(`/protected/semesters/${id}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch semester details."), { cause: error });
+  }
+};
+
+export const useSemester = (id: number) => {
+  return useQuery({
+    queryKey: ["getSemester", id],
+    queryFn: () => getSemester(id),
+    enabled: !!id,
+  });
+};
+
+// Create semester record
+const createSemesterRecord = async (payload: SemesterInsert) => {
+  try {
+    const response = await apiClient.post<APIResponse<SemesterSelect>>(
+      "/protected/semesters",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to create semester record."), { cause: error });
+  }
+};
+
+export const useCreateSemester = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createSemesterRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getSemesters"] });
+    },
+  });
+};
+
+// Update semester record
+const updateSemesterRecord = async ({
+  semester_id,
+  ...payload
+}: SemesterUpdate & { semester_id: number }) => {
+  try {
+    const response = await apiClient.patch<APIResponse<SemesterSelect>>(
+      `/protected/semesters/${semester_id}`,
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update semester record."), { cause: error });
+  }
+};
+
+export const useUpdateSemester = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateSemesterRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getSemesters"] });
+    },
+  });
+};
+
+// Delete semester record
+const deleteSemesterRecord = async (semesterId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(`/protected/semesters/${semesterId}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to delete semester record."), { cause: error });
+  }
+};
+
+export const useDeleteSemester = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteSemesterRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getSemesters"] });
+    },
+  });
+};
+
+
+---
+semester/components/SemesterCreate.tsx
+---
+import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import toast from "react-hot-toast";
+import type { LucideIcon } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
+import { format, parseISO, addDays } from "date-fns";
+import type { DateRange } from "react-day-picker";
+
+import { SemesterInsertSchema, type SemesterInsert } from "backend/types/semester.type";
+import { useCreateSemester } from "../api/semester.service";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FormTextField } from "@/components/form-text-field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface SemesterCreateDialogProps {
+  icon?: LucideIcon;
+  triggerText?: string;
+}
+
+const currentYear = new Date().getFullYear();
+
+export const SemesterCreateDialog = ({
+  icon: Icon = Plus,
+  triggerText = "Add Semester",
+}: SemesterCreateDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+  const [pendingValue, setPendingValue] = useState<SemesterInsert | null>(null);
+
+  const createSemesterMutation = useCreateSemester();
+
+  const today = new Date();
+  const defaultEndDate = addDays(today, 120);
+
+  const initialFormData: SemesterInsert = {
+    semester_term: "1st",
+    school_year_start: currentYear,
+    start_date: format(today, "yyyy-MM-dd"),
+    end_date: format(defaultEndDate, "yyyy-MM-dd"),
+  };
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    validators: { onSubmit: SemesterInsertSchema },
+    onSubmit: async ({ value }) => {
+      setPendingValue(value);
+      setConfirmSaveOpen(true);
+    },
+  });
+
+  const resetEverything = () => {
+    form.reset();
+    setPendingValue(null);
+    setConfirmSaveOpen(false);
+    setConfirmDiscardOpen(false);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      setOpen(true);
+      resetEverything();
+      return;
+    }
+    attemptClose();
+  };
+
+  const attemptClose = () => {
+    if (form.state.isDirty) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    setOpen(false);
+    resetEverything();
+  };
+
+  const confirmDiscard = () => {
+    setConfirmDiscardOpen(false);
+    setOpen(false);
+    resetEverything();
+  };
+
+  const confirmSave = async () => {
+    if (!pendingValue) return;
+    const toastId = toast.loading("Creating semester record...");
+
+    try {
+      await createSemesterMutation.mutateAsync(pendingValue);
+      toast.success("Semester created successfully.", { id: toastId });
+      setConfirmSaveOpen(false);
+      setOpen(false);
+      resetEverything();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create semester.", {
+        id: toastId,
+      });
+      setConfirmSaveOpen(false);
+    }
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button size="sm" className="h-8 rounded-lg text-xs font-medium">
+            <Icon className="mr-1.5 size-3.5" />
+            <span>{triggerText}</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Academic Semester</DialogTitle>
+            <DialogDescription>
+              Set up school year boundaries, semester terms, and operational dates.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            {/* Semester Term */}
+            <form.Field
+              name="semester_term"
+              children={(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Semester Term</FieldLabel>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(val) => field.handleChange(val as "1st" | "2nd" | "Summer")}
+                    disabled={createSemesterMutation.isPending}
+                  >
+                    <SelectTrigger id={field.name} className="h-9">
+                      <SelectValue placeholder="Select Term" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1st">1st Semester</SelectItem>
+                      <SelectItem value="2nd">2nd Semester</SelectItem>
+                      <SelectItem value="Summer">Summer / Midyear</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            />
+
+            {/* School Year Range */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* SY Start Year */}
+              <form.Field
+                name="school_year_start"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="SY Start Year"
+                    type="number"
+                    disabled={createSemesterMutation.isPending}
+                    placeholder={String(currentYear)}
+                  />
+                )}
+              />
+
+              {/* SY End Year (Derived / Read-only) */}
+              <form.Subscribe
+                selector={(state) => state.values.school_year_start}
+                children={(startYear) => (
+                  <Field>
+                    <FieldLabel>SY End Year</FieldLabel>
+                    <Input
+                      type="number"
+                      value={startYear ? Number(startYear) + 1 : ""}
+                      disabled
+                      className="h-9 bg-muted text-muted-foreground"
+                    />
+                  </Field>
+                )}
+              />
+            </div>
+
+            {/* Date Range Picker using date-fns */}
+            <form.Subscribe
+              selector={(state) => [state.values.start_date, state.values.end_date] as const}
+              children={([startDateStr, endDateStr]) => {
+                const dateRange: DateRange | undefined = {
+                  from: startDateStr ? parseISO(startDateStr) : undefined,
+                  to: endDateStr ? parseISO(endDateStr) : undefined,
+                };
+
+                const handleRangeSelect = (range: DateRange | undefined) => {
+                  form.setFieldValue(
+                    "start_date",
+                    range?.from ? format(range.from, "yyyy-MM-dd") : "",
+                  );
+                  form.setFieldValue("end_date", range?.to ? format(range.to, "yyyy-MM-dd") : "");
+                };
+
+                return (
+                  <Field>
+                    <FieldLabel>Semester Duration</FieldLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="date-range"
+                          variant="outline"
+                          disabled={createSemesterMutation.isPending}
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-9",
+                            !dateRange.from && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 size-4" />
+                          {dateRange.from ? (
+                            dateRange.to ? (
+                              <>
+                                {format(dateRange.from, "LLL dd, yyyy")} –{" "}
+                                {format(dateRange.to, "LLL dd, yyyy")}
+                              </>
+                            ) : (
+                              format(dateRange.from, "LLL dd, yyyy")
+                            )
+                          ) : (
+                            <span>Pick duration dates</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          autoFocus
+                          mode="range"
+                          defaultMonth={dateRange.from}
+                          selected={dateRange}
+                          onSelect={handleRangeSelect}
+                          numberOfMonths={2}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </Field>
+                );
+              }}
+            />
+          </FieldGroup>
+
+          <DialogFooter className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={attemptClose}
+              disabled={createSemesterMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!canSubmit || createSemesterMutation.isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {createSemesterMutation.isPending ? "Saving..." : "Save Semester"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Confirmation Alert */}
+      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create Semester Record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingValue &&
+                `This will set up SY ${pendingValue.school_year_start}–${Number(pendingValue.school_year_start) + 1} (${pendingValue.semester_term} Semester) running from ${pendingValue.start_date} to ${pendingValue.end_date}.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={createSemesterMutation.isPending}>
+              Keep Editing
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} disabled={createSemesterMutation.isPending}>
+              {createSemesterMutation.isPending ? "Creating..." : "Yes, Save"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Discard Confirmation Alert */}
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved entries in this form. Closing now will lose all input.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+semester/components/SemesterEdit.tsx
+---
+import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import toast from "react-hot-toast";
+import type { LucideIcon } from "lucide-react";
+import { CalendarIcon, Pencil } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import type { DateRange } from "react-day-picker";
+
+import {
+  SemesterUpdateSchema,
+  type SemesterSelect,
+  type SemesterUpdate,
+} from "backend/types/semester.type";
+import { useUpdateSemester } from "../api/semester.service";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FormTextField } from "@/components/form-text-field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface SemesterEditDialogProps {
+  semester: SemesterSelect;
+  icon?: LucideIcon;
+  triggerText?: string;
+}
+
+export const SemesterEditDialog = ({
+  semester,
+  icon: Icon = Pencil,
+  triggerText = "Edit",
+}: SemesterEditDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+  const [pendingValue, setPendingValue] = useState<SemesterUpdate | null>(null);
+
+  const updateSemesterMutation = useUpdateSemester();
+
+  const initialFormData: SemesterUpdate = {
+    semester_term: semester.semester_term,
+    school_year_start: semester.school_year_start,
+    start_date: semester.start_date,
+    end_date: semester.end_date,
+  };
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    validators: { onSubmit: SemesterUpdateSchema },
+    onSubmit: async ({ value }) => {
+      setPendingValue(value);
+      setConfirmSaveOpen(true);
+    },
+  });
+
+  const resetEverything = () => {
+    form.reset(initialFormData);
+    setPendingValue(null);
+    setConfirmSaveOpen(false);
+    setConfirmDiscardOpen(false);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      setOpen(true);
+      resetEverything();
+      return;
+    }
+    attemptClose();
+  };
+
+  const attemptClose = () => {
+    if (form.state.isDirty) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    setOpen(false);
+    resetEverything();
+  };
+
+  const confirmDiscard = () => {
+    setConfirmDiscardOpen(false);
+    setOpen(false);
+    resetEverything();
+  };
+
+  const confirmSave = async () => {
+    if (!pendingValue) return;
+    const toastId = toast.loading("Updating semester record...");
+
+    try {
+      await updateSemesterMutation.mutateAsync({
+        semester_id: semester.id,
+        ...pendingValue,
+      });
+      toast.success("Semester updated successfully.", { id: toastId });
+      setConfirmSaveOpen(false);
+      setOpen(false);
+      resetEverything();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update semester.", {
+        id: toastId,
+      });
+      setConfirmSaveOpen(false);
+    }
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <div className="flex w-full items-center gap-2 px-2 py-1.5 text-xs">
+            <Icon className="size-3.5" />
+            <span>{triggerText}</span>
+          </div>
+        </DialogTrigger>
+
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Academic Semester</DialogTitle>
+            <DialogDescription>
+              Modify school year bounds, term details, and schedule limits.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            {/* Semester Term */}
+            <form.Field
+              name="semester_term"
+              children={(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Semester Term</FieldLabel>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(val) => field.handleChange(val as "1st" | "2nd" | "Summer")}
+                    disabled={updateSemesterMutation.isPending}
+                  >
+                    <SelectTrigger id={field.name} className="h-9">
+                      <SelectValue placeholder="Select Term" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1st">1st Semester</SelectItem>
+                      <SelectItem value="2nd">2nd Semester</SelectItem>
+                      <SelectItem value="Summer">Summer / Midyear</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            />
+
+            {/* School Year Range */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* SY Start Year */}
+              <form.Field
+                name="school_year_start"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="SY Start Year"
+                    type="number"
+                    disabled={updateSemesterMutation.isPending}
+                    placeholder="2026"
+                  />
+                )}
+              />
+
+              {/* SY End Year (Derived / Read-only) */}
+              <form.Subscribe
+                selector={(state) => state.values.school_year_start}
+                children={(startYear) => (
+                  <Field>
+                    <FieldLabel>SY End Year</FieldLabel>
+                    <Input
+                      type="number"
+                      value={startYear ? Number(startYear) + 1 : ""}
+                      disabled
+                      className="h-9 bg-muted text-muted-foreground"
+                    />
+                  </Field>
+                )}
+              />
+            </div>
+
+            {/* Date Range Picker using date-fns */}
+            <form.Subscribe
+              selector={(state) => [state.values.start_date, state.values.end_date] as const}
+              children={([startDateStr, endDateStr]) => {
+                const dateRange: DateRange | undefined = {
+                  from: startDateStr ? parseISO(startDateStr) : undefined,
+                  to: endDateStr ? parseISO(endDateStr) : undefined,
+                };
+
+                const handleRangeSelect = (range: DateRange | undefined) => {
+                  form.setFieldValue(
+                    "start_date",
+                    range?.from ? format(range.from, "yyyy-MM-dd") : "",
+                  );
+                  form.setFieldValue("end_date", range?.to ? format(range.to, "yyyy-MM-dd") : "");
+                };
+
+                return (
+                  <Field>
+                    <FieldLabel>Semester Duration</FieldLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="date-range"
+                          variant="outline"
+                          disabled={updateSemesterMutation.isPending}
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-9",
+                            !dateRange.from && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 size-4" />
+                          {dateRange.from ? (
+                            dateRange.to ? (
+                              <>
+                                {format(dateRange.from, "LLL dd, yyyy")} –{" "}
+                                {format(dateRange.to, "LLL dd, yyyy")}
+                              </>
+                            ) : (
+                              format(dateRange.from, "LLL dd, yyyy")
+                            )
+                          ) : (
+                            <span>Pick duration dates</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          autoFocus
+                          mode="range"
+                          defaultMonth={dateRange.from}
+                          selected={dateRange}
+                          onSelect={handleRangeSelect}
+                          numberOfMonths={2}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </Field>
+                );
+              }}
+            />
+          </FieldGroup>
+
+          <DialogFooter className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={attemptClose}
+              disabled={updateSemesterMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isDirty] as const}
+              children={([canSubmit, isDirty]) => (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!canSubmit || !isDirty || updateSemesterMutation.isPending}
+                  onClick={() => form.handleSubmit()}
+                >
+                  {updateSemesterMutation.isPending ? "Saving..." : "Update Semester"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Confirmation Alert */}
+      <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Semester Record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingValue &&
+                `This will update SY ${pendingValue.school_year_start}–${Number(pendingValue.school_year_start) + 1} (${pendingValue.semester_term} Semester) duration to run from ${pendingValue.start_date} to ${pendingValue.end_date}.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updateSemesterMutation.isPending}>
+              Keep Editing
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} disabled={updateSemesterMutation.isPending}>
+              {updateSemesterMutation.isPending ? "Updating..." : "Yes, Update"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Discard Confirmation Alert */}
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes in this form. Closing now will lose all modifications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+semester/page/SemestersPage.tsx
+---
+import { useState } from "react";
+import { isWithinInterval, parseISO, format } from "date-fns";
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  X,
+} from "lucide-react";
+import type { DateRange } from "react-day-picker";
+
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DataTable } from "@/components/main-data-table";
+import type { DataTableColumn } from "@/components/main-data-table";
+
+import type { SemesterSearch, SemesterSelect } from "backend/types/semester.type";
+import { useSemesters } from "../api/semester.service";
+import { SemesterCreateDialog } from "../components/SemesterCreate";
+import { SemesterEditDialog } from "../components/SemesterEdit";
+
+// Helper function to check active status dynamically on the frontend
+const getSemesterStatus = (startDateStr: string, endDateStr: string) => {
+  const today = new Date();
+  try {
+    const start = parseISO(startDateStr);
+    const end = parseISO(endDateStr);
+
+    const isActive = isWithinInterval(today, { start, end });
+    if (isActive) {
+      return {
+        label: "Active",
+        className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+      };
+    }
+    if (today < start) {
+      return {
+        label: "Upcoming",
+        className: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+      };
+    }
+    return {
+      label: "Ended",
+      className: "border-border/50 bg-muted/60 text-muted-foreground",
+    };
+  } catch {
+    return {
+      label: "Unknown",
+      className: "border-destructive/20 bg-destructive/10 text-destructive",
+    };
+  }
+};
+
+const columns: Array<DataTableColumn<SemesterSelect>> = [
+  {
+    header: "School Year",
+    cell: (row) => (
+      <span className="text-xs font-semibold tracking-tight text-foreground">
+        SY {row.school_year_start}–{Number(row.school_year_start) + 1}
+      </span>
+    ),
+  },
+  {
+    header: "Term",
+    cell: (row) => (
+      <span className="text-xs font-medium text-muted-foreground">
+        {row.semester_term} Semester
+      </span>
+    ),
+  },
+  {
+    header: "Start Date",
+    cell: (row) => (
+      <span className="inline-block rounded-md border border-border/40 bg-muted/50 px-2 py-0.5 font-mono text-[11px] font-medium text-foreground/90">
+        {row.start_date}
+      </span>
+    ),
+  },
+  {
+    header: "End Date",
+    cell: (row) => (
+      <span className="inline-block rounded-md border border-border/40 bg-muted/50 px-2 py-0.5 font-mono text-[11px] font-medium text-foreground/90">
+        {row.end_date}
+      </span>
+    ),
+  },
+  {
+    header: "Status",
+    cell: (row) => {
+      const status = getSemesterStatus(row.start_date, row.end_date);
+      return (
+        <span
+          className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium ${status.className}`}
+        >
+          {status.label}
+        </span>
+      );
+    },
+  },
+  {
+    header: "Actions",
+    className: "text-right",
+    cell: (row) => (
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 cursor-pointer rounded-lg p-0 hover:bg-muted"
+            >
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="size-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-36 p-1">
+            <DropdownMenuItem
+              className="cursor-pointer p-0 focus:bg-transparent hover:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <SemesterEditDialog semester={row} icon={Pencil} triggerText="Edit" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    ),
+  },
+];
+
+export const SemesterPage = () => {
+  const [page, setPage] = useState(1);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  const queryParams: SemesterSearch = {
+    page,
+    search: undefined,
+    orderBy: "created_at",
+    orderDir: "desc",
+    school_year_start_from: dateRange?.from ? dateRange.from.getFullYear() : undefined,
+    school_year_start_to: dateRange?.to ? dateRange.to.getFullYear() : undefined,
+  };
+
+  const {
+    data: semesterResponse,
+    isPending: isSemestersPending,
+    isError: isSemestersError,
+    error: semesterError,
+  } = useSemesters(queryParams);
+
+  const handleDateSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+    setPage(1);
+  };
+
+  const clearDateRange = () => {
+    setDateRange(undefined);
+    setPage(1);
+  };
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            Academic Semesters
+          </h1>
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            Manage academic years, terms, and date schedules for evaluation cycles.
+          </p>
+        </div>
+
+        {/* ── Table Shell ─────────────────────────────────────────────────── */}
+        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+          <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Date Range Picker Filter */}
+            <div className="flex items-center gap-2 w-full max-w-xs">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-full justify-start rounded-lg text-left text-xs font-normal border-border/60"
+                  >
+                    <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "LLL dd, y")} -{" "}
+                          {format(dateRange.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">Filter by date range...</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={handleDateSelect}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {dateRange && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearDateRange}
+                  className="h-8 rounded-lg px-2 text-xs"
+                >
+                  <X className="size-3.5" />
+                </Button>
+              )}
+            </div>
+
+            <SemesterCreateDialog icon={Plus} triggerText="Add Semester" />
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={semesterResponse?.data ?? []}
+            getRowId={(row) => row.id}
+            isLoading={isSemestersPending}
+            isError={isSemestersError}
+            error={semesterError}
+            emptyMessage="No academic semesters found for the selected date range."
+          />
+
+          {/* ── Pagination Footer ─────────────────────────────────────────── */}
+          <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
+            <span>
+              {semesterResponse?.pagination
+                ? `Page ${semesterResponse.pagination.currentPage} of ${semesterResponse.pagination.totalPage}`
+                : "Loading page info..."}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={!semesterResponse?.pagination?.hasPrev || isSemestersPending}
+              >
+                <ChevronLeft className="size-3.5" />
+              </Button>
+              <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
+                {semesterResponse?.pagination?.currentPage ?? 1}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!semesterResponse?.pagination?.hasNext || isSemestersPending}
+              >
+                <ChevronRight className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SemesterPage;
+
+
+---

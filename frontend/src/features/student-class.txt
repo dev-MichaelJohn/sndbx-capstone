@@ -1,0 +1,996 @@
+student-class/api/student-class.service.ts
+---
+import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type {
+  EligibleStudentOption,
+  StudentClassInsert,
+  StudentClassSearch,
+  StudentClassSelect,
+  StudentClassWithDetails,
+} from "backend/types/student-class.type";
+import { apiClient, getErrorMessage } from "@/lib/api.lib";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// Fetch paginated student class records for a specific course offering[cite: 1, 4]
+export const getCourseOfferingStudents = async (
+  courseOfferingId: number,
+  params: Partial<StudentClassSearch> = {},
+) => {
+  try {
+    const response = await apiClient.get<APIResponse<PaginatedData<StudentClassWithDetails[]>>>(
+      `/protected/course-offerings/${courseOfferingId}/student-classes`,
+      { params },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Failed to fetch enrolled students for course offering."),
+      { cause: error },
+    );
+  }
+};
+
+export const useCourseOfferingStudents = (
+  courseOfferingId: number,
+  params: Partial<StudentClassSearch>,
+  options?: { enabled?: boolean },
+) => {
+  const fullParams: StudentClassSearch = {
+    search: undefined,
+    page: 1,
+    orderBy: "id",
+    orderDir: "asc",
+    ...params,
+  };
+
+  return useQuery({
+    queryKey: ["courseOfferings", courseOfferingId, "studentClasses", fullParams],
+    queryFn: () => getCourseOfferingStudents(courseOfferingId, fullParams),
+    enabled: !!courseOfferingId && (options?.enabled ?? true),
+  });
+};
+
+// Fetch eligible students available for enrollment in a specific course offering
+export const getEligibleStudentsForOffering = async (courseOfferingId: number, search?: string) => {
+  try {
+    const response = await apiClient.get<APIResponse<EligibleStudentOption[]>>(
+      `/protected/course-offerings/${courseOfferingId}/student-classes/eligible-students`,
+      { params: { search: search?.trim() || undefined } },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Failed to fetch eligible students for course offering."),
+      { cause: error },
+    );
+  }
+};
+
+export const useEligibleStudentsForOffering = (
+  courseOfferingId: number,
+  search?: string,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: ["courseOfferings", courseOfferingId, "eligibleStudents", search],
+    queryFn: () => getEligibleStudentsForOffering(courseOfferingId, search),
+    enabled: !!courseOfferingId && (options?.enabled ?? true),
+  });
+};
+
+// Enroll an irregular student in a course offering[cite: 1]
+const enrollIrregularStudentRecord = async (payload: StudentClassInsert) => {
+  try {
+    const response = await apiClient.post<APIResponse<StudentClassSelect>>(
+      "/protected/student-classes",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to enroll student."), {
+      cause: error,
+    });
+  }
+};
+
+export const useEnrollIrregularStudent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: enrollIrregularStudentRecord,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["courseOfferings", variables.course_offering_id, "studentClasses"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["courseOfferings", variables.course_offering_id, "eligibleStudents"],
+      });
+    },
+  });
+};
+
+// Drop a student from a course offering[cite: 1]
+const dropStudentFromOfferingRecord = async (studentClassId: number) => {
+  try {
+    const response = await apiClient.delete<APIResponse>(
+      `/protected/student-classes/${studentClassId}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to drop student from course offering."), {
+      cause: error,
+    });
+  }
+};
+
+export const useDropStudentFromOffering = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: dropStudentFromOfferingRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courseOfferings"] });
+      queryClient.invalidateQueries({ queryKey: ["studentClasses"] });
+    },
+  });
+};
+
+
+---
+student-class/components/EligibleStudentSearch.tsx
+---
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import type { EligibleStudentOption } from "backend/types/student-class.type";
+
+interface EligibleStudentSearchProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  students: EligibleStudentOption[] | undefined;
+  isLoading: boolean;
+  selected: EligibleStudentOption | null;
+  onSelect: (student: EligibleStudentOption) => void;
+  onClear: () => void;
+}
+
+export function EligibleStudentSearch({
+  search,
+  onSearchChange,
+  students,
+  isLoading,
+  selected,
+  onSelect,
+  onClear,
+}: EligibleStudentSearchProps) {
+  if (selected) {
+    const sectionBadge =
+      selected.program_name && selected.class_year_level && selected.class_section
+        ? `${selected.program_name} ${selected.class_year_level}-${selected.class_section}`
+        : "Irregular / Unassigned";
+
+    return (
+      <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-3 text-xs">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-foreground">{selected.student_name}</span>
+            <span className="font-mono text-[10px] text-muted-foreground">
+              ({selected.institutional_id})
+            </span>
+          </div>
+          <span className="w-fit rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+            {sectionBadge}
+          </span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 cursor-pointer rounded-lg px-2 text-xs hover:bg-background"
+          onClick={onClear}
+        >
+          Change
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Command className="w-full rounded-xl border shadow-xs" shouldFilter={false}>
+      <CommandInput
+        placeholder="Search student name or ID..."
+        value={search}
+        onValueChange={onSearchChange}
+        className="text-xs"
+      />
+      <CommandList className="max-h-56">
+        {isLoading ? (
+          <CommandEmpty className="py-4 text-xs text-muted-foreground">
+            Searching student records...
+          </CommandEmpty>
+        ) : !students?.length ? (
+          <CommandEmpty className="py-4 text-xs text-muted-foreground">
+            No eligible students found.
+          </CommandEmpty>
+        ) : (
+          <CommandGroup>
+            {students.map((student) => {
+              const homeSection =
+                student.program_name && student.class_year_level && student.class_section
+                  ? `${student.program_name} ${student.class_year_level}-${student.class_section}`
+                  : "Irregular / Unassigned";
+
+              return (
+                <CommandItem
+                  key={student.student_account_id}
+                  value={String(student.student_account_id)}
+                  onSelect={() => onSelect(student)}
+                  className="flex cursor-pointer items-center justify-between py-2"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium text-foreground">
+                      {student.student_name}
+                    </span>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {student.institutional_id}
+                    </span>
+                  </div>
+                  <span className="rounded-md border bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {homeSection}
+                  </span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
+      </CommandList>
+    </Command>
+  );
+}
+
+
+---
+student-class/components/StudentClassCards.tsx
+---
+import { Users, UserCheck, ArrowLeftRight } from "lucide-react";
+import { Card } from "@/components/ui/card";
+
+interface CourseOfferingRosterCardsProps {
+  totalEnrolled: number;
+  regularEnrolled: number;
+  crossEnrolled: number;
+  isLoading?: boolean;
+}
+
+const stats = [
+  {
+    title: "Total Enrolled",
+    key: "totalEnrolled",
+    icon: Users,
+    accent: "primary",
+    helper: "Course offering roster size",
+  },
+  {
+    title: "Section Members",
+    key: "regularEnrolled",
+    icon: UserCheck,
+    accent: "emerald",
+    helper: "Enrolled from primary class",
+  },
+  {
+    title: "Cross-Enrolled",
+    key: "crossEnrolled",
+    icon: ArrowLeftRight,
+    accent: "amber",
+    helper: "Irregular / outside sections",
+  },
+];
+
+const accentStyles = {
+  primary: {
+    bar: "bg-primary",
+    iconBg: "bg-primary/10 text-primary",
+    shadow: "hover:shadow-primary/20",
+    border: "hover:border-primary/40",
+    text: "text-foreground",
+  },
+  emerald: {
+    bar: "bg-emerald-500",
+    iconBg: "bg-emerald-500/10 text-emerald-500",
+    shadow: "hover:shadow-emerald-500/20",
+    border: "hover:border-emerald-500/40",
+    text: "text-emerald-500",
+  },
+  amber: {
+    bar: "bg-amber-500",
+    iconBg: "bg-amber-500/10 text-amber-500",
+    shadow: "hover:shadow-amber-500/20",
+    border: "hover:border-amber-500/40",
+    text: "text-amber-500",
+  },
+} as const;
+
+export const CourseOfferingRosterCards = ({
+  totalEnrolled,
+  regularEnrolled,
+  crossEnrolled,
+  isLoading = false,
+}: CourseOfferingRosterCardsProps) => {
+  const values = { totalEnrolled, regularEnrolled, crossEnrolled };
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {stats.map((item) => {
+        const Icon = item.icon;
+        const styles = accentStyles[item.accent as keyof typeof accentStyles];
+        const value = values[item.key as keyof typeof values];
+
+        return (
+          <Card
+            key={item.title}
+            className={`
+              group relative overflow-hidden rounded-lg border bg-card
+              shadow-sm transition-all duration-200
+              hover:-translate-y-1 hover:shadow-md
+              ${styles.shadow} ${styles.border}
+            `}
+          >
+            {/* Accent bar */}
+            <div
+              className={`
+                absolute left-0 top-0 h-1 w-full
+                transition-all duration-300 ease-out
+                group-hover:w-[110%] group-hover:scale-x-105
+                ${styles.bar}
+              `}
+            />
+
+            <div className="flex items-center justify-between p-4">
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+                  {item.title}
+                </p>
+                <h2 className={`text-2xl font-semibold tracking-tight ${styles.text}`}>
+                  {isLoading ? "—" : value}
+                </h2>
+                <p className="text-[10px] text-muted-foreground/50">{item.helper}</p>
+              </div>
+
+              {/* Icon container */}
+              <div
+                className={`
+                  flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
+                  transition-all duration-200 ease-out
+                  group-hover:scale-105 group-hover:rotate-1
+                  ${styles.iconBg}
+                `}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+
+---
+student-class/components/StudentClassColumns.tsx
+---
+import type { StudentClassWithDetails } from "backend/types/student-class.type";
+import type { DataTableColumn } from "@/components/main-data-table";
+import { Button } from "@/components/ui/button";
+import { UserMinus } from "lucide-react";
+
+export interface GetStudentClassColumnsProps {
+  onDrop: (record: StudentClassWithDetails) => void;
+  isDropping?: boolean;
+  officialStudentAccountIds?: Set<number>;
+}
+
+const getInitials = (name: string) => {
+  if (!name) return "ST";
+
+  if (name.includes(",")) {
+    const [lastName, firstName] = name.split(",").map((s) => s.trim());
+    const firstInitial = firstName ? firstName[0] : "";
+    const lastInitial = lastName ? lastName[0] : "";
+    return `${firstInitial}${lastInitial}`.toUpperCase() || "ST";
+  }
+
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    const firstInitial = parts[0][0];
+    const lastInitial = parts[parts.length - 1][0];
+    return `${firstInitial}${lastInitial}`.toUpperCase();
+  }
+
+  return parts[0].slice(0, 2).toUpperCase();
+};
+
+export const getStudentClassColumns = ({
+  onDrop,
+  isDropping,
+  officialStudentAccountIds,
+}: GetStudentClassColumnsProps): DataTableColumn<StudentClassWithDetails>[] => [
+  {
+    header: "Institutional ID",
+    cell: (row) => (
+      <span className="inline-block rounded-md border border-border/40 bg-muted/50 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground/90">
+        {row.institutional_id || "N/A"}
+      </span>
+    ),
+  },
+  {
+    header: "Student Name",
+    cell: (row) => {
+      const initials = getInitials(row.student_name);
+
+      return (
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+            {initials}
+          </div>
+          <span className="text-xs font-semibold tracking-tight text-foreground">
+            {row.student_name}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    header: "Enrollment Type",
+    cell: (row) => {
+      const isRegular = officialStudentAccountIds?.has(row.student_account_id);
+
+      return isRegular ? (
+        <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-500">
+          Regular
+        </span>
+      ) : (
+        <span className="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-500">
+          Cross-Enrolled
+        </span>
+      );
+    },
+  },
+  {
+    header: "Home Class",
+    cell: (row) => (
+      <div className="inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+        <span>{row.program_name}</span>
+        <span className="text-muted-foreground/30">•</span>
+        <span>
+          Year {row.class_year_level}-{row.class_section}
+        </span>
+      </div>
+    ),
+  },
+  {
+    header: "Actions",
+    className: "text-right",
+    cell: (row) => (
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isDropping}
+          onClick={() => onDrop(row)}
+          className="h-7 cursor-pointer rounded-lg px-2.5 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
+        >
+          <UserMinus className="mr-1.5 size-3.5" />
+          Drop
+        </Button>
+      </div>
+    ),
+  },
+];
+
+
+---
+student-class/components/StudentClassCreate.tsx
+---
+import { useState, useEffect } from "react";
+import { useForm } from "@tanstack/react-form";
+import type { LucideIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
+
+import { EligibleStudentSearch } from "./EligibleStudentSearch";
+import {
+  useEligibleStudentsForOffering,
+  useEnrollIrregularStudent,
+} from "../api/student-class.service";
+import type { EligibleStudentOption, StudentClassInsert } from "backend/types/student-class.type";
+import { useEntityDialog } from "@/hooks/use-entity-dialog";
+
+interface CourseOfferingStudentEnrollDialogProps {
+  courseOfferingId: number;
+  icon?: LucideIcon;
+  triggerText?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export const CourseOfferingStudentEnrollDialog = ({
+  courseOfferingId,
+  icon: Icon,
+  triggerText = "Enroll Student",
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+}: CourseOfferingStudentEnrollDialogProps) => {
+  const [studentSearch, setStudentSearch] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState<EligibleStudentOption | null>(null);
+
+  const { mutateAsync, isPending } = useEnrollIrregularStudent();
+
+  const { data: eligibleStudents, isLoading: isStudentsLoading } = useEligibleStudentsForOffering(
+    courseOfferingId,
+    studentSearch,
+  );
+
+  const initialFormData: StudentClassInsert = {
+    course_offering_id: courseOfferingId,
+    student_account_id: 0,
+  };
+
+  const form = useForm({
+    defaultValues: initialFormData,
+    onSubmit: (values) => dialog.handleFormSubmit(values),
+  });
+
+  const resetStudentState = () => {
+    setStudentSearch("");
+    setSelectedStudent(null);
+  };
+
+  const dialog = useEntityDialog<StudentClassInsert>({
+    form,
+    mutationFn: mutateAsync,
+    loadingText: "Enrolling student...",
+    successText: "Student successfully enrolled in course offering.",
+    onReset: resetStudentState,
+  });
+
+  useEffect(() => {
+    if (setControlledOpen && controlledOpen !== dialog.open) {
+      setControlledOpen(dialog.open);
+    }
+  }, [dialog.open, controlledOpen, setControlledOpen]);
+
+  useEffect(() => {
+    if (controlledOpen && !dialog.open) {
+      dialog.handleOpenChange(true);
+    }
+  }, [controlledOpen]);
+
+  const handleOpenChange = (newOpen: boolean) => {
+    dialog.handleOpenChange(newOpen);
+  };
+
+  const handleConfirmDiscard = () => {
+    dialog.confirmDiscard();
+    setControlledOpen?.(false);
+  };
+
+  const enrollSummary = selectedStudent
+    ? `${selectedStudent.student_name} will be enrolled into this course offering.`
+    : "Please select a student to enroll.";
+
+  return (
+    <>
+      <Dialog open={dialog.open} onOpenChange={handleOpenChange}>
+        {Icon && (
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium"
+            >
+              <Icon className="size-3.5" />
+              <span>{triggerText}</span>
+            </Button>
+          </DialogTrigger>
+        )}
+        <DialogContent className="rounded-xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold">
+              Enroll Student in Offering
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Search and select an active student account to enroll them directly into this course
+              offering roster.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup className="py-2">
+            <form.Field
+              name="student_account_id"
+              children={() => (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Select Student</Label>
+                  <EligibleStudentSearch
+                    search={studentSearch}
+                    onSearchChange={setStudentSearch}
+                    students={eligibleStudents}
+                    isLoading={isStudentsLoading}
+                    selected={selectedStudent}
+                    onSelect={(student) => {
+                      form.setFieldValue("student_account_id", student.student_account_id);
+                      setSelectedStudent(student);
+                    }}
+                    onClear={() => {
+                      setSelectedStudent(null);
+                      form.setFieldValue("student_account_id", 0);
+                    }}
+                  />
+                </div>
+              )}
+            />
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={dialog.attemptClose}
+              disabled={isPending}
+              className="h-8 rounded-lg text-xs"
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit] as const}
+              children={([canSubmit]) => (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!canSubmit || !selectedStudent || isPending}
+                  onClick={() => form.handleSubmit()}
+                  className="h-8 rounded-lg text-xs"
+                >
+                  {isPending ? "Enrolling..." : "Enroll Student"}
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-semibold">
+              Confirm Student Enrollment?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              {enrollSummary}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending} className="h-8 rounded-lg text-xs">
+              Go back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={dialog.confirmSave}
+              disabled={isPending}
+              className="h-8 rounded-lg text-xs"
+            >
+              {isPending ? "Enrolling..." : "Yes, enroll student"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-semibold">
+              Discard changes?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              You have selected a student. Closing now will cancel this enrollment action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-8 rounded-lg text-xs">Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDiscard} className="h-8 rounded-lg text-xs">
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+
+---
+student-class/page/StudentClassPage.tsx
+---
+import { useState, useMemo } from "react";
+import { useNavigate, useParams } from "react-router";
+import { ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DataTable } from "@/components/main-data-table";
+
+import type { StudentClassWithDetails } from "backend/types/student-class.type";
+import {
+  useCourseOfferingStudents,
+  useDropStudentFromOffering,
+} from "../api/student-class.service";
+import { useClassStudents } from "@/features/class-student/api/class-student.service";
+import { getStudentClassColumns } from "../components/StudentClassColumns";
+import { CourseOfferingStudentEnrollDialog } from "../components/StudentClassCreate";
+import { CourseOfferingRosterCards } from "../components/StudentClassCards";
+
+export const CourseOfferingStudentsPage = () => {
+  const navigate = useNavigate();
+  const { classId, id } = useParams<{ classId?: string; id?: string }>();
+  const courseOfferingId = Number(id);
+  const currentClassId = Number(classId);
+
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+
+  const [isEnrollOpen, setIsEnrollOpen] = useState(false);
+  const [droppingStudent, setDroppingStudent] = useState<StudentClassWithDetails | null>(null);
+
+  // Fetch enrolled students for this course offering
+  const {
+    data: offeringStudentsResponse,
+    isPending: isOfferingStudentsPending,
+    isError: isStudentsError,
+    error: studentsError,
+  } = useCourseOfferingStudents(courseOfferingId, {
+    search: search.trim() || undefined,
+    page,
+  });
+
+  // Fetch official class section roster to cross-reference section members
+  const { data: officialClassResponse, isPending: isOfficialClassPending } = useClassStudents(
+    { class_id: currentClassId },
+    { enabled: !!currentClassId },
+  );
+
+  const dropMutation = useDropStudentFromOffering();
+
+  const handleConfirmDrop = async () => {
+    if (!droppingStudent) return;
+    try {
+      await dropMutation.mutateAsync(droppingStudent.id);
+      toast.success("Student successfully dropped from course offering.");
+      setDroppingStudent(null);
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  const officialStudentAccountIds = useMemo(() => {
+    if (!officialClassResponse?.data) return new Set<number>();
+    return new Set(officialClassResponse.data.map((s) => s.student_account_id));
+  }, [officialClassResponse]);
+
+  const columns = useMemo(
+    () =>
+      getStudentClassColumns({
+        onDrop: (student) => setDroppingStudent(student),
+        isDropping: dropMutation.isPending,
+        officialStudentAccountIds,
+      }),
+    [dropMutation.isPending, officialStudentAccountIds],
+  );
+
+  // Metrics Calculation
+  const enrolledList = offeringStudentsResponse?.data ?? [];
+  const totalEnrolled = offeringStudentsResponse?.pagination?.totalItems ?? enrolledList.length;
+
+  const regularEnrolled = useMemo(() => {
+    if (!enrolledList.length) return 0;
+    return enrolledList.filter((student) => {
+      if ("class_id" in student && student.class_id) {
+        return student.class_id === currentClassId;
+      }
+      return officialStudentAccountIds.has(student.student_account_id);
+    }).length;
+  }, [enrolledList, currentClassId, officialStudentAccountIds]);
+
+  const crossEnrolled = useMemo(() => {
+    return Math.max(0, totalEnrolled - regularEnrolled);
+  }, [totalEnrolled, regularEnrolled]);
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        {/* Header Navigation */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="size-9 shrink-0 cursor-pointer rounded-lg border-border/60 hover:bg-muted/80 hover:text-foreground"
+            title="Back"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              Course Offering Roster
+            </h1>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              Manage course enrollments, drop records, and enroll irregular students.
+            </p>
+          </div>
+        </div>
+
+        {/* Roster KPI Summary Cards */}
+        <CourseOfferingRosterCards
+          totalEnrolled={totalEnrolled}
+          regularEnrolled={regularEnrolled}
+          crossEnrolled={crossEnrolled}
+          isLoading={isOfferingStudentsPending || isOfficialClassPending}
+        />
+
+        {/* Data Table Shell */}
+        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
+          <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Search students..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="h-8 rounded-lg pl-8 text-xs"
+              />
+            </div>
+
+            <Button
+              size="sm"
+              className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
+              onClick={() => setIsEnrollOpen(true)}
+            >
+              <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
+            </Button>
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={enrolledList}
+            getRowId={(row) => row.id}
+            isLoading={isOfferingStudentsPending}
+            isError={isStudentsError}
+            error={studentsError}
+            emptyMessage="No students currently enrolled in this course offering."
+          />
+
+          {/* Footer Pagination */}
+          <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
+            <span>
+              {offeringStudentsResponse?.pagination
+                ? `Page ${offeringStudentsResponse.pagination.currentPage} of ${offeringStudentsResponse.pagination.totalPage}`
+                : "Loading page info..."}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={
+                  !offeringStudentsResponse?.pagination?.hasPrev || isOfferingStudentsPending
+                }
+              >
+                <ChevronLeft className="size-3.5" />
+              </Button>
+              <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
+                {offeringStudentsResponse?.pagination?.currentPage ?? 1}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={
+                  !offeringStudentsResponse?.pagination?.hasNext || isOfferingStudentsPending
+                }
+              >
+                <ChevronRight className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enrollment Dialog */}
+      <CourseOfferingStudentEnrollDialog
+        open={isEnrollOpen}
+        onOpenChange={setIsEnrollOpen}
+        courseOfferingId={courseOfferingId}
+      />
+
+      {/* Drop Confirmation Alert */}
+      <AlertDialog
+        open={!!droppingStudent}
+        onOpenChange={(open) => !open && setDroppingStudent(null)}
+      >
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-semibold">
+              Drop Student Enrollment?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              {droppingStudent && (
+                <>
+                  Are you sure you want to drop{" "}
+                  <strong className="text-foreground">{droppingStudent.student_name}</strong> from
+                  this course offering? This will remove their record from the class roster.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dropMutation.isPending} className="h-8 rounded-lg text-xs">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDrop}
+              disabled={dropMutation.isPending}
+              className="h-8 rounded-lg bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
+            >
+              {dropMutation.isPending ? "Dropping..." : "Yes, drop student"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+
+---

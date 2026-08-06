@@ -2,13 +2,23 @@ import express, { type Express } from "express";
 import passport from "passport";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 import "@/configs/passport.config.js";
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
 
 /**
  * Builds and configures the Express app instance: JSON body parsing,
  * Passport initialization (strategies registered via the side-effect
- * import of `passport.config.js`), cookie parsing, and CORS for the
- * frontend's local dev origin.
+ * import of `passport.config.js`), cookie parsing, CORS for the
+ * frontend's local dev origin (with PDF content-type exposed), and a
+ * global rate limiter.
  *
  * @returns a configured but not-yet-listening Express app
  */
@@ -22,9 +32,10 @@ export const createApp = (): Express => {
     cors({
       origin: "http://localhost:5173",
       credentials: true,
-      exposedHeaders: ["x-access-token"],
+      exposedHeaders: ["x-access-token", "Content-Disposition"],
     }),
   );
+  app.use(limiter);
 
   return app;
 };
