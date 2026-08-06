@@ -1,6 +1,8 @@
 "use client";
 
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
+import { useNavigate } from "react-router";
+import { useUser } from "@/features/auth/context/user.context";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -29,6 +31,15 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const navigate = useNavigate();
+  const { logout } = useUser();
+
+  const handleLogout = async () => {
+    if (logout) {
+      await logout();
+    }
+    navigate("/auth/login", { replace: true });
+  };
 
   return (
     <SidebarMenu>
@@ -69,15 +80,14 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/sys/settings")}>
                 <Settings />
                 Account Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

@@ -1,4 +1,6 @@
 import { AccountRoles, Roles } from "@/schemas/auth.schema.js";
+import type { IAuthService } from "@/services/auth.service.js";
+import AuthService from "@/services/auth.service.js";
 import { GetRecord, GetRecords } from "@/services/db.service.js";
 import EmailService, { type IEmailService } from "@/services/email.service.js";
 import OTPService, { type IOTPService } from "@/services/otp.service.js";
@@ -36,6 +38,7 @@ type RefreshTokenResponseData = {
  */
 class authController {
   constructor(
+    private authService: IAuthService = AuthService,
     private otpService: IOTPService = OTPService,
     private tokenService: ITokenService = TokenService,
     private emailService: IEmailService = EmailService,
@@ -45,6 +48,12 @@ class authController {
     this.verifyOTP = this.verifyOTP.bind(this);
     this.refresh = this.refresh.bind(this);
     this.verifyJWT = this.verifyJWT.bind(this);
+    this.isVerified = this.isVerified.bind(this);
+    this.getVerificationStatus = this.getVerificationStatus.bind(this);
+    this.requestEmailVerification = this.requestEmailVerification.bind(this);
+    this.confirmEmailVerification = this.confirmEmailVerification.bind(this);
+    this.requestPasswordChange = this.requestPasswordChange.bind(this);
+    this.confirmPasswordChange = this.confirmPasswordChange.bind(this);
   }
   generateResendTime(expires_at: Date) {
     const OTP_LIFESPAN_MS = 5 * 60 * 1000; // 5 minutes
@@ -319,6 +328,161 @@ class authController {
     try {
       if (!req.user) throw new AppError(401, "Token expired. Please log in again");
       const response = createAPIResponse(200, "Session valid.", req.user);
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Logs out the current user by revoking the refresh token and clearing cookies.
+   */
+  logout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const refreshToken = req.cookies?.refresh;
+      if (refreshToken) {
+        await this.tokenService.deleteRefreshToken(refreshToken);
+      }
+
+      const cookieOptions = this.tokenService.generateCookieOptions();
+      res.clearCookie("refresh", cookieOptions);
+
+      const response = createAPIResponse(200, "Successfully logged out.", null);
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  isVerified = async (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) throw new AppError(401, "Token expired. Please log in again");
+      const verified = await this.authService.checkIfVerified(req.user);
+      if (!verified)
+        throw new AppError(
+          401,
+          "Account is not yet verified. Please verify your email in account settings.",
+        );
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Returns the email verification status of the current logged-in user.
+   */
+  getVerificationStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) throw new AppError(401, "Authentication required.");
+
+      const isVerified = await this.authService.checkIfVerified(req.user);
+      const response = createAPIResponse(200, "Verification status retrieved.", {
+        isVerified,
+      });
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Dispatches an email verification OTP to the logged-in user.
+   */
+  requestEmailVerification = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) throw new AppError(401, "Authentication required.");
+
+      const result = await this.authService.requestEmailVerification(req.user.email);
+      const otpCode = await this.otpService.findActiveOTP({ email: req.user.email });
+
+      if (otpCode.hasActive) {
+        await this.emailService.sendEmail({
+          to: req.user.email,
+          options: {
+            subject: "Email Verification Code",
+            text: GenerateOTPTextTemplate(otpCode.otpData.code),
+            html: GenerateOTPHtmlTemplate(otpCode.otpData.code),
+          },
+        });
+      }
+
+      const resendAt = this.generateResendTime(result.expires_at);
+      const response = createAPIResponse(200, "Verification code sent to your email address.", {
+        email: req.user.email,
+        resendAt,
+      });
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Confirms email verification using the 8-character OTP code.
+   */
+  confirmEmailVerification = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) throw new AppError(401, "Authentication required.");
+
+      const { code } = req.body;
+      await this.authService.confirmEmailVerification(req.user.email, code);
+
+      const response = createAPIResponse(200, "Email address successfully verified.", null);
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Validates current password and dispatches an OTP for password change 2FA.
+   */
+  requestPasswordChange = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) throw new AppError(401, "Authentication required.");
+
+      const result = await this.authService.requestPasswordChange(
+        req.user.id,
+        req.user.email,
+        req.body,
+      );
+
+      const otpCode = await this.otpService.findActiveOTP({ email: req.user.email });
+      if (otpCode.hasActive) {
+        await this.emailService.sendEmail({
+          to: req.user.email,
+          options: {
+            subject: "Security Notice: Password Change Request Code",
+            text: GenerateOTPTextTemplate(otpCode.otpData.code),
+            html: GenerateOTPHtmlTemplate(otpCode.otpData.code),
+          },
+        });
+      }
+
+      const resendAt = this.generateResendTime(result.expires_at);
+      const response = createAPIResponse(
+        200,
+        "Password update authorization code sent to your email.",
+        { resendAt },
+      );
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Confirms password change using the OTP code and updates the user's password.
+   */
+  confirmPasswordChange = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) throw new AppError(401, "Authentication required.");
+
+      await this.authService.confirmPasswordChange(req.user.email, req.body);
+
+      const response = createAPIResponse(200, "Password successfully updated.", null);
       res.status(response.status).json(response);
     } catch (error) {
       next(error);

@@ -40,6 +40,7 @@ export interface ITokenService {
     rememberMe?: boolean,
   ): Promise<RefreshTokenSelect>;
   verifyToken(token: string): Promise<{ accountId: number; email: string }>;
+  deleteRefreshToken(token: string): Promise<boolean>;
 }
 
 /**
@@ -236,6 +237,41 @@ class tokenService implements ITokenService {
       accountId: decoded.id,
       email: decoded.email,
     };
+  }
+
+  /**
+   * Revokes a active refresh token record during logout.
+   * Decodes token payload without strict expiration throw to allow revoking expired tokens.
+   *
+   * @param token - the raw refresh token string to revoke
+   * @returns true if token was matched and revoked, false otherwise
+   */
+  async deleteRefreshToken(token: string): Promise<boolean> {
+    try {
+      const decoded = jwt.decode(token) as JWTRefreshToken | null;
+      if (!decoded?.id || !decoded?.email) return false;
+
+      const userTokens = await GetRecords("RefreshToken", {
+        where: (RefreshToken) =>
+          and(
+            eq(RefreshToken.account_id, decoded.id),
+            eq(RefreshToken.email, decoded.email),
+            eq(RefreshToken.is_revoked, false),
+          ),
+      });
+
+      for (const record of userTokens) {
+        const isMatch = await bcrypt.compare(token, record.token_hash);
+        if (isMatch) {
+          await UpdateRecord("RefreshToken", record.id, { is_revoked: true }, RefreshToken.id);
+          return true;
+        }
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
   }
 }
 

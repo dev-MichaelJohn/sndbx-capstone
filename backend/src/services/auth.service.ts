@@ -1,4 +1,4 @@
-import { GetRecord, HardDeleteRecord } from "./db.service.js";
+import { GetRecord, HardDeleteRecord, UpdateRecord } from "./db.service.js";
 import { and, eq, isNull } from "drizzle-orm";
 import { AppError } from "@/utils/error.util.js";
 import bcrypt from "bcryptjs";
@@ -13,6 +13,14 @@ import {
 import type { IUserService } from "./user.service.js";
 import UserService from "./user.service.js";
 import { VerifyOTPSchema, type VerifyOTPType } from "@/types/otp.type.js";
+import { Accounts } from "@/schemas/auth.schema.js";
+import {
+  ConfirmPasswordChangeSchema,
+  RequestPasswordChangeSchema,
+  VerifyEmailConfirmSchema,
+  type ConfirmPasswordChangeType,
+  type RequestPasswordChangeType,
+} from "@/types/auth.type.js";
 
 /** An Accounts row with the password field stripped, as returned to callers. */
 type SafeAccount = Omit<AccountSelect, "password">;
@@ -28,6 +36,16 @@ export interface IAuthService {
   authenticateJWT(
     payload: JWTPayloadType,
   ): Promise<{ success: boolean; message: string } | { success: boolean; user: UserType }>;
+
+  checkIfVerified(user: Express.User): Promise<boolean>;
+  requestEmailVerification(email: string): Promise<{ expires_at: Date }>;
+  confirmEmailVerification(email: string, code: string): Promise<boolean>;
+  requestPasswordChange(
+    userId: number,
+    email: string,
+    data: RequestPasswordChangeType,
+  ): Promise<{ expires_at: Date }>;
+  confirmPasswordChange(email: string, data: ConfirmPasswordChangeType): Promise<boolean>;
 }
 
 /**
@@ -115,6 +133,115 @@ class authService implements IAuthService {
       };
 
     return { success: true, user };
+  }
+
+  async checkIfVerified(user: Express.User) {
+    const account = await GetRecord<"Accounts", AccountSelect>("Accounts", {
+      where: () =>
+        and(eq(Accounts.id, user.id), eq(Accounts.email, user.email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "Account not found.");
+
+    return account.is_verified;
+  }
+
+  /**
+   * Generates and dispatches an OTP for email verification.
+   */
+  async requestEmailVerification(email: string) {
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.email, email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "Account not found.");
+    if (account.is_verified) throw new AppError(400, "Email is already verified.");
+
+    const activeOtp = await this.otpService.findActiveOTP({ email });
+    if (activeOtp.hasActive) {
+      return { expires_at: activeOtp.otpData.expires_at };
+    }
+
+    const otpCode = await this.otpService.generateOTP({ email });
+    if (!otpCode) throw new AppError(500, "Failed to generate verification OTP.");
+
+    return { expires_at: otpCode.expires_at };
+  }
+
+  /**
+   * Validates the verification OTP and marks the account as verified.
+   */
+  async confirmEmailVerification(email: string, code: string) {
+    const validation = await VerifyEmailConfirmSchema.safeParseAsync({ code });
+    if (!validation.success) throw validation.error;
+
+    const otpRecord = await this.otpService.verifyOTP({ email, code });
+    if (!otpRecord) throw new AppError(401, "Invalid or expired verification code.");
+
+    await HardDeleteRecord("OTPCodes", otpRecord.id);
+
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.email, email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "Account not found.");
+
+    const updated = await UpdateRecord("Accounts", account.id, { is_verified: true }, Accounts.id);
+    if (!updated) throw new AppError(500, "Failed to verify email address.");
+
+    return true;
+  }
+
+  /**
+   * Verifies the user's current password and dispatches an OTP for password change 2FA.
+   */
+  async requestPasswordChange(userId: number, email: string, data: RequestPasswordChangeType) {
+    const validation = await RequestPasswordChangeSchema.safeParseAsync(data);
+    if (!validation.success) throw validation.error;
+
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.id, userId), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "Account not found.");
+
+    const isMatch = await bcrypt.compare(data.currentPassword, account.password);
+    if (!isMatch) throw new AppError(401, "Incorrect current password.");
+
+    const activeOtp = await this.otpService.findActiveOTP({ email });
+    if (activeOtp.hasActive) {
+      return { expires_at: activeOtp.otpData.expires_at };
+    }
+
+    const otpCode = await this.otpService.generateOTP({ email });
+    if (!otpCode) throw new AppError(500, "Failed to generate OTP for password change.");
+
+    return { expires_at: otpCode.expires_at };
+  }
+
+  /**
+   * Validates the 2FA OTP and updates the account password in the database.
+   */
+  async confirmPasswordChange(email: string, data: ConfirmPasswordChangeType) {
+    const validation = await ConfirmPasswordChangeSchema.safeParseAsync(data);
+    if (!validation.success) throw validation.error;
+
+    const otpRecord = await this.otpService.verifyOTP({ email, code: data.code });
+    if (!otpRecord) throw new AppError(401, "Invalid or expired verification code.");
+
+    await HardDeleteRecord("OTPCodes", otpRecord.id);
+
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.email, email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "Account not found.");
+
+    const newHashedPassword = await bcrypt.hash(data.newPassword, 10);
+    const updated = await UpdateRecord(
+      "Accounts",
+      account.id,
+      { password: newHashedPassword },
+      Accounts.id,
+    );
+    if (!updated) throw new AppError(500, "Failed to update password.");
+
+    return true;
   }
 }
 

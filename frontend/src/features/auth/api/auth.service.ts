@@ -6,7 +6,7 @@ import type {
 } from "backend/types/user.type";
 import { type APIResponse } from "backend/utils/response.util";
 import { apiClient, getErrorMessage } from "@/lib/api.lib";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { VerifyOTPType } from "backend/types/otp.type";
 
 const validateLogin = async (credentials: UserLoginType) => {
@@ -67,4 +67,24 @@ export const fetchCurrentUser = async () => {
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch current user."), { cause: error });
   }
+};
+
+export const logoutRecord = async () => {
+  try {
+    const response = await apiClient.post<APIResponse<null>>("/auth/logout");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to log out."), { cause: error });
+  }
+};
+
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: logoutRecord,
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
 };

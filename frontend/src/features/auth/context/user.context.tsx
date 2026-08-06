@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AccountSelect, PersonalDetailsSelect, SystemRole } from "backend/types/user.type";
 import { createContext, useContext, type ReactNode } from "react";
-import { fetchCurrentUser } from "@/features/auth/api/auth.service";
+import { fetchCurrentUser, logoutRecord } from "@/features/auth/api/auth.service";
 
 type CurrentUser =
   | (Pick<AccountSelect, "id" | "email"> & {
@@ -14,6 +14,7 @@ type UserContextType = {
   user: CurrentUser;
   isLoading: boolean;
   setUser: (user: CurrentUser | null) => void;
+  logout: () => Promise<void>;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -39,8 +40,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     queryClient.setQueryData(["currentUser"], newUser);
   };
 
+  const logout = async () => {
+    try {
+      await logoutRecord();
+    } catch {
+      // Proceed with cache invalidation even if logout request fails
+    } finally {
+      queryClient.setQueryData(["currentUser"], null);
+      queryClient.clear();
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ user: user ?? null, isLoading, setUser }}>
+    <UserContext.Provider value={{ user: user ?? null, isLoading, setUser, logout }}>
       {children}
     </UserContext.Provider>
   );

@@ -6,6 +6,8 @@ import SemesterPage from "@/features/semester/page/SemestersPage";
 import { InstitutionRoutes } from "./InstitutionRoutes";
 import type { SystemRole } from "backend/types/user.type";
 import { EvaluationRoutes } from "./EvaluationRoutes";
+import EmailVerificationDialog from "@/features/auth/components/EmailVerificationDialog";
+import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
 
 interface SysRoutesProps {
   basePath?: string;
@@ -18,11 +20,20 @@ export const SysRoutes = ({
 }: SysRoutesProps = {}) => {
   return (
     <Route element={<RequireRole allowed={allowedRoles} />}>
-      <Route path={basePath} element={<SysDashboard basePath={`/${basePath}`} />}>
+      <Route
+        path={basePath}
+        element={
+          <>
+            <EmailVerificationDialog />
+            <SysDashboard basePath={`/${basePath}`} />
+          </>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<h1>Dashboard</h1>} />
         <Route path="users" element={<UsersPage />} />
         <Route path="semesters" element={<SemesterPage />} />
+        <Route path="settings" element={<AccountSettingsPage />} />
 
         {InstitutionRoutes()}
         {EvaluationRoutes()}

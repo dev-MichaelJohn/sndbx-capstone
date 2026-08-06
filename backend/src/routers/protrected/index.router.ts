@@ -20,6 +20,7 @@ import EvaluationAnalyticsRouter from "./evaluation-analytics.route.js";
 const ProtectedRouter: IRouter = Router();
 
 ProtectedRouter.use(AuthController.verifyJWT);
+ProtectedRouter.use(AuthController.isVerified);
 
 ProtectedRouter.use("/users", UserRouter);
 ProtectedRouter.use("/colleges", CollegeRouter);
