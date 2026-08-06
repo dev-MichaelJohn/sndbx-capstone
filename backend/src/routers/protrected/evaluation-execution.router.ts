@@ -5,6 +5,11 @@ import { PERMISSIONS } from "@/types/seeder.type.js";
 
 const EvaluationExecutionRouter: IRouter = Router({ mergeParams: true });
 
+// Live activity feed endpoint
+EvaluationExecutionRouter.get("/recent-submissions", (req, res, next) =>
+  EvaluationExecutionController.getRecentAnonymousSubmissions(req, res, next),
+);
+
 // Student execution endpoints
 EvaluationExecutionRouter.get(
   "/student/schedule/:scheduleId/class/:studentClassId",

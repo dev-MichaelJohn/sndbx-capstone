@@ -10,6 +10,7 @@ export interface IEvaluationExecutionController {
   submitSupervisorEvaluation(req: Request, res: Response, next: NextFunction): Promise<void>;
   getStudentEvaluation(req: Request, res: Response, next: NextFunction): Promise<void>;
   getSupervisorEvaluation(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getRecentAnonymousSubmissions(req: Request, res: Response, next: NextFunction): Promise<void>;
 }
 
 export class evaluationExecutionController implements IEvaluationExecutionController {
@@ -76,6 +77,21 @@ export class evaluationExecutionController implements IEvaluationExecutionContro
       res
         .status(200)
         .json(createAPIResponse(200, "Supervisor evaluation retrieved.", result ?? null));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getRecentAnonymousSubmissions(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const result = await this.executionService.getRecentAnonymousSubmissions();
+      res
+        .status(200)
+        .json(createAPIResponse(200, "Recent anonymous submissions retrieved.", result));
     } catch (error) {
       next(error);
     }

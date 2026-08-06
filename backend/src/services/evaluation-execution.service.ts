@@ -1,8 +1,16 @@
-import { and, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import db from "@/configs/db.config.js";
 import { CreateRecord, GetRecord, GetRecords, UpdateRecord } from "./db.service.js";
 import { AppError } from "@/utils/error.util.js";
 import { calculateAfinnScore } from "@/utils/sentiment.util.js";
+import { emitLiveSubmission } from "@/utils/socket.util.js";
+import { Accounts, PersonalDetails } from "@/schemas/auth.schema.js";
+import {
+  CourseCurriculums,
+  CourseOfferings,
+  Courses,
+  StudentClasses,
+} from "@/schemas/institution.schema.js";
 import {
   StudentEvaluationSchedules,
   StudentEvaluations,
@@ -19,6 +27,7 @@ import {
   type StudentEvalSelect,
   type SupervisorEvalSelect,
 } from "@/types/evaluation-execution.type.js";
+import type { AnonymousSubmissionEvent } from "@/types/socket.type.js";
 
 export interface IEvaluationExecutionService {
   submitStudentEvaluation(
@@ -37,9 +46,87 @@ export interface IEvaluationExecutionService {
     scheduleId: number,
     courseOfferingId: number,
   ): Promise<{ evaluation: SupervisorEvalSelect; ratings: unknown[] } | null>;
+  getRecentAnonymousSubmissions(): Promise<AnonymousSubmissionEvent[]>;
 }
 
 export class evaluationExecutionService implements IEvaluationExecutionService {
+  private async emitAnonymousStudentSubmission(studentClassId: number) {
+    try {
+      const details = await GetRecord<
+        "StudentClasses",
+        { faculty_name: string; course_initialism: string; course_name: string }
+      >("StudentClasses", {
+        select: () => ({
+          faculty_name: sql<string>`CONCAT(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+          course_initialism: Courses.initialism,
+          course_name: Courses.name,
+        }),
+        join: (q) =>
+          q
+            .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+            .innerJoin(
+              CourseCurriculums,
+              eq(CourseOfferings.course_curriculum_id, CourseCurriculums.id),
+            )
+            .innerJoin(Courses, eq(CourseCurriculums.course_id, Courses.id))
+            .innerJoin(Accounts, eq(CourseOfferings.faculty_id, Accounts.id))
+            .innerJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id)),
+        where: eq(StudentClasses.id, studentClassId),
+      });
+
+      if (details) {
+        emitLiveSubmission({
+          id: crypto.randomUUID(),
+          evaluator_type: "STUDENT",
+          faculty_name: details.faculty_name,
+          course_initialism: details.course_initialism,
+          course_name: details.course_name,
+          submitted_at: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error("Failed to emit live student submission event:", err);
+    }
+  }
+
+  private async emitAnonymousSupervisorSubmission(courseOfferingId: number) {
+    try {
+      const details = await GetRecord<
+        "CourseOfferings",
+        { faculty_name: string; course_initialism: string; course_name: string }
+      >("CourseOfferings", {
+        select: () => ({
+          faculty_name: sql<string>`CONCAT(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+          course_initialism: Courses.initialism,
+          course_name: Courses.name,
+        }),
+        join: (q) =>
+          q
+            .innerJoin(
+              CourseCurriculums,
+              eq(CourseOfferings.course_curriculum_id, CourseCurriculums.id),
+            )
+            .innerJoin(Courses, eq(CourseCurriculums.course_id, Courses.id))
+            .innerJoin(Accounts, eq(CourseOfferings.faculty_id, Accounts.id))
+            .innerJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id)),
+        where: eq(CourseOfferings.id, courseOfferingId),
+      });
+
+      if (details) {
+        emitLiveSubmission({
+          id: crypto.randomUUID(),
+          evaluator_type: "SUPERVISOR",
+          faculty_name: details.faculty_name,
+          course_initialism: details.course_initialism,
+          course_name: details.course_name,
+          submitted_at: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error("Failed to emit live supervisor submission event:", err);
+    }
+  }
+
   async submitStudentEvaluation(
     payload: SubmitStudentEvalReq,
   ): Promise<{ evaluation: StudentEvalSelect }> {
@@ -77,7 +164,7 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
     const commentScore = comment ? calculateAfinnScore(comment).toFixed(2) : null;
     const submittedAt = is_draft ? null : now;
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       let evaluation: StudentEvalSelect;
 
       if (existing) {
@@ -128,6 +215,12 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
 
       return { evaluation };
     });
+
+    if (!is_draft) {
+      this.emitAnonymousStudentSubmission(student_class_id);
+    }
+
+    return result;
   }
 
   async submitSupervisorEvaluation(
@@ -169,7 +262,7 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
     const commentScore = comment ? calculateAfinnScore(comment).toFixed(2) : null;
     const submittedAt = is_draft ? null : now;
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       let evaluation: SupervisorEvalSelect;
 
       if (existing) {
@@ -221,6 +314,12 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
 
       return { evaluation };
     });
+
+    if (!is_draft) {
+      this.emitAnonymousSupervisorSubmission(course_offering_id);
+    }
+
+    return result;
   }
 
   async getStudentEvaluation(scheduleId: number, studentClassId: number) {
@@ -258,6 +357,33 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
     });
 
     return { evaluation, ratings };
+  }
+
+  async getRecentAnonymousSubmissions(): Promise<AnonymousSubmissionEvent[]> {
+    return await GetRecords<"StudentEvaluations", AnonymousSubmissionEvent>("StudentEvaluations", {
+      select: () => ({
+        id: sql<string>`CAST(${StudentEvaluations.id} AS TEXT)`,
+        evaluator_type: sql<"STUDENT" | "SUPERVISOR">`'STUDENT'`,
+        faculty_name: sql<string>`CONCAT(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+        course_initialism: Courses.initialism,
+        course_name: Courses.name,
+        submitted_at: sql<string>`${StudentEvaluations.submitted_at}::text`,
+      }),
+      join: (q) =>
+        q
+          .innerJoin(StudentClasses, eq(StudentEvaluations.student_class_id, StudentClasses.id))
+          .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+          .innerJoin(
+            CourseCurriculums,
+            eq(CourseOfferings.course_curriculum_id, CourseCurriculums.id),
+          )
+          .innerJoin(Courses, eq(CourseCurriculums.course_id, Courses.id))
+          .innerJoin(Accounts, eq(CourseOfferings.faculty_id, Accounts.id))
+          .innerJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id))
+          .orderBy(desc(StudentEvaluations.submitted_at))
+          .limit(10),
+      where: isNotNull(StudentEvaluations.submitted_at),
+    });
   }
 }
 
