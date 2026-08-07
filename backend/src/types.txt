@@ -1,0 +1,1403 @@
+types/auth.type.ts
+---
+import z from "zod";
+import { AccountSchema } from "./user.type.js";
+
+// ==========================================
+// 1. Email Verification Schemas
+// ==========================================
+
+/** Payload to confirm email address via the 8-character OTP code sent to user. */
+export const VerifyEmailConfirmSchema = z.object({
+  code: z.string().trim().length(8, "Verification code must be exactly 8 characters."),
+});
+export type VerifyEmailConfirmType = z.infer<typeof VerifyEmailConfirmSchema>;
+
+// ==========================================
+// 2. Password Change (2FA) Schemas
+// ==========================================
+
+/**
+ * Step 1: Initial password update request.
+ * Validates current credentials and ensures new password meets complexity rules.
+ */
+export const RequestPasswordChangeSchema = z.object({
+  currentPassword: z.string().trim().min(1, "Current password is required."),
+});
+export type RequestPasswordChangeType = z.infer<typeof RequestPasswordChangeSchema>;
+
+/**
+ * Step 2: Final confirmation of password update.
+ * Requires the OTP code sent during Step 1 alongside the new password.
+ */
+export const ConfirmPasswordChangeSchema = z.object({
+  code: z.string().trim().length(8, "Verification code must be exactly 8 characters."),
+  newPassword: AccountSchema.insert.shape.password,
+});
+export type ConfirmPasswordChangeType = z.infer<typeof ConfirmPasswordChangeSchema>;
+
+
+---
+types/class-student.type.ts
+---
+import z from "zod";
+import { ClassStudents } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+export const ClassStudentSchema = GenerateZodSchemas(ClassStudents, {
+  class_id: (schema) =>
+    schema.int("Class ID must be an integer").positive("Please select a valid class."),
+  student_account_id: (schema) =>
+    schema.int("Student ID must be an integer").positive("Please select a valid student."),
+});
+
+export type ClassStudentSelect = z.infer<typeof ClassStudentSchema.select>;
+export type ClassStudentInsert = z.infer<typeof ClassStudentSchema.insert>;
+
+export const ClassStudentSearchSchema = createSearchSchema("ClassStudents").extend({
+  class_id: z.coerce.number().int().positive().optional(),
+  student_account_id: z.coerce.number().int().positive().optional(),
+});
+
+export type ClassStudentSearch = z.infer<typeof ClassStudentSearchSchema>;
+
+export type ClassStudentWithDetails = ClassStudentSelect & {
+  institutional_id: string;
+  student_name: string;
+  program_name: string;
+  year_level: string;
+  section: string;
+};
+
+
+---
+types/class.type.ts
+---
+import z from "zod";
+import { Classes, YearLevelEnum, SectionEnum } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+export const ClassSchema = GenerateZodSchemas(Classes, {
+  program_id: (schema) =>
+    schema.int("Program ID must be an integer").positive("Please select a valid program."),
+});
+
+export type ClassSelect = z.infer<typeof ClassSchema.select>;
+export type ClassInsert = z.infer<typeof ClassSchema.insert>;
+export type ClassUpdate = z.infer<typeof ClassSchema.update>;
+
+export const ClassSearchSchema = createSearchSchema("Classes").extend({
+  program_id: z.coerce.number().int().positive().optional(),
+  year_level: z.enum(YearLevelEnum.enumValues).optional(),
+  section: z.enum(SectionEnum.enumValues).optional(),
+});
+
+export type ClassSearch = z.infer<typeof ClassSearchSchema>;
+
+
+---
+types/college.types.ts
+---
+import z from "zod";
+import { CollegeDeans, Colleges } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+import { AccountSchema, CreateUserReqSchema, PersonalDetailsSchema } from "./user.type.js";
+
+// ==========================================
+// 1. Base Entity Schemas & Inferred Types
+// ==========================================
+
+export const CollegeDeanSchema = GenerateZodSchemas(CollegeDeans, {
+  college_id: (schema) =>
+    schema.int("College ID must be an integer.").positive("Invalid College ID."),
+
+  dean_id: (schema) => schema.int("Dean ID must be an integer.").positive("Invalid Dean ID."),
+});
+export type CollegeDeanInsert = z.infer<typeof CollegeDeanSchema.insert>;
+export type CollegeDeanSelect = z.infer<typeof CollegeDeanSchema.select>;
+
+export const CollegeSchema = GenerateZodSchemas(Colleges, {
+  name: (schema) =>
+    schema
+      .trim()
+      .min(3, "College name must be at least 3 characters.")
+      .max(255, "College name cannot exceed 255 characters."),
+
+  initialism: (schema) =>
+    schema
+      .trim()
+      .min(2, "Initialism must be at least 2 characters (e.g., CAS, COE).")
+      .max(10, "Initialism cannot exceed 10 characters.")
+      .transform((val) => val.toUpperCase()),
+});
+export type CollegeInsert = z.infer<typeof CollegeSchema.insert>;
+export type CollegeSelect = z.infer<typeof CollegeSchema.select>;
+
+// ==========================================
+// 2. Query & Search Schemas
+// ==========================================
+
+export const CollegeSearchQuerySchema = createSearchSchema("Colleges");
+export type CollegeSearchQuery = z.infer<typeof CollegeSearchQuerySchema>;
+
+// ==========================================
+// 3. Candidate & Derived Entity Schemas
+// ==========================================
+
+export const DeanCandidateSchema = z
+  .object({
+    account_id: AccountSchema.select.shape.id,
+  })
+  .extend(
+    PersonalDetailsSchema.select.omit({
+      id: true,
+      created_at: true,
+      deleted_at: true,
+      updated_at: true,
+    }).shape,
+  )
+  .extend({
+    is_college_dean: z.boolean().nonoptional(),
+  });
+export type DeanCandidate = z.infer<typeof DeanCandidateSchema>;
+
+// Composed View Types
+export type CollegeWithDean = CollegeSelect & DeanCandidate;
+
+export type CollegeWithDeanAndTotal = CollegeWithDean & {
+  totalItems: number;
+};
+
+// ==========================================
+// 4. Request DTO Schemas (Create / Update)
+// ==========================================
+
+export const CreateCollegeDeanSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("existing"),
+    id: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal("new"),
+    details: CreateUserReqSchema.omit({
+      role: true,
+    }),
+  }),
+]);
+export type CreateCollegeDean = z.infer<typeof CreateCollegeDeanSchema>;
+
+export const CreateCollegeRecord = z.object({
+  college: CollegeSchema.insert,
+  dean: CreateCollegeDeanSchema.optional(),
+});
+export type CreateCollegeRecordType = z.infer<typeof CreateCollegeRecord>;
+
+export const UpdateCollegeRecord = z.object({
+  collegeId: z.number().int().positive().nonoptional(),
+  college: CollegeSchema.update.optional(),
+  dean: CreateCollegeDeanSchema.optional(),
+});
+export type UpdateCollegeRecordType = z.infer<typeof UpdateCollegeRecord>;
+
+
+---
+types/course.type.ts
+---
+import z from "zod";
+import { Courses } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+export const CourseSchema = GenerateZodSchemas(Courses, {
+  name: (schema) =>
+    schema
+      .trim()
+      .min(1, "Course name is required.")
+      .max(128, "Course name must be 128 characters or fewer."),
+  initialism: (schema) =>
+    schema
+      .trim()
+      .min(1, "Initialism is required.")
+      .max(16, "Initialism must be 16 characters or fewer.")
+      .toUpperCase(),
+});
+
+export type CourseSelect = z.infer<typeof CourseSchema.select>;
+export type CourseInsert = z.infer<typeof CourseSchema.insert>;
+export type CourseUpdate = z.infer<typeof CourseSchema.update>;
+
+export const CourseSearchSchema = createSearchSchema("Courses").extend({
+  program_id: z.number().int().positive().optional(),
+});
+export type CourseSearch = z.infer<typeof CourseSearchSchema>;
+
+
+---
+types/curriculum.type.ts
+---
+import z from "zod";
+import { CourseCurriculums } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { CourseSchema } from "./course.type.js";
+import { YearLevelEnum, SemeterTermEnum } from "../schemas/institution.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+export const CurriculumSchema = GenerateZodSchemas(CourseCurriculums, {
+  course_id: (schema) =>
+    schema.int("Course ID must be an integer").positive("Please select a valid course."),
+  program_id: (schema) =>
+    schema.int("Program ID must be an integer").positive("Please select a valid program."),
+  year_level: (schema) =>
+    schema.refine((val) => val != null && String(val).trim() !== "", {
+      message: "Please select a valid year level.",
+    }),
+  semester_term: (schema) =>
+    schema.refine((val) => val != null && String(val).trim() !== "", {
+      message: "Please select a valid semester term.",
+    }),
+});
+
+export type CurriculumSelect = z.infer<typeof CurriculumSchema.select>;
+export type CurriculumInsert = z.infer<typeof CurriculumSchema.insert>;
+export type CurriculumUpdate = z.infer<typeof CurriculumSchema.update>;
+
+export const CurriculumWithDetailsSchema = CurriculumSchema.select.extend({
+  ...CourseSchema.select.pick({
+    name: true,
+    initialism: true,
+  }).shape,
+});
+export type CurriculumWithDetails = z.infer<typeof CurriculumWithDetailsSchema>;
+
+export const CurriculumSearchSchema = createSearchSchema("CourseCurriculums").extend({
+  course_id: z.coerce.number().int().positive().optional(),
+  program_id: z.coerce.number().int().positive().optional(),
+  year_level: z.enum(YearLevelEnum.enumValues).optional(),
+  semester_term: z.enum(SemeterTermEnum.enumValues).optional(),
+});
+export type CurriculumSearch = z.infer<typeof CurriculumSearchSchema>;
+
+
+---
+types/db.type.ts
+---
+import type { PgTable } from "drizzle-orm/pg-core";
+import type * as schema from "../schemas/index.schema.js";
+
+export type TableNames = {
+  [K in keyof typeof schema]: (typeof schema)[K] extends PgTable ? K : never;
+}[keyof typeof schema];
+
+
+---
+types/evaluation-analytics.type.ts
+---
+export interface EvaluationAnalyticsPayload {
+  kpis: {
+    avg_set_rating: number;
+    avg_sef_rating: number;
+    completion_rate_percentage: number;
+    total_reports_generated: number;
+  };
+  college_performance: Array<{
+    college: string;
+    avg_set: number;
+    avg_sef: number;
+  }>;
+  semester_trends: Array<{
+    term: string;
+    avg_set: number;
+    avg_sef: number;
+  }>;
+  program_semester_trends: Array<{
+    term: string;
+    program_code: string;
+    avg_set: number;
+    avg_sef: number;
+  }>;
+  sentiment_breakdown: {
+    positive_pct: number;
+    neutral_pct: number;
+    negative_pct: number;
+  };
+  course_rankings: {
+    top_courses: Array<{ course_code: string; course_title: string; avg_set: number }>;
+    bottom_courses: Array<{ course_code: string; course_title: string; avg_set: number }>;
+  };
+  faculty_rankings: {
+    top_faculty: Array<{ faculty_id: number; faculty_name: string; avg_rating: number }>;
+    bottom_faculty: Array<{ faculty_id: number; faculty_name: string; avg_rating: number }>;
+  };
+}
+
+
+---
+types/evaluation-execution.type.ts
+---
+import z from "zod";
+import type { InferSelectModel } from "drizzle-orm";
+import {
+  StudentEvaluations,
+  SupervisorEvaluations,
+} from "../schemas/evaluation-execution.schema.js";
+
+export const RatingItemSchema = z.object({
+  question_id: z.number().int().positive("Valid question_id required"),
+  rating: z.number().int().min(1, "Rating min 1").max(5, "Rating max 5"),
+});
+
+export const SubmitStudentEvalReqSchema = z
+  .object({
+    schedule_id: z.number().int().positive("Valid schedule_id required"),
+    student_class_id: z.number().int().positive("Valid student_class_id required"),
+    comment: z.string().optional(),
+    is_draft: z.boolean().default(false),
+    ratings: z.array(RatingItemSchema).default([]),
+  })
+  .refine((data) => data.is_draft || data.ratings.length > 0, {
+    message: "Ratings are required for final submission.",
+    path: ["ratings"],
+  });
+
+export type SubmitStudentEvalReq = z.infer<typeof SubmitStudentEvalReqSchema>;
+
+export const SubmitSupervisorEvalReqSchema = z
+  .object({
+    schedule_id: z.number().int().positive("Valid schedule_id required"),
+    course_offering_id: z.number().int().positive("Valid course_offering_id required"),
+    comment: z.string().optional(),
+    is_draft: z.boolean().default(false),
+    ratings: z.array(RatingItemSchema).default([]),
+  })
+  .refine((data) => data.is_draft || data.ratings.length > 0, {
+    message: "Ratings are required for final submission.",
+    path: ["ratings"],
+  });
+
+export type SubmitSupervisorEvalReq = z.infer<typeof SubmitSupervisorEvalReqSchema>;
+
+export type StudentEvalSelect = InferSelectModel<typeof StudentEvaluations>;
+export type SupervisorEvalSelect = InferSelectModel<typeof SupervisorEvaluations>;
+
+
+---
+types/evaluation-form.type.ts
+---
+import z from "zod";
+import type { InferSelectModel } from "drizzle-orm";
+import {
+  StudentEvaluationForms,
+  SupervisorEvaluationForms,
+  StudentEvaluationCategories,
+  SupervisorEvaluationCategories,
+  StudentEvaluationQuestions,
+  SupervisorEvaluationQuestions,
+  SupervisorEvaluationMeans,
+} from "../schemas/evaluation-form.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+export const StudentEvaluationFormSchema = GenerateZodSchemas(StudentEvaluationForms);
+export type StudentEvaluationFormSelect = z.infer<typeof StudentEvaluationFormSchema.select>;
+
+export const SupervisorEvaluationFormSchema = GenerateZodSchemas(SupervisorEvaluationForms);
+export type SupervisorEvaluationFormSelect = z.infer<typeof SupervisorEvaluationFormSchema.select>;
+
+export const StudentEvaluationFormSearchSchema = createSearchSchema("StudentEvaluationForms");
+export type StudentEvaluationFormSearch = z.infer<typeof StudentEvaluationFormSearchSchema>;
+
+export const SupervisorEvaluationFormSearchSchema = createSearchSchema("SupervisorEvaluationForms");
+export type SupervisorEvaluationFormSearch = z.infer<typeof SupervisorEvaluationFormSearchSchema>;
+
+export const EvaluationTypeSchema = z.enum(["student", "supervisor"]);
+export type EvaluationType = z.infer<typeof EvaluationTypeSchema>;
+
+export const UpsertCategoryReqSchema = z.object({
+  name: z.string().min(1, "Category name required"),
+  description: z.string().optional(),
+  order: z.number().int().nonnegative(),
+});
+export type UpsertCategoryReq = z.infer<typeof UpsertCategoryReqSchema>;
+
+export const UpsertQuestionReqSchema = z.object({
+  question: z.string().min(1, "Question required"),
+  max_rating: z.number().int().positive().default(5),
+  order: z.number().int().nonnegative(),
+});
+export type UpsertQuestionReq = z.infer<typeof UpsertQuestionReqSchema>;
+
+export const UpsertMeanReqSchema = z.object({
+  descriptor: z.string().min(1, "Descriptor required"),
+});
+export type UpsertMeanReq = z.infer<typeof UpsertMeanReqSchema>;
+
+export const CreateFormReqSchema = z.object({
+  title: z.string().min(1, "Title required"),
+  description: z.string().optional(),
+});
+export type CreateFormReq = z.infer<typeof CreateFormReqSchema>;
+
+export type FormSelect = StudentEvaluationFormSelect | SupervisorEvaluationFormSelect;
+export type CategorySelect =
+  | InferSelectModel<typeof StudentEvaluationCategories>
+  | InferSelectModel<typeof SupervisorEvaluationCategories>;
+export type QuestionSelect =
+  | InferSelectModel<typeof StudentEvaluationQuestions>
+  | InferSelectModel<typeof SupervisorEvaluationQuestions>;
+export type MeanSelect = InferSelectModel<typeof SupervisorEvaluationMeans>;
+
+export type EvaluationCategoryNode = CategorySelect & {
+  questions: QuestionSelect[];
+};
+
+export type EvaluationFormTree = FormSelect & {
+  categories: EvaluationCategoryNode[];
+};
+
+export type FormTreeJoinRow = FormSelect & {
+  category_id: number | null;
+  category_parent_id: number | null;
+  category_name: string | null;
+  category_description: string | null;
+  category_order: number | null;
+  category_version: number | null;
+  category_created_at: Date | null;
+  category_updated_at: Date | null;
+  category_deleted_at: Date | null;
+  question_id: number | null;
+  question_parent_id: number | null;
+  question_text: string | null;
+  max_rating: number | null;
+  question_order: number | null;
+  question_version: number | null;
+  question_created_at: Date | null;
+  question_updated_at: Date | null;
+  question_deleted_at: Date | null;
+};
+
+
+---
+types/evaluation-report.type.ts
+---
+import z from "zod";
+import type { InferSelectModel } from "drizzle-orm";
+import {
+  IndividualFacultyEvaluationReports,
+  IferClassSummaries,
+} from "@/schemas/evaluation-report.schema.js";
+import { EVALUATION_WEIGHTS, RATING_CONFIG } from "@/utils/evaluation-report.util.js";
+
+export const IferStatusSchema = z.enum(["DRAFT", "FINALIZED", "ACKNOWLEDGED"]);
+export type IferStatus = z.infer<typeof IferStatusSchema>;
+
+export const GenerateBatchIferReqSchema = z.object({
+  semester_id: z.number().int().positive("Valid semester_id required."),
+  set_weight: z
+    .number()
+    .min(RATING_CONFIG.MIN_WEIGHT)
+    .max(RATING_CONFIG.MAX_WEIGHT)
+    .default(EVALUATION_WEIGHTS.SET_DEFAULT),
+  sef_weight: z
+    .number()
+    .min(RATING_CONFIG.MIN_WEIGHT)
+    .max(RATING_CONFIG.MAX_WEIGHT)
+    .default(EVALUATION_WEIGHTS.SEF_DEFAULT),
+});
+export type GenerateBatchIferReq = z.infer<typeof GenerateBatchIferReqSchema>;
+
+export const UpdateDevelopmentPlanReqSchema = z.object({
+  areas_for_improvement: z.string().min(1, "Areas for improvement required."),
+  proposed_activities: z.string().min(1, "Proposed learning activities required."),
+  action_plan: z.string().min(1, "Action plan required."),
+});
+export type UpdateDevelopmentPlanReq = z.infer<typeof UpdateDevelopmentPlanReqSchema>;
+
+export const UpdateIferStatusReqSchema = z.object({
+  status: IferStatusSchema,
+});
+export type UpdateIferStatusReq = z.infer<typeof UpdateIferStatusReqSchema>;
+
+export type IferSelect = InferSelectModel<typeof IndividualFacultyEvaluationReports>;
+export type IferClassSummarySelect = InferSelectModel<typeof IferClassSummaries>;
+
+export interface UnifiedFacultyReportDetail {
+  report: IferSelect;
+  faculty: {
+    id: number;
+    name: string;
+    department: string;
+    rank?: string;
+  };
+  semester: {
+    id: number;
+    academic_year: string;
+    term: string;
+  };
+  class_summaries: Array<
+    IferClassSummarySelect & {
+      course_code: string;
+      course_title: string;
+      section: string;
+    }
+  >;
+  combined_weighted_rating: number | null;
+  student_comments: string[];
+  supervisor_comments: string[];
+}
+
+
+---
+types/evaluation-schedule.type.ts
+---
+import z from "zod";
+import type { InferSelectModel } from "drizzle-orm";
+import {
+  StudentEvaluationSchedules,
+  SupervisorEvaluationSchedules,
+} from "../schemas/evaluation-execution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+export const StudentEvaluationScheduleSchema = GenerateZodSchemas(StudentEvaluationSchedules);
+export type StudentEvaluationScheduleSelect = z.infer<
+  typeof StudentEvaluationScheduleSchema.select
+>;
+
+export const SupervisorEvaluationScheduleSchema = GenerateZodSchemas(SupervisorEvaluationSchedules);
+export type SupervisorEvaluationScheduleSelect = z.infer<
+  typeof SupervisorEvaluationScheduleSchema.select
+>;
+
+export const StudentEvaluationScheduleSearchSchema = createSearchSchema(
+  "StudentEvaluationSchedules",
+);
+export type StudentEvaluationScheduleSearch = z.infer<typeof StudentEvaluationScheduleSearchSchema>;
+
+export const SupervisorEvaluationScheduleSearchSchema = createSearchSchema(
+  "SupervisorEvaluationSchedules",
+);
+export type SupervisorEvaluationScheduleSearch = z.infer<
+  typeof SupervisorEvaluationScheduleSearchSchema
+>;
+
+export const EvaluationTypeSchema = z.enum(["student", "supervisor"]);
+export type EvaluationType = z.infer<typeof EvaluationTypeSchema>;
+
+export const UpsertScheduleReqSchema = z
+  .object({
+    semester_id: z.number().int().positive("Valid semester ID required"),
+    form_id: z.number().int().positive("Valid form ID required"),
+    open_at: z.coerce.date({ message: "Valid open_at date required" }),
+    close_at: z.coerce.date({ message: "Valid close_at date required" }),
+  })
+  .refine((data) => data.close_at > data.open_at, {
+    message: "close_at must be strictly after open_at",
+    path: ["close_at"],
+  });
+
+export type UpsertScheduleReq = z.infer<typeof UpsertScheduleReqSchema>;
+
+export type ScheduleSelect =
+  | InferSelectModel<typeof StudentEvaluationSchedules>
+  | InferSelectModel<typeof SupervisorEvaluationSchedules>;
+
+
+---
+types/express.d.ts
+---
+import type { PersonalDetailsSelect } from "@/types/auth.type.js";
+import type { SystemRole } from "@/types/seeder.type.js";
+
+declare global {
+  namespace Express {
+    interface User {
+      id: number;
+      email: string;
+      personalDetails: PersonalDetailsSelect;
+      roles: Array<SystemRole>;
+    }
+  }
+}
+
+
+---
+types/offerings.type.ts
+---
+import z from "zod";
+import { CourseOfferings } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+import { CreateUserReqSchema } from "./user.type.js";
+
+export const CourseOfferingSchema = GenerateZodSchemas(CourseOfferings, {
+  course_curriculum_id: (schema) =>
+    schema.int("Curriculum ID must be an integer").positive("Please select a valid course."),
+  class_id: (schema) =>
+    schema.int("Class ID must be an integer").positive("Please select a valid class."),
+  semester_id: (schema) =>
+    schema.int("Semester ID must be an integer").positive("Please select a valid semester."),
+  faculty_id: (schema) =>
+    schema.int("Faculty ID must be an integer").positive("Please select a valid faculty member."),
+});
+
+export type CourseOfferingSelect = z.infer<typeof CourseOfferingSchema.select>;
+export type CourseOfferingInsert = z.infer<typeof CourseOfferingSchema.insert>;
+export type CourseOfferingUpdate = z.infer<typeof CourseOfferingSchema.update>;
+
+export const CourseOfferingSearchSchema = createSearchSchema("CourseOfferings").extend({
+  class_id: z.coerce.number().int().positive().optional(),
+  semester_id: z.coerce.number().int().positive().optional(),
+  faculty_id: z.coerce.number().int().positive().optional(),
+});
+
+export type CourseOfferingSearch = z.infer<typeof CourseOfferingSearchSchema>;
+
+// Joined shape for list/detail views matching the program/chair detail pattern
+export const CourseOfferingWithDetailsSchema = CourseOfferingSchema.select.extend({
+  course_name: z.string(),
+  course_initialism: z.string(),
+  year_level: z.string(),
+  semester_term: z.string(),
+  account_id: z.number().nullable(),
+  institutional_id: z.string().nullable(),
+  first_name: z.string().nullable(),
+  last_name: z.string().nullable(),
+  middle_name: z.string().nullable().optional(),
+  suffix: z.string().nullable().optional(),
+});
+
+export type CourseOfferingWithDetails = z.infer<typeof CourseOfferingWithDetailsSchema>;
+
+// Discriminated union matching CreateCollegeDeanSchema pattern
+export const CreateFacultySchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("existing"),
+    id: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal("new"),
+    details: CreateUserReqSchema.omit({
+      role: true,
+    }),
+  }),
+]);
+
+export type CreateFaculty = z.infer<typeof CreateFacultySchema>;
+
+export type CreateCourseOfferingParams = {
+  offering: Omit<CourseOfferingInsert, "faculty_id">;
+  faculty?: CreateFaculty;
+};
+
+export type UpdateCourseOfferingParams = {
+  course_offering_id: number;
+  offering?: Partial<Omit<CourseOfferingUpdate, "faculty_id">>;
+  faculty?: CreateFaculty;
+};
+
+
+---
+types/otp.type.ts
+---
+import { OTPCodes } from "../schemas/auth.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import z from "zod";
+
+export const OTPCodeSchema = GenerateZodSchemas(OTPCodes, {
+  code: (schema) =>
+    schema
+      .trim()
+      .length(8, "OTP code must be exactly 8 digits.")
+      .regex(/^\d+$/, "OTP code must contain numbers only."),
+  email: (schema) => schema.trim().toLowerCase().pipe(z.email("Invalid email address format.")),
+});
+
+export const VerifyOTPSchema = OTPCodeSchema.insert.omit({
+  expires_at: true,
+});
+export type VerifyOTPType = z.infer<typeof VerifyOTPSchema>;
+
+
+---
+types/program.type.ts
+---
+import { ProgramChairs, Programs } from "../schemas/institution.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import z from "zod";
+import { AccountSchema, CreateUserReqSchema, PersonalDetailsSchema } from "./user.type.js";
+
+export const ProgramSchema = GenerateZodSchemas(Programs, {
+  name: (schema) =>
+    schema
+      .trim()
+      .min(3, "Program name must be at least 3 characters.")
+      .max(255, "Program name cannot exceed 255 characters."),
+  initialism: (schema) =>
+    schema
+      .trim()
+      .min(2, "Initialism must be at least 2 characters (e.g., BSIT, BSEE).")
+      .max(10, "Initialism cannot exceed 10 characters.")
+      .transform((val) => val.toUpperCase()),
+  college_id: (schema) =>
+    schema.int("College ID must be an integer.").positive("Invalid College ID."),
+});
+export type ProgramSelect = z.infer<typeof ProgramSchema.select>;
+export type ProgramInsert = z.infer<typeof ProgramSchema.insert>;
+export type ProgramUpdate = z.infer<typeof ProgramSchema.update>;
+
+export const ProgramChairSchema = GenerateZodSchemas(ProgramChairs, {
+  program_id: (schema) =>
+    schema.int("Program ID must be an integer.").positive("Invaild Program ID."),
+  chair_id: (schema) => schema.int("Chair ID must be an integer.").positive("Invaild Chair ID."),
+});
+export type ProgramChairSelect = z.infer<typeof ProgramChairSchema.select>;
+export type ProgramChairInsert = z.infer<typeof ProgramChairSchema.insert>;
+export type ProgramChairUpdate = z.infer<typeof ProgramChairSchema.update>;
+
+export const ChairCandidate = z
+  .object({
+    account_id: AccountSchema.select.shape.id,
+  })
+  .extend(
+    PersonalDetailsSchema.select.omit({
+      id: true,
+      created_at: true,
+      deleted_at: true,
+      updated_at: true,
+    }).shape,
+  );
+export type ChairCandidateType = z.infer<typeof ChairCandidate>;
+
+export type ProgramWithChairType = ProgramSelect & ChairCandidateType;
+export type ProgramWithChairAndTotalType = ProgramWithChairType & {
+  totalItems: number;
+};
+
+export const ProgramSearchQuery = createSearchSchema("Programs").extend({
+  college_id: z.coerce.number().int().positive().optional(),
+});
+export type ProgramSearchQueryType = z.infer<typeof ProgramSearchQuery>;
+
+export const CreateProgramChair = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("existing"),
+    id: z.number().positive(),
+  }),
+  z.object({
+    type: z.literal("new"),
+    details: CreateUserReqSchema.omit({
+      role: true,
+    }),
+  }),
+]);
+export type CreateProgramChairType = z.infer<typeof CreateProgramChair>;
+
+export const CreateProgram = z.object({
+  program: ProgramSchema.insert,
+  chair: CreateProgramChair.optional(),
+});
+export type CreateProgramType = z.infer<typeof CreateProgram>;
+
+export const UpdateProgram = z.object({
+  program_id: z.number().int().positive().nonoptional(),
+  program: ProgramSchema.insert.optional(),
+  chair: CreateProgramChair.optional(),
+});
+export type UpdateProgramType = z.infer<typeof UpdateProgram>;
+
+
+---
+types/seeder.type.ts
+---
+export const SYSTEM_ROLES = {
+  SYS_ADMIN: "SYS_ADMIN",
+  ADMIN: "ADMIN",
+  SUPERVISOR: "SUPERVISOR",
+  FACULTY: "FACULTY",
+  STUDENT: "STUDENT",
+} as const;
+
+export type RoleName = (typeof SYSTEM_ROLES)[keyof typeof SYSTEM_ROLES];
+
+export const PERMISSIONS = {
+  // Institutional records
+  COLLEGE_CREATE: "college:create",
+  COLLEGE_READ: "college:read",
+  COLLEGE_UPDATE: "college:update",
+  COLLEGE_DELETE: "college:delete",
+
+  PROGRAM_CREATE: "program:create",
+  PROGRAM_READ: "program:read",
+  PROGRAM_UPDATE: "program:update",
+  PROGRAM_DELETE: "program:delete",
+
+  COURSE_CREATE: "course:create",
+  COURSE_READ: "course:read",
+  COURSE_UPDATE: "course:update",
+  COURSE_DELETE: "course:delete",
+
+  COURSE_CURRICULUM_CREATE: "course-curriculum:create",
+  COURSE_CURRICULUM_READ: "course-curriculum:read",
+  COURSE_CURRICULUM_UPDATE: "course-curriculum:update",
+  COURSE_CURRICULUM_DELETE: "course-curriculum:delete",
+
+  SEMESTER_CREATE: "semester:create",
+  SEMESTER_READ: "semester:read",
+  SEMESTER_UPDATE: "semester:update",
+  SEMESTER_DELETE: "semester:delete",
+
+  COURSE_OFFERING_CREATE: "course-offering:create",
+  COURSE_OFFERING_READ: "course-offering:read",
+  COURSE_OFFERING_UPDATE: "course-offering:update",
+  COURSE_OFFERING_DELETE: "course-offering:delete",
+
+  CLASS_CREATE: "class:create",
+  CLASS_READ: "class:read",
+  CLASS_UPDATE: "class:update",
+  CLASS_DELETE: "class:delete",
+
+  FACULTY_CREATE: "faculty:create",
+  FACULTY_READ: "faculty:read",
+  FACULTY_UPDATE: "faculty:update",
+  FACULTY_DELETE: "faculty:delete",
+
+  STUDENT_CREATE: "student:create",
+  STUDENT_READ: "student:read",
+  STUDENT_UPDATE: "student:update",
+  STUDENT_DELETE: "student:delete",
+
+  CLASS_STUDENT_CREATE: "class-student:create",
+  CLASS_STUDENT_READ: "class-student:read",
+  CLASS_STUDENT_DELETE: "class-student:delete",
+
+  STUDENT_CLASS_CREATE: "student-class:create",
+  STUDENT_CLASS_READ: "student-class:read",
+  STUDENT_CLASS_DELETE: "student-class:delete",
+
+  BULK_IMPORT_EXECUTE: "bulk-import:execute",
+
+  // Evaluation configuration & instruments
+  EVALUATION_PERIOD_MANAGE: "evaluation-period:manage",
+  EVALUATION_FORM_MANAGE: "evaluation-form:manage",
+  EVALUATION_SUBMIT_SET: "evaluation:submit-set",
+  EVALUATION_SUBMIT_SEF: "evaluation:submit-sef",
+
+  // Evaluation Report Suite (IFER & FEDAF - CHED Memo 19 s2025)
+  EVALUATION_REPORT_GENERATE: "evaluation-report:generate",
+  EVALUATION_REPORT_VIEW_SELF: "evaluation-report:view-self",
+  EVALUATION_REPORT_VIEW_ALL: "evaluation-report:view-all",
+  EVALUATION_REPORT_MANAGE_STATUS: "evaluation-report:manage-status",
+
+  // Account Management
+  ACCOUNT_CREATE: "account:create",
+  ACCOUNT_READ: "account:read",
+  ACCOUNT_UPDATE: "account:update",
+  ACCOUNT_DELETE: "account:delete",
+  ACCOUNT_UPDATE_OWN: "account:update-own",
+  ACCOUNT_MANAGE_ROLES: "account:manage-roles",
+
+  SYSTEM_LOG_READ: "log:read",
+} as const;
+
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+export const ROLE_PERMISSION_MATRIX: Record<RoleName, Permission[]> = {
+  [SYSTEM_ROLES.SYS_ADMIN]: Object.values(PERMISSIONS),
+
+  [SYSTEM_ROLES.ADMIN]: [
+    // Institutional Records (No top-level deletes)
+    PERMISSIONS.COLLEGE_CREATE,
+    PERMISSIONS.COLLEGE_READ,
+    PERMISSIONS.COLLEGE_UPDATE,
+
+    PERMISSIONS.PROGRAM_CREATE,
+    PERMISSIONS.PROGRAM_READ,
+    PERMISSIONS.PROGRAM_UPDATE,
+    PERMISSIONS.PROGRAM_DELETE,
+
+    PERMISSIONS.COURSE_CREATE,
+    PERMISSIONS.COURSE_READ,
+    PERMISSIONS.COURSE_UPDATE,
+    PERMISSIONS.COURSE_DELETE,
+
+    PERMISSIONS.COURSE_CURRICULUM_CREATE,
+    PERMISSIONS.COURSE_CURRICULUM_READ,
+    PERMISSIONS.COURSE_CURRICULUM_UPDATE,
+    PERMISSIONS.COURSE_CURRICULUM_DELETE,
+
+    PERMISSIONS.SEMESTER_CREATE,
+    PERMISSIONS.SEMESTER_READ,
+    PERMISSIONS.SEMESTER_UPDATE,
+
+    PERMISSIONS.COURSE_OFFERING_CREATE,
+    PERMISSIONS.COURSE_OFFERING_READ,
+    PERMISSIONS.COURSE_OFFERING_UPDATE,
+    PERMISSIONS.COURSE_OFFERING_DELETE,
+
+    PERMISSIONS.CLASS_CREATE,
+    PERMISSIONS.CLASS_READ,
+    PERMISSIONS.CLASS_UPDATE,
+    PERMISSIONS.CLASS_DELETE,
+
+    // Rosters & Imports
+    PERMISSIONS.FACULTY_CREATE,
+    PERMISSIONS.FACULTY_READ,
+    PERMISSIONS.FACULTY_UPDATE,
+    PERMISSIONS.FACULTY_DELETE,
+
+    PERMISSIONS.STUDENT_CREATE,
+    PERMISSIONS.STUDENT_READ,
+    PERMISSIONS.STUDENT_UPDATE,
+    PERMISSIONS.STUDENT_DELETE,
+
+    PERMISSIONS.CLASS_STUDENT_CREATE,
+    PERMISSIONS.CLASS_STUDENT_READ,
+    PERMISSIONS.CLASS_STUDENT_DELETE,
+
+    PERMISSIONS.STUDENT_CLASS_CREATE,
+    PERMISSIONS.STUDENT_CLASS_READ,
+    PERMISSIONS.STUDENT_CLASS_DELETE,
+
+    PERMISSIONS.BULK_IMPORT_EXECUTE,
+
+    // Evaluations (Unchanged for Admin)
+    PERMISSIONS.EVALUATION_PERIOD_MANAGE,
+    PERMISSIONS.EVALUATION_FORM_MANAGE, // <-- Kept for full form & question management
+    PERMISSIONS.EVALUATION_REPORT_GENERATE,
+    PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
+    PERMISSIONS.EVALUATION_REPORT_MANAGE_STATUS,
+
+    // User Directory (No role delegation or account hard-deletes)
+    PERMISSIONS.ACCOUNT_CREATE,
+    PERMISSIONS.ACCOUNT_READ,
+    PERMISSIONS.ACCOUNT_UPDATE,
+    PERMISSIONS.ACCOUNT_UPDATE_OWN,
+  ],
+
+  [SYSTEM_ROLES.SUPERVISOR]: [
+    PERMISSIONS.PROGRAM_READ,
+    PERMISSIONS.COURSE_READ,
+    PERMISSIONS.COURSE_CURRICULUM_READ,
+    PERMISSIONS.SEMESTER_READ,
+    PERMISSIONS.CLASS_READ,
+    PERMISSIONS.FACULTY_READ,
+    PERMISSIONS.STUDENT_READ,
+    PERMISSIONS.COURSE_OFFERING_READ,
+    PERMISSIONS.CLASS_STUDENT_READ,
+    PERMISSIONS.STUDENT_CLASS_READ,
+    PERMISSIONS.EVALUATION_SUBMIT_SEF,
+    PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
+    PERMISSIONS.EVALUATION_REPORT_MANAGE_STATUS,
+    PERMISSIONS.ACCOUNT_UPDATE_OWN,
+  ],
+
+  [SYSTEM_ROLES.FACULTY]: [
+    PERMISSIONS.CLASS_READ,
+    PERMISSIONS.CLASS_STUDENT_READ,
+    PERMISSIONS.STUDENT_CLASS_READ,
+    PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
+    PERMISSIONS.ACCOUNT_UPDATE_OWN,
+  ],
+
+  [SYSTEM_ROLES.STUDENT]: [
+    PERMISSIONS.CLASS_READ,
+    PERMISSIONS.CLASS_STUDENT_READ,
+    PERMISSIONS.STUDENT_CLASS_READ,
+    PERMISSIONS.EVALUATION_SUBMIT_SET,
+    PERMISSIONS.ACCOUNT_UPDATE_OWN,
+  ],
+};
+
+
+---
+types/semester.type.ts
+---
+import { Semesters } from "../schemas/institution.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { z } from "zod";
+
+const SemesterSchema = GenerateZodSchemas(Semesters, {
+  school_year_start: (schema) =>
+    schema
+      .int("School year must be a whole number.")
+      .min(2000, "School year seems too far in the past.")
+      .max(2100, "School year seems too far in the future."),
+  start_date: () => z.iso.date("Start date must be a valid date."),
+  end_date: () => z.iso.date("End date must be a valid date."),
+});
+
+export const SemesterInsertSchema = SemesterSchema.insert.refine(
+  (data) => new Date(data.start_date) < new Date(data.end_date),
+  {
+    message: "Start date must be before end date.",
+    path: ["end_date"],
+  },
+);
+
+export const SemesterUpdateSchema = SemesterSchema.update.refine(
+  (data) => {
+    // Partial update — only enforce ordering when both dates are actually
+    // present in this particular payload.
+    if (!data.start_date || !data.end_date) return true;
+    return new Date(data.start_date) < new Date(data.end_date);
+  },
+  {
+    message: "Start date must be before end date.",
+    path: ["end_date"],
+  },
+);
+
+export type SemesterSelect = z.infer<typeof SemesterSchema.select>;
+export type SemesterInsert = z.infer<typeof SemesterInsertSchema>;
+export type SemesterUpdate = z.infer<typeof SemesterUpdateSchema>;
+
+export const SemesterSearchSchema = createSearchSchema("Semesters")
+  .extend({
+    school_year_start_from: z.coerce
+      .number()
+      .int()
+      .min(2000, "School year seems too far in the past.")
+      .optional(),
+    school_year_start_to: z.coerce
+      .number()
+      .int()
+      .max(2100, "School year seems too far in the future.")
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.school_year_start_from === undefined || data.school_year_start_to === undefined) {
+        return true;
+      }
+      return data.school_year_start_from <= data.school_year_start_to;
+    },
+    {
+      message: "'From' year must be before or equal to 'To' year.",
+      path: ["school_year_start_to"],
+    },
+  );
+
+export type SemesterSearch = z.infer<typeof SemesterSearchSchema>;
+
+
+---
+types/socket.type.ts
+---
+export interface AnonymousSubmissionEvent {
+  id: string;
+  evaluator_type: "STUDENT" | "SUPERVISOR";
+  faculty_name: string;
+  course_initialism: string;
+  course_name: string;
+  submitted_at: string;
+}
+
+export interface ServerToClientEvents {
+  "evaluation:submitted": (data: AnonymousSubmissionEvent) => void;
+}
+
+export interface ClientToServerEvents {
+  "sys-admin:join": () => void;
+}
+
+
+---
+types/student-class.type.ts
+---
+import z from "zod";
+import { StudentClasses } from "../schemas/institution.schema.js";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+export const StudentClassSchema = GenerateZodSchemas(StudentClasses, {
+  student_account_id: (schema) =>
+    schema.int("Student ID must be an integer").positive("Please select a valid student."),
+  course_offering_id: (schema) =>
+    schema
+      .int("Course offering ID must be an integer")
+      .positive("Please select a valid course offering."),
+});
+
+export type StudentClassSelect = z.infer<typeof StudentClassSchema.select>;
+export type StudentClassInsert = z.infer<typeof StudentClassSchema.insert>;
+
+export const StudentClassSearchSchema = createSearchSchema("StudentClasses").extend({
+  student_account_id: z.coerce.number().int().positive().optional(),
+  course_offering_id: z.coerce.number().int().positive().optional(),
+});
+
+export type StudentClassSearch = z.infer<typeof StudentClassSearchSchema>;
+
+export type StudentClassWithDetails = StudentClassSelect & {
+  institutional_id: string;
+  student_name: string;
+  course_name: string;
+  course_initialism: string;
+  year_level: string;
+  semester_term: string;
+  program_name: string;
+  class_year_level: string;
+  class_section: string;
+};
+
+// Re-use properties derived from StudentClassWithDetails
+export type EligibleStudentOption = Pick<
+  StudentClassWithDetails,
+  "student_account_id" | "institutional_id" | "student_name"
+> & {
+  program_name: string | null;
+  class_year_level: string | null;
+  class_section: string | null;
+};
+
+
+---
+types/supervisor.type.ts
+---
+import z from "zod";
+
+export const SupervisorScopeSchema = z.object({
+  collegeIds: z.array(z.number().int().positive()).nullish(),
+  programIds: z.array(z.number().int().positive()).nullish(),
+});
+
+export type SupervisorScope = z.infer<typeof SupervisorScopeSchema>;
+
+declare global {
+  namespace Express {
+    interface Request {
+      supervisorScope?: SupervisorScope | null;
+    }
+  }
+}
+
+
+---
+types/system-log.type.ts
+---
+import z from "zod";
+export type { LogEntry } from "../utils/log-stream.util.js";
+
+export const SystemLogQuerySchema = z.object({
+  file: z.enum(["combined", "error"]).default("combined"),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  search: z.string().optional(),
+});
+
+export type SystemLogQuery = z.infer<typeof SystemLogQuerySchema>;
+
+
+---
+types/token.type.ts
+---
+import { RefreshToken, SystemRoles } from "@/schemas/auth.schema.js";
+import { AccountSchema, PersonalDetailsSchema } from "./user.type.js";
+import z from "zod";
+import jwt from "jsonwebtoken";
+import { GenerateZodSchemas } from "@/utils/schema.util.js";
+
+export const ONE_DAY = 24 * 60 * 60 * 1000;
+
+export const RefreshTokenSchema = GenerateZodSchemas(RefreshToken, {
+  account_id: (schema) => schema.int().positive(),
+  email: (schema) => schema.trim().toLowerCase().pipe(z.email("Invalid email address format.")),
+  token_hash: (schema) =>
+    schema
+      .trim()
+      .min(1, "Token hash is required")
+      .regex(/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/, "Invalid bcrypt hash structure"),
+  expires_at: (schema) =>
+    schema.refine((date) => date > new Date(), {
+      message: "Expiration date must be in the future",
+    }),
+});
+export type RefreshTokenInsert = z.infer<typeof RefreshTokenSchema.insert>;
+export type RefreshTokenSelect = z.infer<typeof RefreshTokenSchema.select>;
+
+/** Decoded shape of a refresh token's JWT payload. */
+export interface JWTRefreshToken extends jwt.JwtPayload {
+  id: number;
+  email: string;
+}
+
+/** Shape of the payload embedded in an access (web) token. */
+export const JWTPayloadSchema = z.object({
+  user: AccountSchema.select.omit({
+    personal_details_id: true,
+    password: true,
+    created_at: true,
+    deleted_at: true,
+    updated_at: true,
+    is_verified: true,
+  }),
+  personalDetails: PersonalDetailsSchema.select.omit({
+    created_at: true,
+    deleted_at: true,
+    updated_at: true,
+  }),
+  roles: z.array(z.enum(SystemRoles.enumValues)),
+});
+export type JWTPayloadType = z.infer<typeof JWTPayloadSchema>;
+
+
+---
+types/user.type.ts
+---
+import z from "zod";
+import { GenerateZodSchemas } from "../utils/schema.util.js";
+import {
+  AccountRoles,
+  Accounts,
+  PersonalDetails,
+  Roles,
+  SystemRoles,
+} from "../schemas/auth.schema.js";
+import { createSearchSchema } from "../utils/request.util.js";
+
+// ==========================================
+// 1. Base Entity Schemas & Inferred Types
+// ==========================================
+
+/** Login credentials and account-level fields (email, password, verification status, etc). */
+export const AccountSchema = GenerateZodSchemas(Accounts, {
+  email: (schema) => schema.trim().toLowerCase().pipe(z.email("Invalid email address format.")),
+  password: (schema) =>
+    schema
+      .trim()
+      .min(8, "Password must be at least 8 characters long.")
+      .max(72, "Password cannot exceed 72 characters."),
+  personal_details_id: (schema) =>
+    schema.int("Personal details ID must be an integer.").positive("Invalid personal details ID."),
+});
+export type AccountInsert = z.infer<typeof AccountSchema.insert>;
+export type AccountSelect = z.infer<typeof AccountSchema.select>;
+export type AccountUpdate = z.infer<typeof AccountSchema.update>;
+
+/** Join-table mapping an account to a system role. */
+export const AccountRoleSchema = GenerateZodSchemas(AccountRoles, {
+  account_id: (schema) =>
+    schema.int("Account ID must be an integer.").positive("Invalid account ID."),
+  role_id: (schema) => schema.int("Role ID must be an integer.").positive("Invalid role ID."),
+});
+export type AccountRoleInsert = z.infer<typeof AccountRoleSchema.insert>;
+export type AccountRoleSelect = z.infer<typeof AccountRoleSchema.select>;
+export type AccountRoleUpdate = z.infer<typeof AccountRoleSchema.update>;
+
+/** An account holder's personal information (name, institutional id, etc), kept separate from login credentials. */
+export const PersonalDetailsSchema = GenerateZodSchemas(PersonalDetails, {
+  institutional_id: (schema) => schema.trim().min(8, "Institutional ID is required."),
+  first_name: (schema) => schema.trim().min(2, "First name is required."),
+  last_name: (schema) => schema.trim().min(2, "Last name is required."),
+  middle_name: () => z.string().trim().optional().nullable(),
+  suffix: () => z.string().trim().optional().nullable(),
+});
+export type PersonalDetailsInsert = z.infer<typeof PersonalDetailsSchema.insert>;
+export type PersonalDetailsSelect = z.infer<typeof PersonalDetailsSchema.select>;
+export type PersonalDetailsUpdate = z.infer<typeof PersonalDetailsSchema.update>;
+
+/** A system role that can be assigned to an account (e.g. FACULTY, SUPERVISOR, SYS_ADMIN). */
+export const RoleSchema = GenerateZodSchemas(Roles);
+export type RoleInsert = z.infer<typeof RoleSchema.insert>;
+export type RoleSelect = z.infer<typeof RoleSchema.select>;
+export type RoleUpdate = z.infer<typeof RoleSchema.update>;
+
+// ==========================================
+// 2. Enums & Standalone Validators
+// ==========================================
+
+/** One of the fixed system role enum values, validated as a standalone value (e.g. a request query param). */
+export const SystemRoleSchema = z.enum(SystemRoles.enumValues);
+export type SystemRole = z.infer<typeof SystemRoleSchema>;
+
+// ==========================================
+// 3. Request DTO Schemas & Composed Types
+// ==========================================
+
+/**
+ * Validates the full payload for a "create user" request: login
+ * credentials (minus the auto-assigned `personal_details_id`), personal
+ * details, and the system role to assign.
+ */
+export const CreateUserReqSchema = z.object({
+  credentials: AccountSchema.insert
+    .omit({
+      personal_details_id: true,
+    })
+    .extend({
+      password: AccountSchema.insert.shape.password.optional(),
+    }),
+  personalDetails: PersonalDetailsSchema.insert,
+  role: SystemRoleSchema,
+});
+export type CreateUserReqType = z.infer<typeof CreateUserReqSchema>;
+
+/**
+ * Validates the payload for an admin-driven account update.
+ * Credentials (email) and personal details are updated separately
+ * in their own atomic steps within the service. Password and role
+ * changes are excluded — those go through OTP or internal flows.
+ */
+export const UpdateUserReqSchema = z.object({
+  credentials: AccountSchema.update.pick({ email: true }).optional(),
+  personalDetails: PersonalDetailsSchema.update
+    .pick({
+      institutional_id: true,
+      first_name: true,
+      last_name: true,
+      middle_name: true,
+      suffix: true,
+    })
+    .optional(),
+});
+export type UpdateUserReqType = z.infer<typeof UpdateUserReqSchema>;
+
+/** Paginated search query for the getUsers list endpoint. */
+export const UserSearchSchema = createSearchSchema("Accounts").extend({
+  search: z.string().trim().optional(),
+  role: SystemRoleSchema.optional(),
+});
+export type UserSearchType = z.infer<typeof UserSearchSchema>;
+
+/** An account's insertable fields joined with its currently assigned system role. */
+export type AccountRecordWithRole = AccountInsert & {
+  system_role: SystemRole;
+};
+
+/** Shape returned by getUsers — account + personal details + roles, no password. */
+export type UserWithDetails = Omit<AccountSelect, "password"> & {
+  institutional_id: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+  suffix: string | null;
+  roles: SystemRole[];
+};
+
+export const UserSchema = z.object({
+  user: AccountSchema.select
+    .omit({
+      password: true,
+    })
+    .extend({
+      id: z.coerce.number().int().positive().nonoptional(),
+    }),
+  personalDetails: PersonalDetailsSchema.select.extend({
+    id: z.coerce.number().int().positive().nonoptional(),
+  }),
+  roles: z.array(z.enum(SystemRoles.enumValues)),
+});
+export type UserType = z.infer<typeof UserSchema>;
+
+export const UserLoginSchema = AccountSchema.insert.omit({
+  personal_details_id: true,
+});
+export type UserLoginType = z.infer<typeof UserLoginSchema>;
+
+
+---

@@ -1,0 +1,967 @@
+schemas/auth.schema.ts
+---
+import { sql } from "drizzle-orm";
+import {
+  integer,
+  pgTable,
+  serial,
+  timestamp,
+  varchar,
+  boolean,
+  uniqueIndex,
+  pgEnum,
+  index,
+} from "drizzle-orm/pg-core";
+
+export const PersonalDetails = pgTable(
+  "personal_details",
+  {
+    id: serial("id").primaryKey(),
+    institutional_id: varchar("institutional_id", { length: 32 }).notNull(),
+    last_name: varchar("last_name", { length: 64 }).notNull(),
+    first_name: varchar("first_name", { length: 64 }).notNull(),
+    middle_name: varchar("middle_name", { length: 64 }),
+    suffix: varchar("suffix", { length: 8 }),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_institution_id")
+      .on(t.institutional_id)
+      .where(sql`deleted_at IS NULL`),
+    uniqueIndex("uidx_active_personal_details_composite")
+      .on(
+        sql`${t.institutional_id}, ${t.last_name}, ${t.first_name}, COALESCE(${t.middle_name}, ''), COALESCE(${t.suffix}, '')`,
+      )
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const Accounts = pgTable(
+  "accounts",
+  {
+    id: serial("id").primaryKey(),
+    personal_details_id: integer("personal_details_id")
+      .notNull()
+      .references(() => PersonalDetails.id),
+    email: varchar("email", { length: 255 }).notNull(),
+    password: varchar("password", { length: 255 }).notNull(),
+    is_verified: boolean("is_verified").notNull().default(false),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_accounts_email")
+      .on(t.email)
+      .where(sql`deleted_at IS NULL`),
+    uniqueIndex("uidx_active_accounts_personal_details")
+      .on(t.personal_details_id)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const OTPCodes = pgTable(
+  "otp_codes",
+  {
+    id: serial("id").primaryKey(),
+    email: varchar("email", { length: 255 }).notNull(),
+    code: varchar("code", { length: 8 }).notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    expires_at: timestamp("expires_at").notNull(),
+    is_active: boolean("is_active").notNull().default(true),
+  },
+  (t) => [
+    uniqueIndex("uidx_otp_email")
+      .on(t.email)
+      .where(sql`${t.is_active} = true`),
+  ],
+);
+
+export const SystemRoles = pgEnum("system_role", [
+  "SYS_ADMIN",
+  "ADMIN",
+  "SUPERVISOR",
+  "FACULTY",
+  "STUDENT",
+]);
+export const Roles = pgTable(
+  "roles",
+  {
+    id: serial("id").primaryKey(),
+    system_role: SystemRoles().notNull(),
+    description: varchar("description", { length: 128 }),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_roles_system_role")
+      .on(t.system_role)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const Permissions = pgTable(
+  "permissions",
+  {
+    id: serial("id").primaryKey(),
+    permission_key: varchar("permission_key", { length: 64 }).notNull(),
+    description: varchar("description", { length: 128 }),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_permissions_permission_key")
+      .on(t.permission_key)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const RolePermissions = pgTable(
+  "role_permissions",
+  {
+    id: serial("id").primaryKey(),
+    role_id: integer("role_id")
+      .notNull()
+      .references(() => Roles.id),
+    permission_id: integer("permission_id")
+      .notNull()
+      .references(() => Permissions.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_role_permissions_role_id_permission_id")
+      .on(t.role_id, t.permission_id)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const AccountRoles = pgTable(
+  "account_roles",
+  {
+    id: serial("id").primaryKey(),
+    account_id: integer("account_id")
+      .notNull()
+      .references(() => Accounts.id),
+    role_id: integer("role_id")
+      .notNull()
+      .references(() => Roles.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_accountrole_account_role")
+      .on(t.account_id, t.role_id)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_account_roles_role_id").on(t.role_id),
+  ],
+);
+
+export const RefreshToken = pgTable(
+  "refresh_tokens",
+  {
+    id: serial("id").primaryKey(),
+    account_id: integer("account_id")
+      .notNull()
+      .references(() => Accounts.id),
+    email: varchar("email", { length: 255 }).notNull(),
+    token_hash: varchar("token_hash", { length: 255 }).notNull(),
+    is_revoked: boolean("is_revoked").notNull().default(false),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    expires_at: timestamp("expires_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("uidx_refresh_tokens_hash").on(t.token_hash),
+    index("idx_refresh_tokens_account_id").on(t.account_id),
+  ],
+);
+
+
+---
+schemas/evaluation-execution.schema.ts
+---
+import { sql } from "drizzle-orm";
+import {
+  decimal,
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+import { Accounts } from "./auth.schema.js";
+import { CourseOfferings, Semesters, StudentClasses } from "./institution.schema.js";
+import {
+  StudentEvaluationForms,
+  StudentEvaluationQuestions,
+  SupervisorEvaluationForms,
+  SupervisorEvaluationQuestions,
+} from "./evaluation-form.schema.js";
+
+// ==========================================
+// STUDENT EXECUTION
+// ==========================================
+
+export const StudentEvaluationSchedules = pgTable(
+  "student_evaluation_schedules",
+  {
+    id: serial("id").primaryKey(),
+    semester_id: integer("semester_id")
+      .notNull()
+      .references(() => Semesters.id),
+    form_id: integer("form_id")
+      .notNull()
+      .references(() => StudentEvaluationForms.id),
+    open_at: timestamp("open_at").notNull(),
+    close_at: timestamp("close_at").notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    index("idx_student_eval_schedule_semester_id").on(t.semester_id),
+    index("idx_student_eval_schedule_form_id").on(t.form_id),
+    uniqueIndex("uidx_active_student_schedule")
+      .on(t.semester_id, t.form_id)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const StudentEvaluations = pgTable(
+  "student_evaluations",
+  {
+    id: serial("id").primaryKey(),
+    schedule_id: integer("schedule_id")
+      .notNull()
+      .references(() => StudentEvaluationSchedules.id),
+    student_class_id: integer("student_class_id")
+      .notNull()
+      .references(() => StudentClasses.id),
+    comment: text("comment"),
+    comment_score: decimal("comment_score", { precision: 5, scale: 2 }), // Sentiment score
+    set_rating: decimal("set_rating", { precision: 5, scale: 2 }), // Computed Rating
+    submitted_at: timestamp("submitted_at"), // NULL = Draft
+  },
+  (t) => [
+    index("idx_student_eval_schedule_id").on(t.schedule_id),
+    index("idx_student_eval_student_class_id").on(t.student_class_id),
+    uniqueIndex("uidx_unique_student_submission").on(t.schedule_id, t.student_class_id),
+  ],
+);
+
+export const StudentEvaluationRatings = pgTable(
+  "student_evaluation_ratings",
+  {
+    id: serial("id").primaryKey(),
+    evaluation_id: integer("evaluation_id")
+      .notNull()
+      .references(() => StudentEvaluations.id, { onDelete: "cascade" }),
+    question_id: integer("question_id")
+      .notNull()
+      .references(() => StudentEvaluationQuestions.id),
+    rating: integer("rating").notNull(),
+  },
+  (t) => [
+    index("idx_student_eval_ratings_evaluation_id").on(t.evaluation_id),
+    index("idx_student_eval_ratings_question_id").on(t.question_id),
+    uniqueIndex("uidx_unique_student_question_rating").on(t.evaluation_id, t.question_id),
+  ],
+);
+
+// ==========================================
+// SUPERVISOR EXECUTION
+// ==========================================
+
+export const SupervisorEvaluationSchedules = pgTable(
+  "supervisor_evaluation_schedules",
+  {
+    id: serial("id").primaryKey(),
+    semester_id: integer("semester_id")
+      .notNull()
+      .references(() => Semesters.id),
+    form_id: integer("form_id")
+      .notNull()
+      .references(() => SupervisorEvaluationForms.id),
+    open_at: timestamp("open_at").notNull(),
+    close_at: timestamp("close_at").notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    index("idx_supervisor_eval_schedule_semester_id").on(t.semester_id),
+    index("idx_supervisor_eval_schedule_form_id").on(t.form_id),
+    uniqueIndex("uidx_active_supervisor_schedule")
+      .on(t.semester_id, t.form_id)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const SupervisorEvaluations = pgTable(
+  "supervisor_evaluations",
+  {
+    id: serial("id").primaryKey(),
+    schedule_id: integer("schedule_id")
+      .notNull()
+      .references(() => SupervisorEvaluationSchedules.id),
+    evaluator_id: integer("evaluator_id")
+      .notNull()
+      .references(() => Accounts.id),
+    course_offering_id: integer("course_offering_id")
+      .notNull()
+      .references(() => CourseOfferings.id),
+    comment: text("comment"),
+    comment_score: decimal("comment_score", { precision: 5, scale: 2 }), // Sentiment score
+    set_rating: decimal("set_rating", { precision: 5, scale: 2 }), // Computed Rating
+    submitted_at: timestamp("submitted_at"), // NULL = Draft
+  },
+  (t) => [
+    index("idx_supervisor_eval_schedule_id").on(t.schedule_id),
+    index("idx_supervisor_eval_evaluator_id").on(t.evaluator_id),
+    index("idx_supervisor_eval_course_offering_id").on(t.course_offering_id),
+    uniqueIndex("uidx_unique_supervisor_submission").on(
+      t.schedule_id,
+      t.evaluator_id,
+      t.course_offering_id,
+    ),
+  ],
+);
+
+export const SupervisorEvaluationRatings = pgTable(
+  "supervisor_evaluation_ratings",
+  {
+    id: serial("id").primaryKey(),
+    evaluation_id: integer("evaluation_id")
+      .notNull()
+      .references(() => SupervisorEvaluations.id, { onDelete: "cascade" }),
+    question_id: integer("question_id")
+      .notNull()
+      .references(() => SupervisorEvaluationQuestions.id),
+    rating: integer("rating").notNull(),
+  },
+  (t) => [
+    index("idx_supervisor_eval_ratings_evaluation_id").on(t.evaluation_id),
+    index("idx_supervisor_eval_ratings_question_id").on(t.question_id),
+    uniqueIndex("uidx_unique_supervisor_question_rating").on(t.evaluation_id, t.question_id),
+  ],
+);
+
+
+---
+schemas/evaluation-form.schema.ts
+---
+import { sql } from "drizzle-orm";
+import {
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+  type AnyPgColumn,
+} from "drizzle-orm/pg-core";
+
+// ==========================================
+// STUDENT EVALUATION INSTRUMENTS
+// ==========================================
+
+export const StudentEvaluationForms = pgTable(
+  "student_evaluation_forms",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_student_eval_form_title")
+      .on(t.title)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const StudentEvaluationCategories = pgTable(
+  "student_evaluation_categories",
+  {
+    id: serial("id").primaryKey(),
+    form_id: integer("form_id")
+      .notNull()
+      .references(() => StudentEvaluationForms.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references((): AnyPgColumn => StudentEvaluationCategories.id, {
+      onDelete: "set null",
+    }),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    order: integer("order").notNull(),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    index("idx_student_eval_categories_form_id").on(t.form_id),
+    uniqueIndex("uidx_active_student_eval_category_name")
+      .on(t.form_id, t.name)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const StudentEvaluationQuestions = pgTable(
+  "student_evaluation_questions",
+  {
+    id: serial("id").primaryKey(),
+    category_id: integer("category_id")
+      .notNull()
+      .references(() => StudentEvaluationCategories.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references((): AnyPgColumn => StudentEvaluationQuestions.id, {
+      onDelete: "set null",
+    }),
+    question: text("question").notNull(),
+    max_rating: integer("max_rating").notNull().default(5),
+    order: integer("order").notNull(),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [index("idx_student_eval_questions_category_id").on(t.category_id)],
+);
+
+// ==========================================
+// SUPERVISOR EVALUATION INSTRUMENTS
+// ==========================================
+
+export const SupervisorEvaluationForms = pgTable(
+  "supervisor_evaluation_forms",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_supervisor_eval_form_title")
+      .on(t.title)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const SupervisorEvaluationCategories = pgTable(
+  "supervisor_evaluation_categories",
+  {
+    id: serial("id").primaryKey(),
+    form_id: integer("form_id")
+      .notNull()
+      .references(() => SupervisorEvaluationForms.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references(
+      (): AnyPgColumn => SupervisorEvaluationCategories.id,
+      { onDelete: "set null" },
+    ),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    order: integer("order").notNull(),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    index("idx_supervisor_eval_categories_form_id").on(t.form_id),
+    uniqueIndex("uidx_active_supervisor_eval_category_name")
+      .on(t.form_id, t.name)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const SupervisorEvaluationQuestions = pgTable(
+  "supervisor_evaluation_questions",
+  {
+    id: serial("id").primaryKey(),
+    category_id: integer("category_id")
+      .notNull()
+      .references(() => SupervisorEvaluationCategories.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references(
+      (): AnyPgColumn => SupervisorEvaluationQuestions.id,
+      { onDelete: "set null" },
+    ),
+    question: text("question").notNull(),
+    max_rating: integer("max_rating").notNull().default(5),
+    order: integer("order").notNull(),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [index("idx_supervisor_eval_questions_category_id").on(t.category_id)],
+);
+
+export const SupervisorEvaluationMeans = pgTable(
+  "supervisor_evaluation_means",
+  {
+    id: serial("id").primaryKey(),
+    question_id: integer("question_id")
+      .notNull()
+      .references(() => SupervisorEvaluationQuestions.id, { onDelete: "cascade" }),
+    parent_id: integer("parent_id").references((): AnyPgColumn => SupervisorEvaluationMeans.id, {
+      onDelete: "set null",
+    }),
+    descriptor: varchar("descriptor", { length: 255 }).notNull(),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [index("idx_supervisor_eval_means_question_id").on(t.question_id)],
+);
+
+
+---
+schemas/evaluation-report.schema.ts
+---
+import { sql } from "drizzle-orm";
+import {
+  decimal,
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { Accounts } from "./auth.schema.js";
+import { CourseOfferings, Semesters } from "./institution.schema.js";
+
+// ==========================================
+// CONSOLIDATED REPORTS (IFER)
+// ==========================================
+
+export const IndividualFacultyEvaluationReports = pgTable(
+  "individual_faculty_evaluation_reports",
+  {
+    id: serial("id").primaryKey(),
+    semester_id: integer("semester_id")
+      .notNull()
+      .references(() => Semesters.id),
+    faculty_id: integer("faculty_id")
+      .notNull()
+      .references(() => Accounts.id),
+
+    overall_set_rating: decimal("overall_set_rating", { precision: 5, scale: 2 }),
+    overall_sef_rating: decimal("overall_sef_rating", { precision: 5, scale: 2 }),
+
+    average_student_sentiment: decimal("average_student_sentiment", { precision: 5, scale: 2 }),
+    average_supervisor_sentiment: decimal("average_supervisor_sentiment", {
+      precision: 5,
+      scale: 2,
+    }),
+
+    status: varchar("status", { length: 32 }).default("DRAFT").notNull(), // DRAFT, FINALIZED, ACKNOWLEDGED
+
+    areas_for_improvement: text("areas_for_improvement"),
+    proposed_activities: text("proposed_activities"),
+    action_plan: text("action_plan"),
+    acknowledged_at: timestamp("acknowledged_at"),
+
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    index("idx_ifer_semester_id").on(t.semester_id),
+    index("idx_ifer_faculty_id").on(t.faculty_id),
+    uniqueIndex("uidx_active_ifer_faculty_semester")
+      .on(t.semester_id, t.faculty_id)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const IferClassSummaries = pgTable(
+  "ifer_class_summaries",
+  {
+    id: serial("id").primaryKey(),
+    ifer_id: integer("ifer_id")
+      .notNull()
+      .references(() => IndividualFacultyEvaluationReports.id, { onDelete: "cascade" }),
+    course_offering_id: integer("course_offering_id")
+      .notNull()
+      .references(() => CourseOfferings.id),
+
+    student_count: integer("student_count").notNull(),
+    average_set_rating: decimal("average_set_rating", { precision: 5, scale: 2 }).notNull(),
+    weighted_set_score: decimal("weighted_set_score", { precision: 7, scale: 2 }).notNull(),
+  },
+  (t) => [
+    index("idx_ifer_summary_ifer_id").on(t.ifer_id),
+    index("idx_ifer_summary_course_offering_id").on(t.course_offering_id),
+    uniqueIndex("uidx_ifer_class_summary").on(t.ifer_id, t.course_offering_id),
+  ],
+);
+
+
+---
+schemas/index.schema.ts
+---
+export * from "./auth.schema.js";
+export * from "./institution.schema.js";
+export * from "./evaluation-form.schema.js";
+export * from "./evaluation-execution.schema.js";
+export * from "./evaluation-report.schema.js";
+
+
+---
+schemas/institution.schema.ts
+---
+import { SQL, sql } from "drizzle-orm";
+import {
+  check,
+  date,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  serial,
+  smallint,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { Accounts } from "./auth.schema.js";
+
+export const Colleges = pgTable(
+  "colleges",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 128 }).notNull(),
+    initialism: varchar("initialism", { length: 16 }).notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_college_name")
+      .on(t.name)
+      .where(sql`deleted_at IS NULL`),
+    uniqueIndex("uidx_active_college_initialism")
+      .on(t.initialism)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const Programs = pgTable(
+  "programs",
+  {
+    id: serial("id").primaryKey(),
+    college_id: integer("college_id")
+      .notNull()
+      .references(() => Colleges.id),
+    name: varchar("name", { length: 128 }).notNull(),
+    initialism: varchar("initialism", { length: 16 }).notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_program_college_name")
+      .on(t.college_id, t.name)
+      .where(sql`deleted_at IS NULL`),
+    uniqueIndex("uidx_active_program_name_initialism")
+      .on(t.initialism)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const YearLevelEnum = pgEnum("year_level", ["I", "II", "III", "IV", "V"]);
+export const SectionEnum = pgEnum("section", ["A", "B", "C", "D", "E", "F"]);
+export const Classes = pgTable(
+  "classes",
+  {
+    id: serial("id").primaryKey(),
+    program_id: integer("program_id")
+      .notNull()
+      .references(() => Programs.id),
+    year_level: YearLevelEnum().notNull(),
+    section: SectionEnum().notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_class_program_year_section")
+      .on(t.program_id, t.year_level, t.section)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const SemeterTermEnum = pgEnum("semester_term", ["1st", "2nd", "Summer"]);
+export const Courses = pgTable(
+  "courses",
+  {
+    id: serial("id").primaryKey(),
+    program_id: integer("program_id")
+      .notNull()
+      .references(() => Programs.id),
+    name: varchar("name", { length: 128 }).notNull(),
+    initialism: varchar("initialism", { length: 16 }).notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_course_program_name")
+      .on(t.program_id, t.name)
+      .where(sql`deleted_at IS NULL`),
+    uniqueIndex("uidx_active_course_program_initialism")
+      .on(t.program_id, t.initialism)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+export const CourseCurriculums = pgTable(
+  "course_curriculums",
+  {
+    id: serial("id").primaryKey(),
+    course_id: integer("course_id")
+      .notNull()
+      .references(() => Courses.id),
+    program_id: integer("program_id")
+      .notNull()
+      .references(() => Programs.id),
+    year_level: YearLevelEnum().notNull(),
+    semester_term: SemeterTermEnum().notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_course_curriculum")
+      .on(t.course_id, t.program_id, t.year_level, t.semester_term)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_course_curriculum_program_year_term").on(
+      t.program_id,
+      t.year_level,
+      t.semester_term,
+    ),
+  ],
+);
+
+export const Semesters = pgTable(
+  "semesters",
+  {
+    id: serial("id").primaryKey(),
+    semester_term: SemeterTermEnum().notNull(),
+    school_year_start: smallint("school_year_start").notNull(),
+    school_year_end: smallint("school_year_end")
+      .notNull()
+      .generatedAlwaysAs((): SQL => sql`${Semesters.school_year_start} + 1`),
+    start_date: date("start_date").notNull(),
+    end_date: date("end_date").notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_semester")
+      .on(t.semester_term, t.school_year_start, t.school_year_end)
+      .where(sql`deleted_at IS NULL`),
+    check("chk_semester_date_order", sql`${t.start_date} < ${t.end_date}`),
+  ],
+);
+
+export const CollegeDeans = pgTable(
+  "college_deans",
+  {
+    id: serial("id").primaryKey(),
+    college_id: integer("college_id")
+      .notNull()
+      .references(() => Colleges.id),
+    dean_id: integer("dean_id")
+      .notNull()
+      .references(() => Accounts.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_college_dean")
+      .on(t.college_id)
+      .where(sql`deleted_at IS NULL`),
+    uniqueIndex("uidx_active_dean_account")
+      .on(t.dean_id)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_college_deans_dean_id").on(t.dean_id),
+  ],
+);
+
+export const ProgramChairs = pgTable(
+  "program_chairs",
+  {
+    id: serial("id").primaryKey(),
+    program_id: integer("program_id")
+      .notNull()
+      .references(() => Programs.id),
+    chair_id: integer("chair_id")
+      .notNull()
+      .references(() => Accounts.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_program_chair")
+      .on(t.program_id)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_program_chairs_chair_id").on(t.chair_id),
+  ],
+);
+
+export const CourseOfferings = pgTable(
+  "course_offerings",
+  {
+    id: serial("id").primaryKey(),
+    course_curriculum_id: integer("course_curriculum_id")
+      .notNull()
+      .references(() => CourseCurriculums.id),
+    class_id: integer("class_id")
+      .notNull()
+      .references(() => Classes.id),
+    semester_id: integer("semester_id")
+      .notNull()
+      .references(() => Semesters.id),
+    faculty_id: integer("faculty_id")
+      .notNull()
+      .references(() => Accounts.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_course_offering")
+      .on(t.class_id, t.course_curriculum_id, t.semester_id)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_course_offerings_faculty_id").on(t.faculty_id),
+  ],
+);
+
+export const ClassStudents = pgTable(
+  "class_students",
+  {
+    id: serial("id").primaryKey(),
+    class_id: integer("class_id")
+      .notNull()
+      .references(() => Classes.id),
+    student_account_id: integer("student_account_id")
+      .notNull()
+      .references(() => Accounts.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_class_student")
+      .on(t.class_id, t.student_account_id)
+      .where(sql`deleted_at IS NULL`),
+    index("idx_class_students_class_id").on(t.class_id),
+    index("idx_class_students_student_account_id").on(t.student_account_id),
+  ],
+);
+
+export const StudentClasses = pgTable(
+  "student_classes",
+  {
+    id: serial("id").primaryKey(),
+    student_account_id: integer("student_account_id")
+      .notNull()
+      .references(() => Accounts.id),
+    course_offering_id: integer("course_offering_id")
+      .notNull()
+      .references(() => CourseOfferings.id),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+    updated_at: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    deleted_at: timestamp("deleted_at"),
+  },
+  (t) => [
+    uniqueIndex("uidx_active_student_course_offering")
+      .on(t.student_account_id, t.course_offering_id)
+      .where(sql`deleted_at IS NULL`),
+  ],
+);
+
+
+---

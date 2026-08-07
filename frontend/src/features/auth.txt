@@ -782,8 +782,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // Proceed with cache invalidation even if logout request fails
     } finally {
+      localStorage.removeItem("access_token");
+      await queryClient.cancelQueries({ queryKey: ["currentUser"] });
       queryClient.setQueryData(["currentUser"], null);
-      queryClient.clear();
+      queryClient.invalidateQueries({ queryKey: ["currentUser"], refetchType: "none" });
     }
   };
 

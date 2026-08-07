@@ -1,0 +1,112 @@
+configs/db.config.ts
+---
+import env from "./env.config.js";
+import { drizzle } from "drizzle-orm/node-postgres";
+import type { EmptyRelations } from "drizzle-orm";
+import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
+import type { PgAsyncTransaction } from "drizzle-orm/pg-core";
+
+const db = drizzle(env.DATABASE_URL!);
+export type PgDatabase = typeof db;
+export type PgTransaction = PgAsyncTransaction<NodePgQueryResultHKT, EmptyRelations>;
+
+export default db;
+
+
+---
+configs/email.config.ts
+---
+import nodemailer from "nodemailer";
+import env from "./env.config.js";
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: env.GMAIL_APP_USER,
+    pass: env.GMAIL_APP_PASSWORD,
+  },
+});
+
+export default transporter;
+
+
+---
+configs/env.config.ts
+---
+import { logger } from "@/utils/logger.util.js";
+import "dotenv/config";
+import z from "zod";
+
+const postgresRegex =
+  /^postgresql?:\/\/(?:([^:]+)(?::([^@]+))?@)?([^:\/\s]+)(?::(\d+))?(?:\/([^\?\s]+))?(?:\?(.*))?$/;
+
+const EnvSchema = z.object({
+  NODE_ENV: z
+    .enum(["development", "production", "test"], "NODE_ENV is invalid.")
+    .default("development"),
+  PORT: z.coerce
+    .number("PORT must be a number.")
+    .positive("PORT must be a positive number.")
+    .nonoptional("PORT is required."),
+  DATABASE_URL: z
+    .url("DATABASE_URL must be a valid connection string URL.")
+    .regex(postgresRegex, "DATABASE_URL must be a valid PostgreSQL connection string URL.")
+    .nonoptional("DATABASE_URL is required"),
+  JWT_SECRET: z
+    .string("JWT_SECRET is invalid.")
+    .trim()
+    .min(32, "JWT_SECRET should be at least 32 characters long.")
+    .nonempty("JWT_SECRET must not be an empty string.")
+    .nonoptional("JWT_SECRET is required."),
+  REFRESH_SECRET: z
+    .string("REFRESH_SECRET is invalid.")
+    .trim()
+    .min(32, "REFRESH_SECRET should be at least 32 characters long.")
+    .nonempty("REFRESH_SECRET must not be an empty string.")
+    .nonoptional("REFRESH_SECRET is required."),
+  // Nodemailer config
+  GMAIL_APP_USER: z
+    .email("GMAIL_APP_USER is invalid.")
+    .trim()
+    .nonempty("GMAIL_APP_USER must not be an empty string.")
+    .nonoptional("GMAIL_APP_USER is required."),
+  GMAIL_APP_PASSWORD: z
+    .string("GMAIL_APP_PASSWORD is invalid.")
+    .trim()
+    .nonempty("GMAIL_APP_PASSWORD must not be an empty string.")
+    .nonoptional("GMAIL_APP_PASSWORD is required."),
+});
+
+export type EnvType = z.infer<typeof EnvSchema>;
+
+const initializeEnv = () => {
+  logger.info("🔃 Initializing environment variables...");
+
+  const result = EnvSchema.safeParse(process.env);
+
+  if (!result.success) {
+    const errors = z.prettifyError(result.error);
+    console.error(errors);
+    console.error("🛑 Shutting down server...");
+    process.exit(1);
+  }
+
+  return result.data;
+};
+
+const env = initializeEnv();
+export default env;
+
+
+---
+configs/passport.config.ts
+---
+import passport from "passport";
+import { JWTAuthStrategy, LocalAuthStrategy, OTPAuthStrategy } from "@/utils/auth.util.js";
+
+passport.use("local", LocalAuthStrategy);
+passport.use("otp", OTPAuthStrategy);
+passport.use("jwt", JWTAuthStrategy);
+
+
+---
