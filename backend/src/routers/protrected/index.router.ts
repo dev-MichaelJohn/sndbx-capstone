@@ -17,8 +17,17 @@ import EvaluationExecutionRouter from "./evaluation-execution.router.js";
 import EvaluationReportRouter from "./evaluation-report.route.js";
 import EvaluationAnalyticsRouter from "./evaluation-analytics.route.js";
 import SystemLogRouter from "./system-log.route.js";
+import rateLimit from "express-rate-limit";
 
 const ProtectedRouter: IRouter = Router();
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
 
 ProtectedRouter.use(AuthController.verifyJWT);
 ProtectedRouter.use(AuthController.isVerified);

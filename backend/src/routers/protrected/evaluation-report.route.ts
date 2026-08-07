@@ -2,13 +2,14 @@ import { Router, type IRouter } from "express";
 import EvaluationReportController from "@/controllers/evaluation-report.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const EvaluationReportRouter: IRouter = Router({ mergeParams: true });
 
-// System-wide Read Operation (Admin / Supervisor Dashboard)
 EvaluationReportRouter.get(
   "/",
   requirePermission(PERMISSIONS.EVALUATION_REPORT_VIEW_ALL),
+  resolveSupervisorScope,
   (req, res, next) => EvaluationReportController.getAllReports(req, res, next),
 );
 
@@ -32,13 +33,13 @@ EvaluationReportRouter.get(
   (req, res, next) => EvaluationReportController.getFacultyReports(req, res, next),
 );
 
-// Single Report Detail (Accessible by Faculty for own report or Supervisors/Admins)
 EvaluationReportRouter.get(
   "/:id",
   requirePermission(
     PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
     PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
   ),
+  resolveSupervisorScope,
   (req, res, next) => EvaluationReportController.getReportDetail(req, res, next),
 );
 
@@ -65,6 +66,7 @@ EvaluationReportRouter.get(
 EvaluationReportRouter.patch(
   "/:id/development-plan",
   requirePermission(PERMISSIONS.EVALUATION_REPORT_MANAGE_STATUS),
+  resolveSupervisorScope,
   (req, res, next) => EvaluationReportController.saveDevelopmentPlan(req, res, next),
 );
 

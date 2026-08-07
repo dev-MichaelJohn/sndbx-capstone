@@ -4,14 +4,21 @@ import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import CourseOfferingRouter from "./offerings.route.js";
 import ClassStudentRouter from "./class-student.route.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const ClassRouter: IRouter = Router({ mergeParams: true });
 
-ClassRouter.get("/", requirePermission(PERMISSIONS.CLASS_READ), (req, res, next) =>
-  ClassController.getClasses(req, res, next),
+ClassRouter.get(
+  "/",
+  requirePermission(PERMISSIONS.CLASS_READ),
+  resolveSupervisorScope,
+  (req, res, next) => ClassController.getClasses(req, res, next),
 );
-ClassRouter.get("/:classId", requirePermission(PERMISSIONS.CLASS_READ), (req, res, next) =>
-  ClassController.getClass(req, res, next),
+ClassRouter.get(
+  "/:classId",
+  requirePermission(PERMISSIONS.CLASS_READ),
+  resolveSupervisorScope,
+  (req, res, next) => ClassController.getClass(req, res, next),
 );
 ClassRouter.post("/", requirePermission(PERMISSIONS.CLASS_CREATE), (req, res, next) =>
   ClassController.createClass(req, res, next),

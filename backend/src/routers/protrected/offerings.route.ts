@@ -3,12 +3,14 @@ import CourseOfferingController from "@/controllers/offerings.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import StudentClassRouter from "./student-class.route.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const CourseOfferingRouter: IRouter = Router({ mergeParams: true });
 
 CourseOfferingRouter.get(
   "/",
   requirePermission(PERMISSIONS.COURSE_OFFERING_READ),
+  resolveSupervisorScope,
   (req, res, next) => CourseOfferingController.getCourseOfferings(req, res, next),
 );
 CourseOfferingRouter.get(

@@ -34,7 +34,10 @@ class courseOfferingController {
       if (!validation.success) throw validation.error;
       const searchQuery = validation.data;
 
-      const result = await this.courseOfferingService.getCourseOfferings(searchQuery);
+      const result = await this.courseOfferingService.getCourseOfferings(
+        searchQuery,
+        req.supervisorScope,
+      );
       const response = createAPIResponse<typeof result>(
         200,
         "Course offering records retrieved successfully.",

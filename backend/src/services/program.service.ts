@@ -1,4 +1,4 @@
-import { ProgramChairs, Programs } from "@/schemas/institution.schema.js";
+import { Colleges, ProgramChairs, Programs } from "@/schemas/institution.schema.js";
 import {
   CreateProgram,
   CreateProgramChair,
@@ -21,9 +21,9 @@ import {
   asc,
   desc,
   eq,
-  getColumns,
   ilike,
   inArray,
+  getColumns,
   isNull,
   notExists,
   or,
@@ -44,9 +44,14 @@ import { AppError } from "@/utils/error.util.js";
 import db from "@/configs/db.config.js";
 import type { IUserService } from "./user.service.js";
 import UserService from "./user.service.js";
+import type { SupervisorScope } from "@/types/supervisor.type.js";
+import { buildScopeFilter } from "@/utils/scope.util.js";
 
 export interface IProgramService {
-  getPrograms(searchQuery: ProgramSearchQueryType): Promise<PaginatedData<ProgramWithChairType[]>>;
+  getPrograms(
+    searchQuery: ProgramSearchQueryType,
+    scope?: SupervisorScope | null,
+  ): Promise<PaginatedData<ProgramWithChairType[]>>;
   getProgram(id: number, tx?: PgTransaction): Promise<ProgramWithChairType>;
   searchAvailableChairCandidates(
     search: string | undefined,
@@ -165,7 +170,7 @@ class programService implements IProgramService {
     return existingColleges.length > 0;
   }
 
-  async getPrograms(searhQuery: ProgramSearchQueryType) {
+  async getPrograms(searhQuery: ProgramSearchQueryType, scope?: SupervisorScope | null) {
     searhQuery.orderBy = searhQuery.orderBy ?? "id";
     searhQuery.orderDir = searhQuery.orderDir ?? "asc";
 
@@ -180,6 +185,8 @@ class programService implements IProgramService {
     const columns = getColumns(Programs);
     const orderColumn = columns[orderBy as keyof typeof columns] ?? Programs.id;
     const orderFn = orderDir === "asc" ? asc : desc;
+
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
 
     const rows = await GetRecords<"Programs", ProgramWithChairAndTotalType>("Programs", {
       select: (Programs) => ({
@@ -197,9 +204,11 @@ class programService implements IProgramService {
           searchConditions,
           isNull(Programs.deleted_at),
           college_id ? eq(Programs.college_id, college_id) : undefined,
+          scopeFilter,
         ),
       join: (query) =>
         query
+          .leftJoin(Colleges, eq(Colleges.id, Programs.college_id))
           .leftJoin(
             ProgramChairs,
             and(eq(ProgramChairs.program_id, Programs.id), isNull(ProgramChairs.deleted_at)),

@@ -1,4 +1,4 @@
-import { Classes } from "@/schemas/institution.schema.js";
+import { Classes, Colleges, Programs } from "@/schemas/institution.schema.js";
 import {
   ClassSchema,
   ClassSearchSchema,
@@ -20,9 +20,14 @@ import type { PgTransaction } from "@/configs/db.config.js";
 import { AppError } from "@/utils/error.util.js";
 import z from "zod";
 import db from "@/configs/db.config.js";
+import type { SupervisorScope } from "@/types/supervisor.type.js";
+import { buildScopeFilter } from "@/utils/scope.util.js";
 
 export interface IClassService {
-  getClasses(searchQuery: ClassSearch): Promise<PaginatedData<ClassSelect[]>>;
+  getClasses(
+    searchQuery: ClassSearch,
+    scope?: SupervisorScope | null,
+  ): Promise<PaginatedData<ClassSelect[]>>;
   getClass(id: number, tx?: PgTransaction): Promise<ClassSelect>;
   createClass(data: ClassInsert): Promise<ClassSelect>;
   updateClass(data: ClassUpdate & { class_id: number }): Promise<ClassSelect>;
@@ -32,7 +37,7 @@ export interface IClassService {
 export class classService implements IClassService {
   constructor() {}
 
-  async getClasses(searchQuery: ClassSearch) {
+  async getClasses(searchQuery: ClassSearch, scope?: SupervisorScope | null) {
     searchQuery.orderBy = searchQuery.orderBy ?? "id";
     searchQuery.orderDir = searchQuery.orderDir ?? "asc";
 
@@ -46,6 +51,8 @@ export class classService implements IClassService {
     const orderColumn = columns[orderBy as keyof typeof columns] ?? Classes.id;
     const orderFn = orderDir === "asc" ? asc : desc;
 
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
+
     const rows = await GetRecords<"Classes", ClassSelect & { totalItems: number }>("Classes", {
       select: (Classes) => ({
         ...getColumns(Classes),
@@ -57,9 +64,12 @@ export class classService implements IClassService {
           year_level ? eq(Classes.year_level, year_level) : undefined,
           section ? eq(Classes.section, section) : undefined,
           isNull(Classes.deleted_at),
+          scopeFilter,
         ),
       join: (query) =>
         query
+          .innerJoin(Programs, eq(Programs.id, Classes.program_id))
+          .leftJoin(Colleges, eq(Colleges.id, Programs.college_id))
           .orderBy(orderFn(orderColumn))
           .limit(PAGE_SIZE)
           .offset((page - 1) * PAGE_SIZE),

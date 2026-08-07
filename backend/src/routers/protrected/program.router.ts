@@ -5,6 +5,7 @@ import CurriculumRouter from "./curriculum.route.js";
 import ClassRouter from "./class.route.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const ProgramRouter: IRouter = Router({ mergeParams: true });
 
@@ -16,9 +17,14 @@ ProgramRouter.get(
   },
 );
 
-ProgramRouter.get("/", requirePermission(PERMISSIONS.PROGRAM_READ), (req, res, next) => {
-  ProgramController.getPrograms(req, res, next);
-});
+ProgramRouter.get(
+  "/",
+  requirePermission(PERMISSIONS.PROGRAM_READ),
+  resolveSupervisorScope,
+  (req, res, next) => {
+    ProgramController.getPrograms(req, res, next);
+  },
+);
 
 ProgramRouter.get("/:program_id", requirePermission(PERMISSIONS.PROGRAM_READ), (req, res, next) => {
   ProgramController.getProgram(req, res, next);

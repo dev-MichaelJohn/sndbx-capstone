@@ -32,7 +32,7 @@ class classController {
       if (!validation.success) throw validation.error;
       const searchQuery = validation.data;
 
-      const result = await this.classService.getClasses(searchQuery);
+      const result = await this.classService.getClasses(searchQuery, req.supervisorScope);
       const response = createAPIResponse<typeof result>(
         200,
         "Class records retrieved successfully",

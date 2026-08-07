@@ -178,16 +178,7 @@ import express, { type Express } from "express";
 import passport from "passport";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
 import "@/configs/passport.config.js";
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." },
-});
 
 /**
  * Builds and configures the Express app instance: JSON body parsing,
@@ -211,7 +202,6 @@ export const createApp = (): Express => {
       exposedHeaders: ["x-access-token", "Content-Disposition"],
     }),
   );
-  app.use(limiter);
 
   return app;
 };
@@ -1164,6 +1154,7 @@ import type {
   ClientToServerEvents,
   AnonymousSubmissionEvent,
 } from "@/types/socket.type.js";
+import { logger } from "@/utils/logger.util.js";
 
 let io: Server<ClientToServerEvents, ServerToClientEvents> | null = null;
 
@@ -1175,16 +1166,30 @@ export const initSocket = (httpServer: HTTPServer) => {
     },
   });
 
+  logger.info("🔌 Socket.io server initialized and active");
+
   io.use((socket, next) => {
-    // Authenticate handshake via cookies or auth header token
+    // Authenticate handshake via cookies or auth header token[cite: 5]
     const token = socket.handshake.auth?.token;
-    if (!token) return next(new Error("Authentication required"));
+    if (!token) {
+      logger.warn(
+        `❌ Socket connection rejected: Missing authentication token for client [id: ${socket.id}]`,
+      );
+      return next(new Error("Authentication required"));
+    }
     return next();
   });
 
   io.on("connection", (socket: Socket) => {
+    logger.info(`🟢 Client connected via WebSocket [id: ${socket.id}]`);
+
     socket.on("sys-admin:join", () => {
+      logger.info(`🛡️ Client [id: ${socket.id}] joined SYS_ADMIN_ROOM`);
       socket.join("SYS_ADMIN_ROOM");
+    });
+
+    socket.on("disconnect", (reason) => {
+      logger.info(`🔴 Client disconnected [id: ${socket.id}] - Reason: ${reason}`);
     });
   });
 
@@ -10638,17 +10643,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { AppError } from "@/utils/error.util.js";
 import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
-import z from "zod";
-import type { LogEntry } from "@/utils/log-stream.util.js";
-
-export const SystemLogQuerySchema = z.object({
-  file: z.enum(["combined", "error"]).default("combined"),
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  search: z.string().optional(),
-});
-
-export type SystemLogQuery = z.infer<typeof SystemLogQuerySchema>;
+import {
+  SystemLogQuerySchema,
+  type LogEntry,
+  type SystemLogQuery,
+} from "@/types/system-log.type.js";
 
 export interface ISystemLogService {
   getLogs(query: SystemLogQuery): Promise<PaginatedData<LogEntry[]>>;
@@ -11818,8 +11817,19 @@ import AuthController from "@/controllers/auth.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import { Router, type IRouter } from "express";
+import rateLimit from "express-rate-limit";
 
 const AuthRouter: IRouter = Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Stricter limit for login attempts
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts, please try again later." },
+});
+
+AuthRouter.use(authLimiter);
 
 AuthRouter.post("/login", AuthController.login);
 AuthRouter.post("/verify-otp", AuthController.verifyOTP);
@@ -11927,14 +11937,21 @@ import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import CourseOfferingRouter from "./offerings.route.js";
 import ClassStudentRouter from "./class-student.route.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const ClassRouter: IRouter = Router({ mergeParams: true });
 
-ClassRouter.get("/", requirePermission(PERMISSIONS.CLASS_READ), (req, res, next) =>
-  ClassController.getClasses(req, res, next),
+ClassRouter.get(
+  "/",
+  requirePermission(PERMISSIONS.CLASS_READ),
+  resolveSupervisorScope,
+  (req, res, next) => ClassController.getClasses(req, res, next),
 );
-ClassRouter.get("/:classId", requirePermission(PERMISSIONS.CLASS_READ), (req, res, next) =>
-  ClassController.getClass(req, res, next),
+ClassRouter.get(
+  "/:classId",
+  requirePermission(PERMISSIONS.CLASS_READ),
+  resolveSupervisorScope,
+  (req, res, next) => ClassController.getClass(req, res, next),
 );
 ClassRouter.post("/", requirePermission(PERMISSIONS.CLASS_CREATE), (req, res, next) =>
   ClassController.createClass(req, res, next),
@@ -12083,6 +12100,7 @@ import { Router, type IRouter } from "express";
 import EvaluationAnalyticsController from "@/controllers/evaluation-analytics.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const EvaluationAnalyticsRouter: IRouter = Router({ mergeParams: true });
 
@@ -12090,6 +12108,7 @@ const EvaluationAnalyticsRouter: IRouter = Router({ mergeParams: true });
 EvaluationAnalyticsRouter.get(
   "/",
   requirePermission(PERMISSIONS.EVALUATION_REPORT_VIEW_ALL),
+  resolveSupervisorScope,
   (req, res, next) => EvaluationAnalyticsController.getAnalytics(req, res, next),
 );
 
@@ -12243,13 +12262,14 @@ import { Router, type IRouter } from "express";
 import EvaluationReportController from "@/controllers/evaluation-report.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const EvaluationReportRouter: IRouter = Router({ mergeParams: true });
 
-// System-wide Read Operation (Admin / Supervisor Dashboard)
 EvaluationReportRouter.get(
   "/",
   requirePermission(PERMISSIONS.EVALUATION_REPORT_VIEW_ALL),
+  resolveSupervisorScope,
   (req, res, next) => EvaluationReportController.getAllReports(req, res, next),
 );
 
@@ -12273,13 +12293,13 @@ EvaluationReportRouter.get(
   (req, res, next) => EvaluationReportController.getFacultyReports(req, res, next),
 );
 
-// Single Report Detail (Accessible by Faculty for own report or Supervisors/Admins)
 EvaluationReportRouter.get(
   "/:id",
   requirePermission(
     PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
     PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
   ),
+  resolveSupervisorScope,
   (req, res, next) => EvaluationReportController.getReportDetail(req, res, next),
 );
 
@@ -12306,6 +12326,7 @@ EvaluationReportRouter.get(
 EvaluationReportRouter.patch(
   "/:id/development-plan",
   requirePermission(PERMISSIONS.EVALUATION_REPORT_MANAGE_STATUS),
+  resolveSupervisorScope,
   (req, res, next) => EvaluationReportController.saveDevelopmentPlan(req, res, next),
 );
 
@@ -12395,8 +12416,17 @@ import EvaluationExecutionRouter from "./evaluation-execution.router.js";
 import EvaluationReportRouter from "./evaluation-report.route.js";
 import EvaluationAnalyticsRouter from "./evaluation-analytics.route.js";
 import SystemLogRouter from "./system-log.route.js";
+import rateLimit from "express-rate-limit";
 
 const ProtectedRouter: IRouter = Router();
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
 
 ProtectedRouter.use(AuthController.verifyJWT);
 ProtectedRouter.use(AuthController.isVerified);
@@ -12435,12 +12465,14 @@ import CourseOfferingController from "@/controllers/offerings.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import StudentClassRouter from "./student-class.route.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const CourseOfferingRouter: IRouter = Router({ mergeParams: true });
 
 CourseOfferingRouter.get(
   "/",
   requirePermission(PERMISSIONS.COURSE_OFFERING_READ),
+  resolveSupervisorScope,
   (req, res, next) => CourseOfferingController.getCourseOfferings(req, res, next),
 );
 CourseOfferingRouter.get(
@@ -12482,6 +12514,7 @@ import CurriculumRouter from "./curriculum.route.js";
 import ClassRouter from "./class.route.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
+import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const ProgramRouter: IRouter = Router({ mergeParams: true });
 
@@ -12493,9 +12526,14 @@ ProgramRouter.get(
   },
 );
 
-ProgramRouter.get("/", requirePermission(PERMISSIONS.PROGRAM_READ), (req, res, next) => {
-  ProgramController.getPrograms(req, res, next);
-});
+ProgramRouter.get(
+  "/",
+  requirePermission(PERMISSIONS.PROGRAM_READ),
+  resolveSupervisorScope,
+  (req, res, next) => {
+    ProgramController.getPrograms(req, res, next);
+  },
+);
 
 ProgramRouter.get("/:program_id", requirePermission(PERMISSIONS.PROGRAM_READ), (req, res, next) => {
   ProgramController.getProgram(req, res, next);
@@ -12845,6 +12883,63 @@ export const requirePermission = (...requiredPermissions: Permission[]): Request
       next(error);
     }
   };
+};
+
+
+---
+./middlewares/supervisor-scope.middleware.ts
+---
+import type { Request, Response, NextFunction } from "express";
+import { and, eq, isNull } from "drizzle-orm";
+import { GetRecords } from "@/services/db.service.js";
+import { CollegeDeans, ProgramChairs } from "@/schemas/institution.schema.js";
+import { AppError } from "@/utils/error.util.js";
+import type { SupervisorScope } from "@/types/supervisor.type.js";
+import { SYSTEM_ROLES } from "@/types/seeder.type.js";
+
+export const resolveSupervisorScope = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new AppError(401, "Authentication required.");
+
+    const roles = req.user?.roles;
+    if (!roles || roles.length === 0)
+      throw new AppError(403, "Access denied: no roles assigned to this account.");
+
+    const isGlobalAdmin = roles.some((role) =>
+      [SYSTEM_ROLES.SYS_ADMIN, SYSTEM_ROLES.ADMIN].includes(role),
+    );
+
+    if (isGlobalAdmin) {
+      req.supervisorScope = null;
+      return next();
+    }
+
+    const [deanships, chairships] = await Promise.all([
+      GetRecords<"CollegeDeans", { college_id: number }>("CollegeDeans", {
+        select: (t) => ({ college_id: t.college_id }),
+        where: () => and(eq(CollegeDeans.dean_id, userId), isNull(CollegeDeans.deleted_at)),
+      }),
+      GetRecords<"ProgramChairs", { program_id: number }>("ProgramChairs", {
+        select: (t) => ({ program_id: t.program_id }),
+        where: () => and(eq(ProgramChairs.chair_id, userId), isNull(ProgramChairs.deleted_at)),
+      }),
+    ]);
+
+    const scope: SupervisorScope = {
+      collegeIds: deanships.map((d) => d.college_id),
+      programIds: chairships.map((c) => c.program_id),
+    };
+
+    req.supervisorScope = scope;
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 
@@ -14644,6 +14739,7 @@ export const ROLE_PERMISSION_MATRIX: Record<RoleName, Permission[]> = {
     PERMISSIONS.CLASS_READ,
     PERMISSIONS.FACULTY_READ,
     PERMISSIONS.STUDENT_READ,
+    PERMISSIONS.COURSE_OFFERING_READ,
     PERMISSIONS.CLASS_STUDENT_READ,
     PERMISSIONS.STUDENT_CLASS_READ,
     PERMISSIONS.EVALUATION_SUBMIT_SEF,
@@ -14811,6 +14907,43 @@ export type EligibleStudentOption = Pick<
   class_year_level: string | null;
   class_section: string | null;
 };
+
+
+---
+./types/supervisor.type.ts
+---
+import z from "zod";
+
+export const SupervisorScopeSchema = z.object({
+  collegeIds: z.array(z.number().int().positive()),
+  programIds: z.array(z.number().int().positive()),
+});
+
+export type SupervisorScope = z.infer<typeof SupervisorScopeSchema>;
+
+declare global {
+  namespace Express {
+    interface Request {
+      supervisorScope?: SupervisorScope | null;
+    }
+  }
+}
+
+
+---
+./types/system-log.type.ts
+---
+import z from "zod";
+export type { LogEntry } from "../utils/log-stream.util.js";
+
+export const SystemLogQuerySchema = z.object({
+  file: z.enum(["combined", "error"]).default("combined"),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  search: z.string().optional(),
+});
+
+export type SystemLogQuery = z.infer<typeof SystemLogQuerySchema>;
 
 
 ---

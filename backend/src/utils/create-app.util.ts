@@ -2,16 +2,7 @@ import express, { type Express } from "express";
 import passport from "passport";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
 import "@/configs/passport.config.js";
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1500,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." },
-});
 
 /**
  * Builds and configures the Express app instance: JSON body parsing,
@@ -35,7 +26,6 @@ export const createApp = (): Express => {
       exposedHeaders: ["x-access-token", "Content-Disposition"],
     }),
   );
-  app.use(limiter);
 
   return app;
 };

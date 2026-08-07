@@ -28,10 +28,13 @@ class programController {
       if (id) parsedId = await this.extractId(id, "College ID is required.");
 
       const searchParams = await extractSearchParams("Programs", req);
-      const result = await this.programService.getPrograms({
-        ...(parsedId && { college_id: parsedId }),
-        ...searchParams,
-      });
+      const result = await this.programService.getPrograms(
+        {
+          ...(parsedId && { college_id: parsedId }),
+          ...searchParams,
+        },
+        req.supervisorScope,
+      );
       const response = createAPIResponse<typeof result>(
         200,
         "Program records retrieved successfully.",

@@ -1,4 +1,5 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
+import type { PgSelect } from "drizzle-orm/pg-core";
 import { GetRecords } from "./db.service.js";
 import {
   IndividualFacultyEvaluationReports,
@@ -6,6 +7,7 @@ import {
 } from "@/schemas/evaluation-report.schema.js";
 import {
   Classes,
+  Colleges,
   CourseCurriculums,
   CourseOfferings,
   Courses,
@@ -15,6 +17,8 @@ import {
 import { Accounts, PersonalDetails } from "@/schemas/auth.schema.js";
 import { RATING_CONFIG } from "@/utils/evaluation-report.util.js";
 import type { EvaluationAnalyticsPayload } from "@/types/evaluation-analytics.type.js";
+import type { SupervisorScope } from "@/types/supervisor.type.js";
+import { buildScopeFilter } from "@/utils/scope.util.js";
 
 const ANALYTICS_CONFIG = {
   DEFAULT_SCORE: 0.0,
@@ -29,7 +33,10 @@ const ANALYTICS_CONFIG = {
 } as const;
 
 export interface IEvaluationAnalyticsService {
-  getAnalytics(semesterId?: number): Promise<EvaluationAnalyticsPayload>;
+  getAnalytics(
+    semesterId?: number,
+    scope?: SupervisorScope | null,
+  ): Promise<EvaluationAnalyticsPayload>;
 }
 
 export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
@@ -79,9 +86,10 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
     };
   }
 
-  private async fetchCollegePerformance(): Promise<
-    Array<{ college: string; avg_set: number; avg_sef: number }>
-  > {
+  private async fetchCollegePerformance(
+    scope?: SupervisorScope | null,
+  ): Promise<Array<{ college: string; avg_set: number; avg_sef: number }>> {
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
     const collegeRecords = await GetRecords<
       "IndividualFacultyEvaluationReports",
       { college: string; avg_set: number; avg_sef: number }
@@ -91,14 +99,15 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
         avg_set: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_set_rating}::numeric), 0)::float`,
         avg_sef: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_sef_rating}::numeric), 0)::float`,
       }),
-      where: (reportRecord) => isNull(reportRecord.deleted_at),
+      where: (reportRecord) => and(isNull(reportRecord.deleted_at), scopeFilter),
       join: (queryBuilder) =>
         queryBuilder
           .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
           .innerJoin(CourseOfferings, eq(CourseOfferings.faculty_id, Accounts.id))
           .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
           .innerJoin(Programs, eq(Classes.program_id, Programs.id))
-          .groupBy(Programs.initialism),
+          .leftJoin(Colleges, eq(Programs.college_id, Colleges.id))
+          .groupBy(Programs.initialism) as unknown as PgSelect,
     });
 
     return collegeRecords.map((collegeRecord) => ({
@@ -108,10 +117,11 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
     }));
   }
 
-  private async fetchCourseRankings(): Promise<{
+  private async fetchCourseRankings(scope?: SupervisorScope | null): Promise<{
     top_courses: Array<{ course_code: string; course_title: string; avg_set: number }>;
     bottom_courses: Array<{ course_code: string; course_title: string; avg_set: number }>;
   }> {
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
     const coursePerformance = await GetRecords<
       "IferClassSummaries",
       { course_code: string; course_title: string; avg_set: number }
@@ -121,6 +131,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
         course_title: Courses.name,
         avg_set: sql<number>`avg(${IferClassSummaries.average_set_rating}::numeric)::float`,
       }),
+      where: () => scopeFilter,
       join: (queryBuilder) =>
         queryBuilder
           .innerJoin(CourseOfferings, eq(IferClassSummaries.course_offering_id, CourseOfferings.id))
@@ -129,8 +140,13 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
             eq(CourseOfferings.course_curriculum_id, CourseCurriculums.id),
           )
           .innerJoin(Courses, eq(CourseCurriculums.course_id, Courses.id))
+          .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
+          .innerJoin(Programs, eq(Classes.program_id, Programs.id))
+          .leftJoin(Colleges, eq(Programs.college_id, Colleges.id))
           .groupBy(Courses.initialism, Courses.name)
-          .orderBy(sql`avg(${IferClassSummaries.average_set_rating}::numeric) DESC`),
+          .orderBy(
+            sql`avg(${IferClassSummaries.average_set_rating}::numeric) DESC`,
+          ) as unknown as PgSelect,
     });
 
     const formattedCourses = coursePerformance.map((courseRecord) => ({
@@ -165,7 +181,9 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
         queryBuilder
           .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
           .leftJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id))
-          .orderBy(sql`${IndividualFacultyEvaluationReports.overall_set_rating}::numeric DESC`),
+          .orderBy(
+            sql`${IndividualFacultyEvaluationReports.overall_set_rating}::numeric DESC`,
+          ) as unknown as PgSelect,
     });
 
     const formattedFaculty = facultyPerformance.map((facultyRecord) => ({
@@ -210,7 +228,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
             Semesters.school_year_end,
             Semesters.semester_term,
           )
-          .orderBy(Semesters.school_year_start, Semesters.semester_term),
+          .orderBy(Semesters.school_year_start, Semesters.semester_term) as unknown as PgSelect,
     });
 
     return historicalRecords.map((semesterRecord) => ({
@@ -220,9 +238,10 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
     }));
   }
 
-  private async fetchProgramSemesterTrends(): Promise<
-    Array<{ term: string; program_code: string; avg_set: number; avg_sef: number }>
-  > {
+  private async fetchProgramSemesterTrends(
+    scope?: SupervisorScope | null,
+  ): Promise<Array<{ term: string; program_code: string; avg_set: number; avg_sef: number }>> {
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
     const programTrends = await GetRecords<
       "Semesters",
       { term: string; program_code: string; avg_set: number; avg_sef: number }
@@ -233,7 +252,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
         avg_set: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_set_rating}::numeric), 0)::float`,
         avg_sef: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_sef_rating}::numeric), 0)::float`,
       }),
-      where: (semesterTable) => isNull(semesterTable.deleted_at),
+      where: (semesterTable) => and(isNull(semesterTable.deleted_at), scopeFilter),
       join: (queryBuilder) =>
         queryBuilder
           .innerJoin(
@@ -247,6 +266,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
           .innerJoin(CourseOfferings, eq(CourseOfferings.faculty_id, Accounts.id))
           .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
           .innerJoin(Programs, eq(Classes.program_id, Programs.id))
+          .leftJoin(Colleges, eq(Programs.college_id, Colleges.id))
           .groupBy(
             Semesters.id,
             Semesters.school_year_start,
@@ -254,7 +274,11 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
             Semesters.semester_term,
             Programs.initialism,
           )
-          .orderBy(Semesters.school_year_start, Semesters.semester_term, Programs.initialism),
+          .orderBy(
+            Semesters.school_year_start,
+            Semesters.semester_term,
+            Programs.initialism,
+          ) as unknown as PgSelect,
     });
 
     return programTrends.map((programRecord) => ({
@@ -265,23 +289,56 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
     }));
   }
 
-  async getAnalytics(semesterId?: number): Promise<EvaluationAnalyticsPayload> {
+  async getAnalytics(
+    semesterId?: number,
+    scope?: SupervisorScope | null,
+  ): Promise<EvaluationAnalyticsPayload> {
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
     const reports = await GetRecords("IndividualFacultyEvaluationReports", {
       where: (reportRecord) =>
         and(
           isNull(reportRecord.deleted_at),
           semesterId ? eq(reportRecord.semester_id, semesterId) : undefined,
+          scopeFilter,
         ),
+      ...(scopeFilter
+        ? {
+            join: (query) =>
+              query
+                .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
+                .innerJoin(
+                  CourseOfferings,
+                  and(
+                    eq(CourseOfferings.faculty_id, Accounts.id),
+                    eq(CourseOfferings.semester_id, IndividualFacultyEvaluationReports.semester_id),
+                    isNull(CourseOfferings.deleted_at),
+                  ),
+                )
+                .innerJoin(
+                  Classes,
+                  and(eq(CourseOfferings.class_id, Classes.id), isNull(Classes.deleted_at)),
+                )
+                .innerJoin(
+                  Programs,
+                  and(eq(Classes.program_id, Programs.id), isNull(Programs.deleted_at)),
+                )
+                .leftJoin(
+                  Colleges,
+                  and(eq(Programs.college_id, Colleges.id), isNull(Colleges.deleted_at)),
+                )
+                .groupBy(IndividualFacultyEvaluationReports.id) as unknown as PgSelect,
+          }
+        : {}),
     });
 
     const meanSet = this.calculateMeanRating(reports.map((report) => report.overall_set_rating));
     const meanSef = this.calculateMeanRating(reports.map((report) => report.overall_sef_rating));
 
-    const collegePerformance = await this.fetchCollegePerformance();
-    const courseRankings = await this.fetchCourseRankings();
+    const collegePerformance = await this.fetchCollegePerformance(scope);
+    const courseRankings = await this.fetchCourseRankings(scope);
     const facultyRankings = await this.fetchFacultyRankings();
     const semesterTrends = await this.fetchSemesterTrends();
-    const programSemesterTrends = await this.fetchProgramSemesterTrends();
+    const programSemesterTrends = await this.fetchProgramSemesterTrends(scope);
     const sentimentBreakdown = this.calculateSentimentDistribution(
       reports.map((report) => report.average_student_sentiment),
     );

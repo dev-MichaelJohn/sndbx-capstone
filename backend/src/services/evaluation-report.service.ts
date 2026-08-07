@@ -13,6 +13,7 @@ import {
 } from "@/schemas/evaluation-execution.schema.js";
 import {
   Classes,
+  Colleges,
   CourseCurriculums,
   CourseOfferings,
   Courses,
@@ -33,9 +34,13 @@ import {
   type UpdateDevelopmentPlanReq,
   type UpdateIferStatusReq,
 } from "@/types/evaluation-report.type.js";
+import type { SupervisorScope } from "@/types/supervisor.type.js";
+import { buildScopeFilter } from "@/utils/scope.util.js";
 
 export interface IEvaluationReportService {
-  getAllReports(): Promise<Array<IferSelect & { faculty_name: string | null }>>;
+  getAllReports(
+    scope?: SupervisorScope | null,
+  ): Promise<Array<IferSelect & { faculty_name: string | null }>>;
   generateBatchReports(payload: GenerateBatchIferReq): Promise<{ generated_count: number }>;
   getReportDetail(reportId: number, isSelfView?: boolean): Promise<UnifiedFacultyReportDetail>;
   getFacultyReports(facultyId: number): Promise<IferSelect[]>;
@@ -215,7 +220,10 @@ export class evaluationReportService implements IEvaluationReportService {
     return setRating ? Number(setRating) : null;
   }
 
-  async getAllReports(): Promise<Array<IferSelect & { faculty_name: string | null }>> {
+  async getAllReports(
+    scope?: SupervisorScope | null,
+  ): Promise<Array<IferSelect & { faculty_name: string | null }>> {
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
     return await GetRecords<
       "IndividualFacultyEvaluationReports",
       IferSelect & { faculty_name: string | null }
@@ -239,10 +247,42 @@ export class evaluationReportService implements IEvaluationReportService {
         faculty_name: sql<string>`concat(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
       }),
       where: (t) => isNull(t.deleted_at),
-      join: (query) =>
-        query
+      join: (query) => {
+        let q = query
           .innerJoin(Accounts, eq(IndividualFacultyEvaluationReports.faculty_id, Accounts.id))
-          .leftJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id)),
+          .leftJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id));
+
+        if (scopeFilter) {
+          q = q
+            .innerJoin(
+              CourseOfferings,
+              and(
+                eq(CourseOfferings.faculty_id, Accounts.id),
+                eq(CourseOfferings.semester_id, IndividualFacultyEvaluationReports.semester_id),
+                isNull(CourseOfferings.deleted_at),
+              ),
+            )
+            .innerJoin(
+              Classes,
+              and(eq(CourseOfferings.class_id, Classes.id), isNull(Classes.deleted_at)),
+            )
+            .innerJoin(
+              Programs,
+              and(eq(Classes.program_id, Programs.id), isNull(Programs.deleted_at)),
+            )
+            .leftJoin(
+              Colleges,
+              and(eq(Programs.college_id, Colleges.id), isNull(Colleges.deleted_at)),
+            )
+            .groupBy(
+              IndividualFacultyEvaluationReports.id,
+              PersonalDetails.first_name,
+              PersonalDetails.last_name,
+            );
+        }
+
+        return q;
+      },
     });
   }
 

@@ -1,4 +1,11 @@
-import { CourseOfferings, CourseCurriculums, Courses } from "@/schemas/institution.schema.js";
+import {
+  CourseOfferings,
+  CourseCurriculums,
+  Courses,
+  Programs,
+  Colleges,
+  Classes,
+} from "@/schemas/institution.schema.js";
 import { AccountRoles, Accounts, PersonalDetails, Roles } from "@/schemas/auth.schema.js";
 import {
   CourseOfferingSchema,
@@ -26,10 +33,13 @@ import { AppError } from "@/utils/error.util.js";
 import z from "zod";
 import db from "@/configs/db.config.js";
 import UserService, { type IUserService } from "./user.service.js";
+import type { SupervisorScope } from "@/types/supervisor.type.js";
+import { buildScopeFilter } from "@/utils/scope.util.js";
 
 export interface ICourseOfferingService {
   getCourseOfferings(
     searchQuery: CourseOfferingSearch,
+    scope?: SupervisorScope | null,
   ): Promise<PaginatedData<CourseOfferingWithDetails[]>>;
   getCourseOffering(id: number, tx?: PgTransaction): Promise<CourseOfferingWithDetails>;
   createCourseOffering(
@@ -122,7 +132,7 @@ export class courseOfferingService implements ICourseOfferingService {
     return { curriculum, classInfo, semester };
   }
 
-  async getCourseOfferings(searchQuery: CourseOfferingSearch) {
+  async getCourseOfferings(searchQuery: CourseOfferingSearch, scope?: SupervisorScope | null) {
     searchQuery.orderBy = searchQuery.orderBy ?? "id";
     searchQuery.orderDir = searchQuery.orderDir ?? "asc";
 
@@ -135,6 +145,8 @@ export class courseOfferingService implements ICourseOfferingService {
     const columns = getColumns(CourseOfferings);
     const orderColumn = columns[orderBy as keyof typeof columns] ?? CourseOfferings.id;
     const orderFn = orderDir === "asc" ? asc : desc;
+
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
 
     const rows = await GetRecords<
       "CourseOfferings",
@@ -161,6 +173,9 @@ export class courseOfferingService implements ICourseOfferingService {
             eq(CourseCurriculums.id, CourseOfferings.course_curriculum_id),
           )
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
+          .innerJoin(Classes, eq(Classes.id, CourseOfferings.class_id))
+          .innerJoin(Programs, eq(Programs.id, Classes.program_id))
+          .leftJoin(Colleges, eq(Colleges.id, Programs.college_id))
           .leftJoin(
             Accounts,
             and(eq(Accounts.id, CourseOfferings.faculty_id), isNull(Accounts.deleted_at)),
@@ -175,6 +190,7 @@ export class courseOfferingService implements ICourseOfferingService {
           semester_id ? eq(CourseOfferings.semester_id, semester_id) : undefined,
           faculty_id ? eq(CourseOfferings.faculty_id, faculty_id) : undefined,
           isNull(CourseOfferings.deleted_at),
+          scopeFilter,
         ),
     });
 

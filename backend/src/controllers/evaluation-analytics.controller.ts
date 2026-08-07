@@ -25,7 +25,7 @@ export class evaluationAnalyticsController implements IEvaluationAnalyticsContro
   async getAnalytics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const semesterId = await this.extractSemesterId(req.query.semester_id);
-      const result = await this.analyticsService.getAnalytics(semesterId);
+      const result = await this.analyticsService.getAnalytics(semesterId, req.supervisorScope);
 
       res
         .status(200)

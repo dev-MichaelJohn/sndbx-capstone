@@ -33,7 +33,7 @@ export class evaluationReportController implements IEvaluationReportController {
 
   async getAllReports(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await this.reportService.getAllReports();
+      const result = await this.reportService.getAllReports(req.supervisorScope);
       res
         .status(200)
         .json(createAPIResponse(200, "All evaluation reports retrieved successfully.", result));
