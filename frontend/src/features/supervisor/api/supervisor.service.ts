@@ -3,76 +3,146 @@ import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import type { APIResponse, PaginatedData } from "backend/utils/response.util";
 import type {
   EvaluationAnalyticsPayload,
+  GenerateBatchIferReq,
   IferSelect,
   UnifiedFacultyReportDetail,
   UpdateDevelopmentPlanReq,
 } from "backend/types/evaluation-report.type";
+import type { CourseOfferingSearch, CourseOfferingWithDetails } from "backend/types/offerings.type";
+import type { ScheduleSelect } from "backend/types/evaluation-schedule.type";
+import type {
+  SubmitSupervisorEvalReq,
+  SupervisorEvalSelect,
+} from "backend/types/evaluation-execution.type";
 
-// ── Analytics ────────────────────────────────────────────────────────────────
+const BASE_REPORTS = "/protected/evaluation-reports";
+const BASE_EXEC = "/protected/evaluation-execution";
+const BASE_OFFERINGS = "/protected/course-offerings";
+const BASE_ANALYTICS = "/protected/evaluation-analytics";
+const BASE_SCHEDULES = "/protected/evaluation-schedules";
+
+// ── 1. Analytics ─────────────────────────────────────────────────────────────
 
 export const getSupervisorAnalytics = async (semesterId?: number) => {
   try {
-    const response = await apiClient<APIResponse<EvaluationAnalyticsPayload>>(
-      `/protected/evaluation-analytics${semesterId ? `?semester_id=${semesterId}` : ""}`,
-    );
-    return response.data.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to load analytics data."), { cause: error });
+    const q = semesterId ? `?semester_id=${semesterId}` : "";
+    const res = await apiClient<APIResponse<EvaluationAnalyticsPayload>>(`${BASE_ANALYTICS}${q}`);
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to load analytics data."), { cause: err });
   }
 };
 
 export const useSupervisorAnalytics = (semesterId?: number) => {
   return useQuery({
-    queryKey: ["supervisor-analytics", semesterId],
+    queryKey: ["supervisorAnalytics", semesterId],
     queryFn: () => getSupervisorAnalytics(semesterId),
   });
 };
 
-// ── Course Offerings / Coverage Inspector ───────────────────────────────────
+// ── 2. Course Offerings (Who to evaluate) ───────────────────────────────────
 
-export const getSupervisorCourseOfferings = async (params?: {
-  semester_id?: number;
-  page?: number;
-  search?: string;
-}) => {
+export const getSupervisorCourseOfferings = async (params: Partial<CourseOfferingSearch> = {}) => {
   try {
-    const query = new URLSearchParams();
-    if (params?.semester_id) query.append("semester_id", String(params.semester_id));
-    if (params?.page) query.append("page", String(params.page));
-    if (params?.search) query.append("search", params.search);
-
-    const response = await apiClient<APIResponse<PaginatedData<CourseOfferingWithDetails[]>>>(
-      `/protected/course-offerings?${query.toString()}`,
+    const res = await apiClient<APIResponse<PaginatedData<CourseOfferingWithDetails[]>>>(
+      BASE_OFFERINGS,
+      { params },
     );
-    return response.data.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to fetch course offerings."), { cause: error });
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch course offerings."), { cause: err });
   }
 };
 
-export const useSupervisorOfferings = (params?: {
-  semester_id?: number;
-  page?: number;
-  search?: string;
-}) => {
+export const useSupervisorOfferings = (params: Partial<CourseOfferingSearch> = {}) => {
+  const fullParams: CourseOfferingSearch = {
+    search: undefined,
+    page: 1,
+    orderBy: "id",
+    orderDir: "asc",
+    ...params,
+  };
+
   return useQuery({
-    queryKey: ["supervisor-offerings", params?.semester_id, params?.page, params?.search],
-    queryFn: () => getSupervisorCourseOfferings(params),
-    placeholderData: (previousData) => previousData,
+    queryKey: ["supervisorOfferings", fullParams],
+    queryFn: () => getSupervisorCourseOfferings(fullParams),
   });
 };
 
-// ── Evaluation Execution ─────────────────────────────────────────────────────
+// ── 3. Evaluation Schedules ─────────────────────────────────────────────────
+
+export const getSupervisorSchedules = async (semesterId?: number) => {
+  try {
+    const q = semesterId ? `?semester_id=${semesterId}` : "";
+    const res = await apiClient<APIResponse<ScheduleSelect[]>>(
+      `${BASE_SCHEDULES}/supervisor/schedules${q}`,
+    );
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch supervisor schedules."), { cause: err });
+  }
+};
+
+export const useSupervisorSchedules = (semesterId?: number) => {
+  return useQuery({
+    queryKey: ["supervisorSchedules", semesterId],
+    queryFn: () => getSupervisorSchedules(semesterId),
+  });
+};
+
+export const getActiveSupervisorSchedule = async (semesterId: number) => {
+  try {
+    const res = await apiClient<APIResponse<ScheduleSelect | null>>(
+      `${BASE_SCHEDULES}/supervisor/schedules/active/${semesterId}`,
+    );
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch active schedule."), { cause: err });
+  }
+};
+
+export const useActiveSupervisorSchedule = (semesterId: number) => {
+  return useQuery({
+    queryKey: ["activeSupervisorSchedule", semesterId],
+    queryFn: () => getActiveSupervisorSchedule(semesterId),
+    enabled: !!semesterId && !isNaN(semesterId),
+  });
+};
+
+// ── 4. Evaluation Execution (SEF) ───────────────────────────────────────────
+
+export const getSupervisorEvaluation = async (scheduleId: number, courseOfferingId: number) => {
+  try {
+    const res = await apiClient<
+      APIResponse<{ evaluation: SupervisorEvalSelect; ratings: unknown[] } | null>
+    >(`${BASE_EXEC}/supervisor/schedule/${scheduleId}/course/${courseOfferingId}`);
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch supervisor evaluation."), { cause: err });
+  }
+};
+
+export const useSupervisorEvaluation = (
+  scheduleId?: number,
+  courseOfferingId?: number,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: ["supervisorEval", scheduleId, courseOfferingId],
+    queryFn: () => getSupervisorEvaluation(scheduleId!, courseOfferingId!),
+    enabled: !!scheduleId && !!courseOfferingId && (options?.enabled ?? true),
+  });
+};
 
 export const submitSupervisorEvaluation = async (payload: SubmitSupervisorEvalReq) => {
   try {
-    const response = await apiClient.post<APIResponse<unknown>>(
-      "/protected/evaluation-execution/supervisor",
+    const res = await apiClient.post<APIResponse<{ evaluation: SupervisorEvalSelect }>>(
+      `${BASE_EXEC}/supervisor/submit`,
       payload,
     );
-    return response.data.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to submit evaluation."), { cause: error });
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to submit evaluation."), { cause: err });
   }
 };
 
@@ -81,49 +151,94 @@ export const useSubmitSupervisorEvaluation = () => {
 
   return useMutation({
     mutationFn: submitSupervisorEvaluation,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supervisor-offerings"] });
-      queryClient.invalidateQueries({ queryKey: ["supervisor-analytics"] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["supervisorEval", variables.schedule_id, variables.course_offering_id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["supervisorOfferings"] });
+      queryClient.invalidateQueries({ queryKey: ["supervisorAnalytics"] });
     },
   });
 };
 
-// ── Reports Management ────────────────────────────────────────────────────────
+// ── 5. Reports & Development Plan (Managed + Self) ──────────────────────────
 
 export const getSupervisorReports = async () => {
   try {
-    const response = await apiClient<
-      APIResponse<Array<IferSelect & { faculty_name: string | null }>>
-    >("/protected/evaluation-reports");
-    return response.data.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to load evaluation reports."), { cause: error });
+    const res =
+      await apiClient<APIResponse<Array<IferSelect & { faculty_name: string | null }>>>(
+        BASE_REPORTS,
+      );
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to load evaluation reports."), { cause: err });
   }
 };
 
 export const useSupervisorReports = () => {
   return useQuery({
-    queryKey: ["supervisor-reports"],
-    queryFn: () => getSupervisorReports(),
+    queryKey: ["supervisorReports"],
+    queryFn: getSupervisorReports,
+  });
+};
+
+export const getMyReports = async () => {
+  try {
+    const res = await apiClient<APIResponse<IferSelect[]>>(`${BASE_REPORTS}/my-reports`);
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to load personal reports."), { cause: err });
+  }
+};
+
+export const useMyReports = () => {
+  return useQuery({
+    queryKey: ["myReports"],
+    queryFn: getMyReports,
   });
 };
 
 export const getReportDetail = async (reportId: number) => {
   try {
-    const response = await apiClient<APIResponse<UnifiedFacultyReportDetail>>(
-      `/protected/evaluation-reports/${reportId}`,
+    const res = await apiClient<APIResponse<UnifiedFacultyReportDetail>>(
+      `${BASE_REPORTS}/${reportId}`,
     );
-    return response.data.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to fetch report details."), { cause: error });
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to fetch report detail."), { cause: err });
   }
 };
 
 export const useReportDetail = (reportId: number) => {
   return useQuery({
-    queryKey: ["supervisor-report-detail", reportId],
+    queryKey: ["reportDetail", reportId],
     queryFn: () => getReportDetail(reportId),
     enabled: !!reportId && !isNaN(reportId),
+  });
+};
+
+export const generateBatchReports = async (payload: GenerateBatchIferReq) => {
+  try {
+    const res = await apiClient.post<APIResponse<{ generated_count: number }>>(
+      `${BASE_REPORTS}/batch-generate`,
+      payload,
+    );
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to generate batch reports."), { cause: err });
+  }
+};
+
+export const useBatchGenerateReports = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: generateBatchReports,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supervisorReports"] });
+      queryClient.invalidateQueries({ queryKey: ["myReports"] });
+      queryClient.invalidateQueries({ queryKey: ["supervisorAnalytics"] });
+    },
   });
 };
 
@@ -135,13 +250,13 @@ export const updateDevelopmentPlan = async ({
   payload: UpdateDevelopmentPlanReq;
 }) => {
   try {
-    const response = await apiClient.patch<APIResponse<IferSelect>>(
-      `/protected/evaluation-reports/${reportId}/development-plan`,
+    const res = await apiClient.patch<APIResponse<IferSelect>>(
+      `${BASE_REPORTS}/${reportId}/development-plan`,
       payload,
     );
-    return response.data.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, "Failed to update development plan."), { cause: error });
+    return res.data.data;
+  } catch (err) {
+    throw new Error(getErrorMessage(err, "Failed to update development plan."), { cause: err });
   }
 };
 
@@ -151,8 +266,8 @@ export const useUpdateDevelopmentPlan = () => {
   return useMutation({
     mutationFn: updateDevelopmentPlan,
     onSuccess: (_, { reportId }) => {
-      queryClient.invalidateQueries({ queryKey: ["supervisor-report-detail", reportId] });
-      queryClient.invalidateQueries({ queryKey: ["supervisor-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["reportDetail", reportId] });
+      queryClient.invalidateQueries({ queryKey: ["supervisorReports"] });
     },
   });
 };
