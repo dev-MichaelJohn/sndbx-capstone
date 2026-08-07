@@ -6,7 +6,7 @@ import type { EvaluationFormTree, EvaluationType } from "backend/types/evaluatio
 
 interface EvaluationFormContainerProps {
   type: EvaluationType;
-  formTree: EvaluationFormTree;
+  formTree: EvaluationFormTree & { min_rating?: number; max_rating?: number };
   initialRatings?: Record<number, number>;
   initialComment?: string;
   isSubmitted?: boolean;
@@ -29,6 +29,9 @@ export const EvaluationFormContainer = ({
 }: EvaluationFormContainerProps) => {
   const [ratings, setRatings] = useState<Record<number, number>>(initialRatings);
   const [comment, setComment] = useState(initialComment);
+
+  const formMin = formTree.min_rating ?? 1;
+  const formMax = formTree.max_rating ?? 5;
 
   useEffect(() => {
     setRatings(initialRatings);
@@ -56,6 +59,8 @@ export const EvaluationFormContainer = ({
           type={type}
           category={cat}
           catIdx={idx}
+          formMinRating={formMin}
+          formMaxRating={formMax}
           ratingsMap={ratings}
           disabled={isSubmitted || isSaving}
           onRatingChange={handleRatingChange}

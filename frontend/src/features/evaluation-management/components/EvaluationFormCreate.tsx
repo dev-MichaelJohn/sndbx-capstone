@@ -46,6 +46,8 @@ export const EvaluationFormCreateDialog = ({
   const initialFormData: CreateFormReq = {
     title: "",
     description: "",
+    min_rating: 1,
+    max_rating: 5,
   };
 
   const form = useForm({
@@ -83,11 +85,11 @@ export const EvaluationFormCreateDialog = ({
               {type === "student"
                 ? "Student Evaluation of Teachers (SET)"
                 : "Supervisor Evaluation of Faculty (SEF)"}{" "}
-              form.
+              form with custom score bounds.
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup className="py-2">
+          <FieldGroup className="py-2 space-y-3">
             <form.Field
               name="title"
               children={(field) => (
@@ -99,6 +101,7 @@ export const EvaluationFormCreateDialog = ({
                 />
               )}
             />
+
             <form.Field
               name="description"
               children={(field) => (
@@ -110,6 +113,33 @@ export const EvaluationFormCreateDialog = ({
                 />
               )}
             />
+
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="min_rating"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Min Score Bound"
+                    type="number"
+                    disabled={isPending}
+                    placeholder="1"
+                  />
+                )}
+              />
+              <form.Field
+                name="max_rating"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Max Score Bound"
+                    type="number"
+                    disabled={isPending}
+                    placeholder="5"
+                  />
+                )}
+              />
+            </div>
           </FieldGroup>
 
           <DialogFooter>
@@ -146,7 +176,11 @@ export const EvaluationFormCreateDialog = ({
               Create new evaluation form?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              This will create a new evaluation instrument template.
+              This will create a new evaluation instrument template with score range{" "}
+              <strong>
+                {dialog.pendingValue?.min_rating} to {dialog.pendingValue?.max_rating}
+              </strong>
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

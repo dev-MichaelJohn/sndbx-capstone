@@ -22,7 +22,7 @@ export function generateIferPdfBuffer(data: UnifiedFacultyReportDetail): Promise
       .text("ANNEX C — CHED Memorandum Order No. 19, Series of 2025", { align: "center" });
     doc.moveDown(1.2);
 
-    // Section A: Faculty Info
+    // Section A: Faculty Information
     doc.fontSize(9.5).font("Helvetica-Bold").text("A. Faculty Information");
     doc.font("Helvetica").fontSize(9);
     doc.text(`Name of Faculty: ${data.faculty.name}`);
@@ -31,17 +31,17 @@ export function generateIferPdfBuffer(data: UnifiedFacultyReportDetail): Promise
     doc.text(`Semester / AY: ${data.semester.term} / AY ${data.semester.academic_year}`);
     doc.moveDown(1);
 
-    // Section B: Class Summary Table
+    // Section B: Summary of Average SET Rating Computation
     doc.font("Helvetica-Bold").fontSize(9.5).text("B. Summary of Average SET Rating Computation");
     doc.moveDown(0.5);
 
     let y = doc.y;
     doc.fontSize(8).font("Helvetica-Bold");
-    doc.text("Course", 40, y);
-    doc.text("Section", 150, y);
-    doc.text("Students", 250, y);
-    doc.text("Avg SET", 340, y);
-    doc.text("Weighted Score", 440, y);
+    doc.text("Course Code", 40, y);
+    doc.text("Year / Section", 150, y);
+    doc.text("No. of Students", 250, y);
+    doc.text("Average SET Rating", 340, y);
+    doc.text("Weighted SET Score", 440, y);
     doc.moveDown(0.5);
 
     doc.font("Helvetica");
@@ -56,22 +56,27 @@ export function generateIferPdfBuffer(data: UnifiedFacultyReportDetail): Promise
     });
     doc.moveDown(1);
 
-    // Section C: Ratings Summary
-    doc.font("Helvetica-Bold").fontSize(9.5).text("C. Ratings Summary");
+    // Section C: SET and SEF Ratings (Annex C Layout)
+    doc.font("Helvetica-Bold").fontSize(9.5).text("C. SET and SEF Ratings");
     doc.font("Helvetica").fontSize(9);
-    doc.text(`Overall SET Rating: ${data.report.overall_set_rating ?? "N/A"}`);
-    doc.text(`Overall SEF Rating: ${data.report.overall_sef_rating ?? "N/A"}`);
-    doc.text(
-      `Combined Rating (60% SET / 40% SEF): ${data.combined_weighted_rating?.toFixed(2) ?? "N/A"}`,
-    );
+    doc.text(`OVERALL SET RATING: ${data.report.overall_set_rating ?? "N/A"}`);
+    doc.text(`OVERALL SEF RATING: ${data.report.overall_sef_rating ?? "N/A"}`);
+    if (data.combined_weighted_rating !== null) {
+      doc.text(`COMBINED RATING: ${data.combined_weighted_rating.toFixed(2)}`);
+    }
     doc.moveDown(1);
 
-    // Section D: Qualitative Comments
-    doc.font("Helvetica-Bold").fontSize(9.5).text("D. Qualitative Comments");
+    // Section D: Summary of Qualitative Comments
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(9.5)
+      .text("D. Summary of Qualitative Comments and Suggestions");
     doc.font("Helvetica").fontSize(8.5);
-    doc.text("Student Comments: " + (data.student_comments.join("; ") || "None recorded."));
+    doc.text("Comments from Students: " + (data.student_comments.join("; ") || "None recorded."));
     doc.moveDown(0.5);
-    doc.text("Supervisor Comments: " + (data.supervisor_comments.join("; ") || "None recorded."));
+    doc.text(
+      "Comments from Supervisor: " + (data.supervisor_comments.join("; ") || "None recorded."),
+    );
     doc.moveDown(2);
 
     // Signatures
@@ -79,7 +84,7 @@ export function generateIferPdfBuffer(data: UnifiedFacultyReportDetail): Promise
     doc.text("_________________________", 40, doc.y);
     doc.text("_________________________", 350, doc.y - 10);
     doc.text("Prepared By (Authorized Staff)", 40, doc.y + 2);
-    doc.text("Reviewed By (Dean / Chair)", 350, doc.y - 10);
+    doc.text("Reviewed By (Authorized Official)", 350, doc.y - 10);
 
     doc.end();
   });

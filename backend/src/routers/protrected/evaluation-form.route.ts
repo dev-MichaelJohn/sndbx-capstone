@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import EvaluationFormController from "@/controllers/evaluation-form.controller.js";
-import { requirePermission } from "@/middlewares/rbac.middleware.js";
+import { requireAnyPermission, requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 
 const EvaluationFormRouter: IRouter = Router({ mergeParams: true });
@@ -8,7 +8,7 @@ const EvaluationFormRouter: IRouter = Router({ mergeParams: true });
 // FORM ROOT
 EvaluationFormRouter.get(
   "/:type/forms",
-  requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
+  requireAnyPermission(PERMISSIONS.EVALUATION_FORM_MANAGE, PERMISSIONS.EVALUATION_FORM_READ),
   (req, res, next) => EvaluationFormController.getForms(req, res, next),
 );
 EvaluationFormRouter.post(
@@ -18,7 +18,7 @@ EvaluationFormRouter.post(
 );
 EvaluationFormRouter.get(
   "/:type/forms/:formId",
-  requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
+  requireAnyPermission(PERMISSIONS.EVALUATION_FORM_MANAGE, PERMISSIONS.EVALUATION_FORM_READ),
   (req, res, next) => EvaluationFormController.getFormTree(req, res, next),
 );
 

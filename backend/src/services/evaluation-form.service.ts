@@ -144,6 +144,8 @@ export class evaluationFormService implements IEvaluationFormService {
       id: baseRow.id,
       title: baseRow.title,
       description: baseRow.description,
+      min_rating: baseRow.min_rating ?? 1,
+      max_rating: baseRow.max_rating ?? 5,
       created_at: baseRow.created_at,
       updated_at: baseRow.updated_at,
       deleted_at: baseRow.deleted_at,

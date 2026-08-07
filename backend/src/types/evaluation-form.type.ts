@@ -46,10 +46,17 @@ export const UpsertMeanReqSchema = z.object({
 });
 export type UpsertMeanReq = z.infer<typeof UpsertMeanReqSchema>;
 
-export const CreateFormReqSchema = z.object({
-  title: z.string().min(1, "Title required"),
-  description: z.string().optional(),
-});
+export const CreateFormReqSchema = z
+  .object({
+    title: z.string().min(1, "Title required"),
+    description: z.string().optional(),
+    min_rating: z.number().int().min(0),
+    max_rating: z.number().int().min(1),
+  })
+  .refine((data) => data.max_rating > data.min_rating, {
+    message: "max_rating must be strictly greater than min_rating",
+    path: ["max_rating"],
+  });
 export type CreateFormReq = z.infer<typeof CreateFormReqSchema>;
 
 export type FormSelect = StudentEvaluationFormSelect | SupervisorEvaluationFormSelect;

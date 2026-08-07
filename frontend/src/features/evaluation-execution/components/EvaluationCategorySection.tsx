@@ -5,6 +5,8 @@ interface EvaluationCategorySectionProps {
   type: EvaluationType;
   category: EvaluationCategoryNode;
   catIdx: number;
+  formMinRating: number;
+  formMaxRating: number;
   ratingsMap: Record<number, number>;
   disabled?: boolean;
   onRatingChange: (questionId: number, rating: number) => void;
@@ -14,6 +16,8 @@ export const EvaluationCategorySection = ({
   type,
   category,
   catIdx,
+  formMinRating,
+  formMaxRating,
   ratingsMap,
   disabled = false,
   onRatingChange,
@@ -39,6 +43,8 @@ export const EvaluationCategorySection = ({
             question={q}
             catIdx={catIdx}
             qIdx={qIdx}
+            formMinRating={formMinRating}
+            formMaxRating={formMaxRating}
             rating={ratingsMap[q.id]}
             disabled={disabled}
             onRatingChange={onRatingChange}

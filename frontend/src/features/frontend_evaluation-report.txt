@@ -248,6 +248,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -257,10 +259,16 @@ import {
 } from "@/components/ui/select";
 import { useSemesters } from "@/features/semester/api/semester.service";
 import { useGenerateBatchReports } from "../api/evaluation-report.service";
+import type { ScaleMode } from "backend/types/evaluation-report.type";
 
 export const BatchGenerateReportDialog = () => {
   const [open, setOpen] = useState(false);
   const [semesterId, setSemesterId] = useState<string>("");
+  const [setWeight, setSetWeight] = useState<number>(0.6);
+  const [sefWeight, setSefWeight] = useState<number>(0.4);
+  const [minRating, setMinRating] = useState<number>(1);
+  const [maxRating, setMaxRating] = useState<number>(5);
+  const [scaleMode, setScaleMode] = useState<ScaleMode>("PERCENTAGE_100");
 
   const { data: semesterData, isLoading: isLoadingSemesters } = useSemesters({
     page: 1,
@@ -278,20 +286,26 @@ export const BatchGenerateReportDialog = () => {
       return;
     }
 
+    if (Math.abs(setWeight + sefWeight - 1.0) > 0.001) {
+      toast.error("SET and SEF weights must sum up to 1.0 (100%).");
+      return;
+    }
+
     try {
       const result = await generateBatch.mutateAsync({
         semester_id: Number(semesterId),
-        set_weight: 0.6,
-        sef_weight: 0.4,
+        set_weight: setWeight,
+        sef_weight: sefWeight,
+        min_rating: minRating,
+        max_rating: maxRating,
+        scale_mode: scaleMode,
       });
 
       const count = result?.generated_count ?? 0;
       toast.success(`Generated ${count} evaluation report(s) successfully.`);
       setOpen(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to generate batch evaluation reports.",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to generate batch reports.");
     }
   };
 
@@ -311,14 +325,14 @@ export const BatchGenerateReportDialog = () => {
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">Generate Batch Reports</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Calculate and aggregate SET/SEF rating scores for all faculty offering courses in the
-            selected semester.
+            Configure consolidation formula parameters, weights, and scoring bounds.
           </DialogDescription>
         </DialogHeader>
 
-        <FieldGroup className="py-2">
+        <FieldGroup className="py-2 space-y-3">
+          {/* Target Academic Semester */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-foreground">Target Academic Semester</label>
+            <Label className="text-xs">Academic Semester</Label>
             <Select value={semesterId} onValueChange={setSemesterId} disabled={isLoadingSemesters}>
               <SelectTrigger className="h-8 rounded-lg text-xs bg-muted/20 border-border/60">
                 <SelectValue
@@ -333,6 +347,82 @@ export const BatchGenerateReportDialog = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Consolidation Scale Mode */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">Consolidation Scale Mode</Label>
+            <Select value={scaleMode} onValueChange={(val) => setScaleMode(val as ScaleMode)}>
+              <SelectTrigger className="h-8 rounded-lg text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="PERCENTAGE_100" className="text-xs">
+                  CHED CMO 19 Percentage Mode (0–100%)
+                </SelectItem>
+                <SelectItem value="GPA_5" className="text-xs">
+                  GPA Rating Scale Mode (1.00–5.00)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Score Bounds */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Min Rating Bound</Label>
+              <Input
+                type="number"
+                value={minRating}
+                onChange={(e) => setMinRating(Number(e.target.value))}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Max Rating Bound</Label>
+              <Input
+                type="number"
+                value={maxRating}
+                onChange={(e) => setMaxRating(Number(e.target.value))}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
+          </div>
+
+          {/* SET / SEF Weights */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="space-y-1">
+              <Label className="text-xs">SET Weight (60% = 0.6)</Label>
+              <Input
+                type="number"
+                step="0.05"
+                min="0"
+                max="1"
+                value={setWeight}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setSetWeight(val);
+                  setSefWeight(Number((1 - val).toFixed(2)));
+                }}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">SEF Weight (40% = 0.4)</Label>
+              <Input
+                type="number"
+                step="0.05"
+                min="0"
+                max="1"
+                value={sefWeight}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setSefWeight(val);
+                  setSetWeight(Number((1 - val).toFixed(2)));
+                }}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
           </div>
         </FieldGroup>
 
@@ -352,7 +442,7 @@ export const BatchGenerateReportDialog = () => {
             disabled={generateBatch.isPending || !semesterId}
             className="h-8 cursor-pointer rounded-lg bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-500"
           >
-            {generateBatch.isPending ? "Generating..." : "Run Batch Aggregation"}
+            {generateBatch.isPending ? "Calculating..." : "Run Batch Aggregation"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -383,6 +473,12 @@ import { useSemester } from "@/features/semester/api/semester.service";
 import type { IferSelect } from "backend/types/evaluation-report.type";
 
 type EvaluationReportRow = IferSelect & { faculty_name?: string };
+
+const formatScore = (val: string | null) => {
+  if (!val) return "N/A";
+  const num = Number(val);
+  return num > 5 ? `${num.toFixed(2)}%` : `${num.toFixed(2)} / 5.0`;
+};
 
 const SemesterCell = ({ semesterId }: { semesterId: number }) => {
   const { data: semester } = useSemester(semesterId);
@@ -442,19 +538,19 @@ export const getEvaluationReportColumns = (): Array<DataTableColumn<EvaluationRe
   },
   {
     header: "SET Rating",
-    className: "w-24",
+    className: "w-28",
     cell: (row) => (
       <span className="font-mono text-xs font-semibold text-emerald-400">
-        {row.overall_set_rating ? `${row.overall_set_rating} / 5.0` : "N/A"}
+        {formatScore(row.overall_set_rating)}
       </span>
     ),
   },
   {
     header: "SEF Rating",
-    className: "w-24",
+    className: "w-28",
     cell: (row) => (
       <span className="font-mono text-xs font-semibold text-sky-400">
-        {row.overall_sef_rating ? `${row.overall_sef_rating} / 5.0` : "N/A"}
+        {formatScore(row.overall_sef_rating)}
       </span>
     ),
   },
@@ -575,6 +671,178 @@ export const EvaluationReportStatusBadge = ({ status, className }: StatusBadgePr
         </Badge>
       );
   }
+};
+
+
+---
+evaluation-report/components/FedafPlanForm.tsx
+---
+import { useState, type ChangeEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { FileEdit, Check } from "lucide-react";
+import type { UpdateDevelopmentPlanReq } from "backend/types/evaluation-report.type";
+
+interface FedafPlanFormProps {
+  initialPlan?: UpdateDevelopmentPlanReq;
+  isSaving?: boolean;
+  onSave: (payload: UpdateDevelopmentPlanReq) => void;
+}
+
+export const FedafPlanForm = ({ initialPlan, isSaving = false, onSave }: FedafPlanFormProps) => {
+  const [areas, setAreas] = useState(initialPlan?.areas_for_improvement ?? "");
+  const [activities, setActivities] = useState(initialPlan?.proposed_activities ?? "");
+  const [actionPlan, setActionPlan] = useState(initialPlan?.action_plan ?? "");
+
+  const handleSubmit = (e: ChangeEvent) => {
+    e.preventDefault();
+    onSave({
+      areas_for_improvement: areas,
+      proposed_activities: activities,
+      action_plan: actionPlan,
+    });
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-xl border border-border/60 bg-card p-4 shadow-2xs"
+    >
+      <div className="flex items-center gap-2 border-b pb-2">
+        <FileEdit className="size-4 text-emerald-500" />
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+          FEDAF Development Plan
+        </h4>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground">Areas for Improvement</label>
+        <Textarea
+          value={areas}
+          disabled={isSaving}
+          onChange={(e) => setAreas(e.target.value)}
+          placeholder="Identify specific instructional areas needing growth..."
+          className="min-h-20 text-xs"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground">Proposed L&D Activities</label>
+        <Textarea
+          value={activities}
+          disabled={isSaving}
+          onChange={(e) => setActivities(e.target.value)}
+          placeholder="List seminars, workshops, or mentoring sessions..."
+          className="min-h-20 text-xs"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground">Action Plan & Target Timeline</label>
+        <Textarea
+          value={actionPlan}
+          disabled={isSaving}
+          onChange={(e) => setActionPlan(e.target.value)}
+          placeholder="Define measurable goals and target completion dates..."
+          className="min-h-20 text-xs"
+        />
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={isSaving || !areas.trim() || !activities.trim() || !actionPlan.trim()}
+          className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
+        >
+          <Check className="size-3.5" />
+          <span>{isSaving ? "Saving..." : "Save FEDAF Plan"}</span>
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+
+---
+evaluation-report/components/ReportCardSummary.tsx
+---
+import { Button } from "@/components/ui/button";
+import { Download, FileText, Star, Activity } from "lucide-react";
+import { downloadIferPdf, downloadFedafPdf } from "../api/evaluation-report.service";
+import type { UnifiedFacultyReportDetail } from "backend/types/evaluation-report.type";
+
+interface ReportSummaryCardProps {
+  detail: UnifiedFacultyReportDetail;
+}
+
+export const ReportSummaryCard = ({ detail }: ReportSummaryCardProps) => {
+  const { report, faculty, semester, combined_weighted_rating } = detail;
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">{faculty.name}</h3>
+          <p className="text-xs text-muted-foreground">
+            {faculty.department} • Term: {semester.term} (AY {semester.academic_year})
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadIferPdf(report.id)}
+            className="h-7 text-xs gap-1"
+          >
+            <Download className="size-3 text-emerald-500" /> IFER PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadFedafPdf(report.id)}
+            className="h-7 text-xs gap-1"
+          >
+            <Download className="size-3 text-sky-500" /> FEDAF PDF
+          </Button>
+        </div>
+      </div>
+
+      {/* Ratings Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div className="rounded-lg border p-3 bg-muted/20 space-y-1">
+          <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
+            <Star className="size-3.5 text-amber-500" />
+            <span>SET Rating (60%)</span>
+          </div>
+          <p className="text-lg font-bold font-mono text-foreground">
+            {report.overall_set_rating ? `${report.overall_set_rating} / 5.0` : "N/A"}
+          </p>
+        </div>
+
+        <div className="rounded-lg border p-3 bg-muted/20 space-y-1">
+          <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
+            <Activity className="size-3.5 text-indigo-500" />
+            <span>SEF Rating (40%)</span>
+          </div>
+          <p className="text-lg font-bold font-mono text-foreground">
+            {report.overall_sef_rating ? `${report.overall_sef_rating} / 5.0` : "N/A"}
+          </p>
+        </div>
+
+        <div className="rounded-lg border p-3 bg-emerald-500/10 border-emerald-500/20 space-y-1">
+          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+            <FileText className="size-3.5" />
+            <span>Combined Score</span>
+          </div>
+          <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
+            {combined_weighted_rating ? `${combined_weighted_rating.toFixed(2)} / 5.0` : "N/A"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 

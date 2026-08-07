@@ -7,6 +7,8 @@ interface QuestionItemProps {
   question: QuestionSelect & { means?: any[] };
   catIdx: number;
   qIdx: number;
+  formMinRating: number;
+  formMaxRating: number;
   rating?: number;
   disabled?: boolean;
   onRatingChange: (questionId: number, rating: number) => void;
@@ -17,10 +19,15 @@ export const QuestionItem = ({
   question,
   catIdx,
   qIdx,
+  formMinRating,
+  formMaxRating,
   rating,
   disabled = false,
   onRatingChange,
 }: QuestionItemProps) => {
+  // Use question's max_rating override if available, else fallback to form level max_rating
+  const effectiveMaxRating = question.max_rating ?? formMaxRating;
+
   return (
     <div className="rounded-xl border border-border/50 bg-card/60 p-4 space-y-3 shadow-2xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -34,7 +41,8 @@ export const QuestionItem = ({
         </div>
 
         <RatingPillGroup
-          maxRating={question.max_rating}
+          minRating={formMinRating}
+          maxRating={effectiveMaxRating}
           value={rating}
           disabled={disabled}
           onChange={(val) => onRatingChange(question.id, val)}

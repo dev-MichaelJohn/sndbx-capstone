@@ -7,7 +7,7 @@ import {
 
 export const RatingItemSchema = z.object({
   question_id: z.number().int().positive("Valid question_id required"),
-  rating: z.number().int().min(1, "Rating min 1").max(5, "Rating max 5"),
+  rating: z.number().int().min(1, "Rating min 1"),
 });
 
 export const SubmitStudentEvalReqSchema = z

@@ -295,6 +295,13 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
   ): Promise<EvaluationAnalyticsPayload> {
     const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
     const reports = await GetRecords("IndividualFacultyEvaluationReports", {
+      select: (t) => ({
+        id: t.id,
+        overall_set_rating: t.overall_set_rating,
+        overall_sef_rating: t.overall_sef_rating,
+        average_student_sentiment: t.average_student_sentiment,
+        average_supervisor_sentiment: t.average_supervisor_sentiment,
+      }),
       where: (reportRecord) =>
         and(
           isNull(reportRecord.deleted_at),
@@ -326,7 +333,13 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
                   Colleges,
                   and(eq(Programs.college_id, Colleges.id), isNull(Colleges.deleted_at)),
                 )
-                .groupBy(IndividualFacultyEvaluationReports.id) as unknown as PgSelect,
+                .groupBy(
+                  IndividualFacultyEvaluationReports.id,
+                  IndividualFacultyEvaluationReports.overall_set_rating,
+                  IndividualFacultyEvaluationReports.overall_sef_rating,
+                  IndividualFacultyEvaluationReports.average_student_sentiment,
+                  IndividualFacultyEvaluationReports.average_supervisor_sentiment,
+                ) as unknown as PgSelect,
           }
         : {}),
     });

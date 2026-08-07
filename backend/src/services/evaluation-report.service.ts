@@ -30,6 +30,7 @@ import {
   UpdateIferStatusReqSchema,
   type GenerateBatchIferReq,
   type IferSelect,
+  type ScaleMode,
   type UnifiedFacultyReportDetail,
   type UpdateDevelopmentPlanReq,
   type UpdateIferStatusReq,
@@ -56,13 +57,50 @@ export class evaluationReportService implements IEvaluationReportService {
     return val.toFixed(RATING_CONFIG.DECIMAL_PLACES);
   }
 
+  // ── Score Transformation (CHED CMO 19 Annex C Formula) ─────────────────────
+
+  /** Scale transformation:
+   *  Mode PERCENTAGE_100: Rating = ((Raw - Min) / (Max - Min)) * 100
+   *  Mode GPA_5: Raw GPA score (1.00 - 5.00)
+   */
+  private transformScore(
+    rawRating: number,
+    minRating: number,
+    maxRating: number,
+    scaleMode: ScaleMode,
+  ): number {
+    if (scaleMode === "PERCENTAGE_100") {
+      const range = maxRating > minRating ? maxRating - minRating : maxRating;
+      const offset = maxRating > minRating ? minRating : 0;
+      const normalized = (rawRating - offset) / range;
+      return Math.min(100, Math.max(0, normalized * 100));
+    }
+    return rawRating;
+  }
+
+  /** CHED Annex C Step 4: Combined Rating = (SET * set_weight) + (SEF * sef_weight) */
+  private computeCombinedRating(
+    setRating: string | number | null,
+    sefRating: string | number | null,
+    setWeight = EVALUATION_WEIGHTS.SET_DEFAULT,
+    sefWeight = EVALUATION_WEIGHTS.SEF_DEFAULT,
+  ): number | null {
+    if (setWeight === undefined || sefWeight === undefined) return null;
+
+    const setVal = setRating !== null ? Number(setRating) : null;
+    const sefVal = sefRating !== null ? Number(sefRating) : null;
+
+    if (setVal !== null && sefVal !== null) {
+      return setVal * setWeight + sefVal * sefWeight;
+    }
+    return null;
+  }
+
+  // ── Validation Helpers ──────────────────────────────────────────────────────
+
   private async findActiveReportById(reportId: number): Promise<IferSelect> {
     const report = (await GetRecord("IndividualFacultyEvaluationReports", {
-      where: (IndividualFacultyEvaluationReports) =>
-        and(
-          eq(IndividualFacultyEvaluationReports.id, reportId),
-          isNull(IndividualFacultyEvaluationReports.deleted_at),
-        ),
+      where: (t) => and(eq(t.id, reportId), isNull(t.deleted_at)),
     })) as IferSelect | undefined;
 
     if (!report) throw new AppError(404, "Report not found.");
@@ -70,7 +108,7 @@ export class evaluationReportService implements IEvaluationReportService {
   }
 
   private async validateNoActiveSchedules(semesterId: number, now: Date): Promise<void> {
-    const activeStudentSchedules = await GetRecords("StudentEvaluationSchedules", {
+    const activeStudent = await GetRecords("StudentEvaluationSchedules", {
       where: (s) =>
         and(
           eq(s.semester_id, semesterId),
@@ -80,7 +118,7 @@ export class evaluationReportService implements IEvaluationReportService {
         ),
     });
 
-    const activeSupervisorSchedules = await GetRecords("SupervisorEvaluationSchedules", {
+    const activeSupervisor = await GetRecords("SupervisorEvaluationSchedules", {
       where: (s) =>
         and(
           eq(s.semester_id, semesterId),
@@ -90,7 +128,7 @@ export class evaluationReportService implements IEvaluationReportService {
         ),
     });
 
-    if (activeStudentSchedules.length > 0 || activeSupervisorSchedules.length > 0) {
+    if (activeStudent.length > 0 || activeSupervisor.length > 0) {
       throw new AppError(
         400,
         "Cannot generate reports while an evaluation schedule is currently active.",
@@ -100,29 +138,29 @@ export class evaluationReportService implements IEvaluationReportService {
 
   private async validateHasSubmittedEvaluations(semesterId: number): Promise<void> {
     const studentSubmissions = await GetRecords("StudentEvaluations", {
-      select: (StudentEvaluations) => ({ id: StudentEvaluations.id }),
+      select: (t) => ({ id: t.id }),
       where: () =>
         and(
           eq(CourseOfferings.semester_id, semesterId),
           isNull(CourseOfferings.deleted_at),
           sql`${StudentEvaluations.submitted_at} IS NOT NULL`,
         ),
-      join: (query) =>
-        query
+      join: (q) =>
+        q
           .innerJoin(StudentClasses, eq(StudentEvaluations.student_class_id, StudentClasses.id))
           .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id)),
     });
 
     const supervisorSubmissions = await GetRecords("SupervisorEvaluations", {
-      select: (SupervisorEvaluations) => ({ id: SupervisorEvaluations.id }),
+      select: (t) => ({ id: t.id }),
       where: () =>
         and(
           eq(SupervisorEvaluationSchedules.semester_id, semesterId),
           isNull(SupervisorEvaluationSchedules.deleted_at),
           sql`${SupervisorEvaluations.submitted_at} IS NOT NULL`,
         ),
-      join: (query) =>
-        query.innerJoin(
+      join: (q) =>
+        q.innerJoin(
           SupervisorEvaluationSchedules,
           eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
         ),
@@ -136,46 +174,48 @@ export class evaluationReportService implements IEvaluationReportService {
     }
   }
 
+  // ── Comments & Rollup Helpers ───────────────────────────────────────────────
+
   private async fetchStudentComments(semesterId: number, facultyId: number): Promise<string[]> {
-    const studentComments = await GetRecords<"StudentEvaluations", { comment: string | null }>(
+    const comments = await GetRecords<"StudentEvaluations", { comment: string | null }>(
       "StudentEvaluations",
       {
-        select: (StudentEvaluations) => ({ comment: StudentEvaluations.comment }),
+        select: (t) => ({ comment: t.comment }),
         where: () =>
           and(
             eq(CourseOfferings.semester_id, semesterId),
             eq(CourseOfferings.faculty_id, facultyId),
             sql`${StudentEvaluations.comment} IS NOT NULL`,
           ),
-        join: (query) =>
-          query
+        join: (q) =>
+          q
             .innerJoin(StudentClasses, eq(StudentClasses.course_offering_id, CourseOfferings.id))
             .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id)),
       },
     );
 
-    return studentComments.map((c) => c.comment!).filter(Boolean);
+    return comments.map((c) => c.comment!).filter(Boolean);
   }
 
   private async fetchSupervisorComments(semesterId: number): Promise<string[]> {
-    const supervisorComments = await GetRecords<
+    const comments = await GetRecords<"SupervisorEvaluations", { comment: string | null }>(
       "SupervisorEvaluations",
-      { comment: string | null }
-    >("SupervisorEvaluations", {
-      select: (SupervisorEvaluations) => ({ comment: SupervisorEvaluations.comment }),
-      where: () =>
-        and(
-          eq(SupervisorEvaluationSchedules.semester_id, semesterId),
-          sql`${SupervisorEvaluations.comment} IS NOT NULL`,
-        ),
-      join: (query) =>
-        query.innerJoin(
-          SupervisorEvaluationSchedules,
-          eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
-        ),
-    });
+      {
+        select: (t) => ({ comment: t.comment }),
+        where: () =>
+          and(
+            eq(SupervisorEvaluationSchedules.semester_id, semesterId),
+            sql`${SupervisorEvaluations.comment} IS NOT NULL`,
+          ),
+        join: (q) =>
+          q.innerJoin(
+            SupervisorEvaluationSchedules,
+            eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
+          ),
+      },
+    );
 
-    return supervisorComments.map((c) => c.comment!).filter(Boolean);
+    return comments.map((c) => c.comment!).filter(Boolean);
   }
 
   private rollupClassSummaries(
@@ -210,15 +250,216 @@ export class evaluationReportService implements IEvaluationReportService {
     return Array.from(courseMap.values());
   }
 
-  private computeCombinedRating(setRating: string | null, sefRating: string | null): number | null {
-    if (setRating && sefRating) {
-      return (
-        Number(setRating) * EVALUATION_WEIGHTS.SET_DEFAULT +
-        Number(sefRating) * EVALUATION_WEIGHTS.SEF_DEFAULT
+  // ── Single Responsibility Aggregation Modules ─────────────────────────────
+
+  /** Annex C Steps 1–3: Class SET Summaries & Weighted SET Score. */
+  private async aggregateClassSummaries(
+    semesterId: number,
+    facultyId: number,
+    minRating: number,
+    maxRating: number,
+    scaleMode: ScaleMode,
+  ) {
+    const rawSummaries = await GetRecords<
+      "CourseOfferings",
+      {
+        course_offering_id: number;
+        student_count: number;
+        avg_set_rating: number;
+        avg_student_sentiment: number;
+      }
+    >("CourseOfferings", {
+      select: () => ({
+        course_offering_id: CourseOfferings.id,
+        student_count: sql<number>`count(${StudentEvaluations.id})::int`,
+        avg_set_rating: sql<number>`coalesce(avg(${StudentEvaluations.set_rating}), 0)::float`,
+        avg_student_sentiment: sql<number>`coalesce(avg(${StudentEvaluations.comment_score}), 0)::float`,
+      }),
+      where: () =>
+        and(
+          eq(CourseOfferings.semester_id, semesterId),
+          eq(CourseOfferings.faculty_id, facultyId),
+          isNull(CourseOfferings.deleted_at),
+        ),
+      join: (q) =>
+        q
+          .leftJoin(StudentClasses, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+          .leftJoin(
+            StudentEvaluations,
+            and(
+              eq(StudentEvaluations.student_class_id, StudentClasses.id),
+              sql`${StudentEvaluations.submitted_at} IS NOT NULL`,
+            ),
+          )
+          .groupBy(CourseOfferings.id),
+    });
+
+    const activeSummaries = rawSummaries.filter((c) => c.student_count > 0);
+    const totalStudents = activeSummaries.reduce((acc, c) => acc + c.student_count, 0);
+
+    // Step 1: Average SET Rating
+    // Step 2: Weighted SET Score = No. Students * Avg SET Rating
+    const activeClassSummariesWithScores = activeSummaries.map((item) => {
+      const classAvgRating = this.transformScore(
+        item.avg_set_rating,
+        minRating,
+        maxRating,
+        scaleMode,
       );
-    }
-    return setRating ? Number(setRating) : null;
+      const weightedSetScore = item.student_count * classAvgRating;
+
+      return {
+        ...item,
+        classAvgRating,
+        weightedSetScore,
+      };
+    });
+
+    const totalWeightedSetScore = activeClassSummariesWithScores.reduce(
+      (acc, c) => acc + c.weightedSetScore,
+      0,
+    );
+
+    // Step 3: Overall SET Rating = Total Weighted SET Score / Total Students
+    const overallSetRating =
+      totalStudents > 0 ? this.formatRating(totalWeightedSetScore / totalStudents) : null;
+
+    const avgStudentSentiment =
+      activeSummaries.length > 0
+        ? this.formatRating(
+            activeSummaries.reduce((acc, c) => acc + c.avg_student_sentiment, 0) /
+              activeSummaries.length,
+          )
+        : null;
+
+    return {
+      activeClassSummariesWithScores,
+      overallSetRating,
+      avgStudentSentiment,
+    };
   }
+
+  /** Annex C Step 4: Overall SEF Rating. */
+  private async aggregateSupervisorRatings(
+    semesterId: number,
+    minRating: number,
+    maxRating: number,
+    scaleMode: ScaleMode,
+  ) {
+    const supervisorEval = await GetRecords<
+      "SupervisorEvaluations",
+      {
+        avg_sef_rating: number;
+        avg_supervisor_sentiment: number;
+        count: number;
+      }
+    >("SupervisorEvaluations", {
+      select: () => ({
+        avg_sef_rating: sql<number>`coalesce(avg(${SupervisorEvaluations.set_rating}), 0)::float`,
+        avg_supervisor_sentiment: sql<number>`coalesce(avg(${SupervisorEvaluations.comment_score}), 0)::float`,
+        count: sql<number>`count(${SupervisorEvaluations.id})::int`,
+      }),
+      where: () =>
+        and(
+          eq(SupervisorEvaluationSchedules.semester_id, semesterId),
+          sql`${SupervisorEvaluations.submitted_at} IS NOT NULL`,
+        ),
+      join: (q) =>
+        q.innerJoin(
+          SupervisorEvaluationSchedules,
+          eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
+        ),
+    });
+
+    const rawSef =
+      supervisorEval[0] && supervisorEval[0].count > 0 ? supervisorEval[0].avg_sef_rating : null;
+
+    const overallSefRating =
+      rawSef !== null
+        ? this.formatRating(this.transformScore(rawSef, minRating, maxRating, scaleMode))
+        : null;
+
+    const avgSupervisorSentiment =
+      supervisorEval[0] && supervisorEval[0].count > 0
+        ? this.formatRating(supervisorEval[0].avg_supervisor_sentiment)
+        : null;
+
+    return { overallSefRating, avgSupervisorSentiment };
+  }
+
+  /** Transaction module to persist IFER report + Class Summaries table. */
+  private async saveIferTransaction(
+    semesterId: number,
+    facultyId: number,
+    overallSetRating: string | null,
+    overallSefRating: string | null,
+    avgStudentSentiment: string | null,
+    avgSupervisorSentiment: string | null,
+    activeClassSummariesWithScores: Array<{
+      course_offering_id: number;
+      student_count: number;
+      classAvgRating: number;
+      weightedSetScore: number;
+    }>,
+  ) {
+    await db.transaction(async (tx) => {
+      const existing = await GetRecord("IndividualFacultyEvaluationReports", {
+        where: (t) =>
+          and(eq(t.semester_id, semesterId), eq(t.faculty_id, facultyId), isNull(t.deleted_at)),
+        tx,
+      });
+
+      let ifer: IferSelect;
+
+      if (existing) {
+        ifer = (await UpdateRecord(
+          "IndividualFacultyEvaluationReports",
+          existing.id,
+          {
+            overall_set_rating: overallSetRating,
+            overall_sef_rating: overallSefRating,
+            average_student_sentiment: avgStudentSentiment,
+            average_supervisor_sentiment: avgSupervisorSentiment,
+            status: "DRAFT",
+          },
+          IndividualFacultyEvaluationReports.id,
+          tx,
+        )) as IferSelect;
+
+        await tx.delete(IferClassSummaries).where(eq(IferClassSummaries.ifer_id, existing.id));
+      } else {
+        ifer = (await CreateRecord(
+          "IndividualFacultyEvaluationReports",
+          {
+            semester_id: semesterId,
+            faculty_id: facultyId,
+            overall_set_rating: overallSetRating,
+            overall_sef_rating: overallSefRating,
+            average_student_sentiment: avgStudentSentiment,
+            average_supervisor_sentiment: avgSupervisorSentiment,
+            status: "DRAFT",
+          },
+          tx,
+        )) as IferSelect;
+      }
+
+      for (const item of activeClassSummariesWithScores) {
+        await CreateRecord(
+          "IferClassSummaries",
+          {
+            ifer_id: ifer.id,
+            course_offering_id: item.course_offering_id,
+            student_count: item.student_count,
+            average_set_rating: this.formatRating(item.classAvgRating),
+            weighted_set_score: this.formatRating(item.weightedSetScore),
+          },
+          tx,
+        );
+      }
+    });
+  }
+
+  // ── Public Service Implementation ──────────────────────────────────────────
 
   async getAllReports(
     scope?: SupervisorScope | null,
@@ -286,14 +527,15 @@ export class evaluationReportService implements IEvaluationReportService {
     });
   }
 
+  /** CHED CMO 19 Annex C Batch Consolidation Engine */
   async generateBatchReports(payload: GenerateBatchIferReq): Promise<{ generated_count: number }> {
     const validation = await GenerateBatchIferReqSchema.safeParseAsync(payload);
     if (!validation.success) throw validation.error;
 
-    const { semester_id } = validation.data;
+    const { semester_id, min_rating, max_rating, scale_mode } = validation.data;
 
     const semester = await GetRecord("Semesters", {
-      where: (Semesters) => eq(Semesters.id, semester_id),
+      where: (s) => eq(s.id, semester_id),
     });
     if (!semester) throw new AppError(404, "Semester not found.");
 
@@ -304,10 +546,9 @@ export class evaluationReportService implements IEvaluationReportService {
     const facultyOfferings = await GetRecords<"CourseOfferings", { faculty_id: number }>(
       "CourseOfferings",
       {
-        select: (CourseOfferings) => ({ faculty_id: CourseOfferings.faculty_id }),
-        where: (CourseOfferings) =>
-          and(eq(CourseOfferings.semester_id, semester_id), isNull(CourseOfferings.deleted_at)),
-        join: (query) => query.groupBy(CourseOfferings.faculty_id),
+        select: (o) => ({ faculty_id: o.faculty_id }),
+        where: (o) => and(eq(o.semester_id, semester_id), isNull(o.deleted_at)),
+        join: (q) => q.groupBy(CourseOfferings.faculty_id),
       },
     );
 
@@ -316,150 +557,34 @@ export class evaluationReportService implements IEvaluationReportService {
     for (const { faculty_id } of facultyOfferings) {
       if (!faculty_id) continue;
 
-      const classSummariesRaw = await GetRecords<
-        "CourseOfferings",
-        {
-          course_offering_id: number;
-          student_count: number;
-          avg_set_rating: number;
-          avg_student_sentiment: number;
-        }
-      >("CourseOfferings", {
-        select: (CourseOfferings) => ({
-          course_offering_id: CourseOfferings.id,
-          student_count: sql<number>`count(${StudentEvaluations.id})::int`,
-          avg_set_rating: sql<number>`coalesce(avg(${StudentEvaluations.set_rating}), 0)::float`,
-          avg_student_sentiment: sql<number>`coalesce(avg(${StudentEvaluations.comment_score}), 0)::float`,
-        }),
-        where: (CourseOfferings) =>
-          and(
-            eq(CourseOfferings.semester_id, semester_id),
-            eq(CourseOfferings.faculty_id, faculty_id),
-            isNull(CourseOfferings.deleted_at),
-          ),
-        join: (query) =>
-          query
-            .leftJoin(StudentClasses, eq(StudentClasses.course_offering_id, CourseOfferings.id))
-            .leftJoin(
-              StudentEvaluations,
-              and(
-                eq(StudentEvaluations.student_class_id, StudentClasses.id),
-                sql`${StudentEvaluations.submitted_at} IS NOT NULL`,
-              ),
-            )
-            .groupBy(CourseOfferings.id),
-      });
+      // Steps 1–3: Aggregate SET Scores & Class Summaries
+      const { activeClassSummariesWithScores, overallSetRating, avgStudentSentiment } =
+        await this.aggregateClassSummaries(
+          semester_id,
+          faculty_id,
+          min_rating,
+          max_rating,
+          scale_mode,
+        );
 
-      const activeSummaries = classSummariesRaw.filter((c) => c.student_count > 0);
-      const totalStudents = activeSummaries.reduce((acc, c) => acc + c.student_count, 0);
-      const totalWeightedSetScore = activeSummaries.reduce(
-        (acc, c) => acc + c.student_count * c.avg_set_rating,
-        0,
+      // Step 4: Aggregate SEF Score
+      const { overallSefRating, avgSupervisorSentiment } = await this.aggregateSupervisorRatings(
+        semester_id,
+        min_rating,
+        max_rating,
+        scale_mode,
       );
 
-      const overallSetRating =
-        totalStudents > 0 ? this.formatRating(totalWeightedSetScore / totalStudents) : null;
-      const avgStudentSentiment =
-        activeSummaries.length > 0
-          ? this.formatRating(
-              activeSummaries.reduce((acc, c) => acc + c.avg_student_sentiment, 0) /
-                activeSummaries.length,
-            )
-          : null;
-
-      const supervisorEval = await GetRecords<
-        "SupervisorEvaluations",
-        {
-          avg_sef_rating: number;
-          avg_supervisor_sentiment: number;
-          count: number;
-        }
-      >("SupervisorEvaluations", {
-        select: () => ({
-          avg_sef_rating: sql<number>`coalesce(avg(${SupervisorEvaluations.set_rating}), 0)::float`,
-          avg_supervisor_sentiment: sql<number>`coalesce(avg(${SupervisorEvaluations.comment_score}), 0)::float`,
-          count: sql<number>`count(${SupervisorEvaluations.id})::int`,
-        }),
-        where: () =>
-          and(
-            eq(SupervisorEvaluationSchedules.semester_id, semester_id),
-            sql`${SupervisorEvaluations.submitted_at} IS NOT NULL`,
-          ),
-        join: (query) =>
-          query.innerJoin(
-            SupervisorEvaluationSchedules,
-            eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
-          ),
-      });
-
-      const overallSefRating =
-        supervisorEval[0] && supervisorEval[0].count > 0
-          ? this.formatRating(supervisorEval[0].avg_sef_rating)
-          : null;
-      const avgSupervisorSentiment =
-        supervisorEval[0] && supervisorEval[0].count > 0
-          ? this.formatRating(supervisorEval[0].avg_supervisor_sentiment)
-          : null;
-
-      await db.transaction(async (tx) => {
-        const existing = await GetRecord("IndividualFacultyEvaluationReports", {
-          where: (IndividualFacultyEvaluationReports) =>
-            and(
-              eq(IndividualFacultyEvaluationReports.semester_id, semester_id),
-              eq(IndividualFacultyEvaluationReports.faculty_id, faculty_id),
-              isNull(IndividualFacultyEvaluationReports.deleted_at),
-            ),
-          tx,
-        });
-
-        let ifer: IferSelect;
-
-        if (existing) {
-          ifer = (await UpdateRecord(
-            "IndividualFacultyEvaluationReports",
-            existing.id,
-            {
-              overall_set_rating: overallSetRating,
-              overall_sef_rating: overallSefRating,
-              average_student_sentiment: avgStudentSentiment,
-              average_supervisor_sentiment: avgSupervisorSentiment,
-              status: "DRAFT",
-            },
-            IndividualFacultyEvaluationReports.id,
-            tx,
-          )) as IferSelect;
-
-          await tx.delete(IferClassSummaries).where(eq(IferClassSummaries.ifer_id, existing.id));
-        } else {
-          ifer = (await CreateRecord(
-            "IndividualFacultyEvaluationReports",
-            {
-              semester_id,
-              faculty_id,
-              overall_set_rating: overallSetRating,
-              overall_sef_rating: overallSefRating,
-              average_student_sentiment: avgStudentSentiment,
-              average_supervisor_sentiment: avgSupervisorSentiment,
-              status: "DRAFT",
-            },
-            tx,
-          )) as IferSelect;
-        }
-
-        for (const item of activeSummaries) {
-          await CreateRecord(
-            "IferClassSummaries",
-            {
-              ifer_id: ifer.id,
-              course_offering_id: item.course_offering_id,
-              student_count: item.student_count,
-              average_set_rating: this.formatRating(item.avg_set_rating),
-              weighted_set_score: this.formatRating(item.student_count * item.avg_set_rating),
-            },
-            tx,
-          );
-        }
-      });
+      // Save IFER + Annex C Table
+      await this.saveIferTransaction(
+        semester_id,
+        faculty_id,
+        overallSetRating,
+        overallSefRating,
+        avgStudentSentiment,
+        avgSupervisorSentiment,
+        activeClassSummariesWithScores,
+      );
 
       generatedCount++;
     }
@@ -474,18 +599,18 @@ export class evaluationReportService implements IEvaluationReportService {
       "Accounts",
       { id: number; first_name: string | null; last_name: string | null }
     >("Accounts", {
-      select: (Accounts) => ({
-        id: Accounts.id,
+      select: (a) => ({
+        id: a.id,
         first_name: PersonalDetails.first_name,
         last_name: PersonalDetails.last_name,
       }),
-      where: (Accounts) => eq(Accounts.id, report.faculty_id),
-      join: (query) =>
-        query.leftJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id)),
+      where: (a) => eq(a.id, report.faculty_id),
+      join: (q) =>
+        q.leftJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id)),
     });
 
     const semester = await GetRecord("Semesters", {
-      where: (Semesters) => eq(Semesters.id, report.semester_id),
+      where: (s) => eq(s.id, report.semester_id),
     });
 
     let classSummaries = await GetRecords<
@@ -502,20 +627,20 @@ export class evaluationReportService implements IEvaluationReportService {
         section: string;
       }
     >("IferClassSummaries", {
-      select: (IferClassSummaries) => ({
-        id: IferClassSummaries.id,
-        ifer_id: IferClassSummaries.ifer_id,
-        course_offering_id: IferClassSummaries.course_offering_id,
-        student_count: IferClassSummaries.student_count,
-        average_set_rating: IferClassSummaries.average_set_rating,
-        weighted_set_score: IferClassSummaries.weighted_set_score,
+      select: (t) => ({
+        id: t.id,
+        ifer_id: t.ifer_id,
+        course_offering_id: t.course_offering_id,
+        student_count: t.student_count,
+        average_set_rating: t.average_set_rating,
+        weighted_set_score: t.weighted_set_score,
         course_code: Courses.initialism,
         course_title: Courses.name,
         section: sql<string>`concat(${Programs.initialism}, ' ', ${Classes.year_level}, '-', ${Classes.section})`,
       }),
-      where: (IferClassSummaries) => eq(IferClassSummaries.ifer_id, reportId),
-      join: (query) =>
-        query
+      where: (t) => eq(t.ifer_id, reportId),
+      join: (q) =>
+        q
           .innerJoin(CourseOfferings, eq(IferClassSummaries.course_offering_id, CourseOfferings.id))
           .innerJoin(
             CourseCurriculums,
@@ -532,6 +657,7 @@ export class evaluationReportService implements IEvaluationReportService {
 
     const studentComments = await this.fetchStudentComments(report.semester_id, report.faculty_id);
     const supervisorComments = await this.fetchSupervisorComments(report.semester_id);
+
     const combinedRating = this.computeCombinedRating(
       report.overall_set_rating,
       report.overall_sef_rating,
@@ -560,11 +686,7 @@ export class evaluationReportService implements IEvaluationReportService {
 
   async getFacultyReports(facultyId: number): Promise<IferSelect[]> {
     const reports = await GetRecords("IndividualFacultyEvaluationReports", {
-      where: (IndividualFacultyEvaluationReports) =>
-        and(
-          eq(IndividualFacultyEvaluationReports.faculty_id, facultyId),
-          isNull(IndividualFacultyEvaluationReports.deleted_at),
-        ),
+      where: (t) => and(eq(t.faculty_id, facultyId), isNull(t.deleted_at)),
     });
     return reports as IferSelect[];
   }

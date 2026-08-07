@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { AlertTriangle, ArrowLeft, Edit2, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowDown, ArrowUp, Edit2, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import {
@@ -21,12 +21,15 @@ import {
   useDeleteCategory,
   useDeleteQuestion,
   useEvaluationFormTree,
+  useUpdateCategory,
+  useUpdateQuestion,
 } from "../api/evaluation-form.service";
 import { CategoryDialog } from "../components/CategoryDialog";
 import { QuestionDialog } from "../components/QuestionDialog";
 import { SupervisorMeansDialog } from "../components/SupervisorMeansDialog";
 import type {
   CategorySelect,
+  EvaluationCategoryNode,
   EvaluationType,
   QuestionSelect,
 } from "backend/types/evaluation-form.type";
@@ -57,11 +60,77 @@ export const EvaluationFormBuilderPage = () => {
 
   const deleteCategory = useDeleteCategory(activeType, parsedFormId);
   const deleteQuestion = useDeleteQuestion(activeType, parsedFormId);
+  const updateCategory = useUpdateCategory(activeType, parsedFormId);
+  const updateQuestion = useUpdateQuestion(activeType, parsedFormId);
 
   const isDeleting = deleteCategory.isPending || deleteQuestion.isPending;
 
   const handleBack = () => {
     navigate("../..", { relative: "path" });
+  };
+
+  // ── Reorder Categories ──────────────────────────────────────────────────────
+  const handleMoveCategory = async (index: number, direction: "up" | "down") => {
+    if (!formTree) return;
+
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= formTree.categories.length) return;
+
+    const currentCat = formTree.categories[index];
+    const targetCat = formTree.categories[targetIndex];
+
+    if (!currentCat || !targetCat) return;
+
+    try {
+      await Promise.all([
+        updateCategory.mutateAsync({
+          type: activeType,
+          categoryId: currentCat.id,
+          payload: { order: targetCat.order },
+        }),
+        updateCategory.mutateAsync({
+          type: activeType,
+          categoryId: targetCat.id,
+          payload: { order: currentCat.order },
+        }),
+      ]);
+      toast.success("Category order updated.");
+    } catch {
+      toast.error("Failed to reorder categories.");
+    }
+  };
+
+  // ── Reorder Questions ──────────────────────────────────────────────────────
+  const handleMoveQuestion = async (
+    category: EvaluationCategoryNode,
+    index: number,
+    direction: "up" | "down",
+  ) => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= category.questions.length) return;
+
+    const currentQ = category.questions[index];
+    const targetQ = category.questions[targetIndex];
+
+    if (!currentQ || !targetQ) return;
+
+    try {
+      await Promise.all([
+        updateQuestion.mutateAsync({
+          type: activeType,
+          questionId: currentQ.id,
+          payload: { order: targetQ.order },
+        }),
+        updateQuestion.mutateAsync({
+          type: activeType,
+          questionId: targetQ.id,
+          payload: { order: currentQ.order },
+        }),
+      ]);
+      toast.success("Question order updated.");
+    } catch {
+      toast.error("Failed to reorder questions.");
+    }
   };
 
   const handleInitiateDeleteCategory = (
@@ -210,7 +279,7 @@ export const EvaluationFormBuilderPage = () => {
                 key={category.id}
                 className="overflow-hidden rounded-xl border bg-card shadow-xs"
               >
-                <div className="flex items-center justify-between border-b px-4 py-3">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/20">
                   <div>
                     <h3 className="text-sm font-semibold tracking-tight text-foreground">
                       {catIdx + 1}. {category.name}
@@ -220,7 +289,31 @@ export const EvaluationFormBuilderPage = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
+                    {/* Category Order Control */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={catIdx === 0}
+                      onClick={() => handleMoveCategory(catIdx, "up")}
+                      className="size-7 cursor-pointer rounded-lg text-muted-foreground hover:bg-muted"
+                      title="Move Category Up"
+                    >
+                      <ArrowUp className="size-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={catIdx === formTree.categories.length - 1}
+                      onClick={() => handleMoveCategory(catIdx, "down")}
+                      className="size-7 cursor-pointer rounded-lg text-muted-foreground hover:bg-muted"
+                      title="Move Category Down"
+                    >
+                      <ArrowDown className="size-3.5" />
+                    </Button>
+
+                    <div className="h-4 w-px bg-border/60 mx-1" />
+
                     <CategoryDialog
                       type={activeType}
                       formId={parsedFormId}
@@ -237,6 +330,7 @@ export const EvaluationFormBuilderPage = () => {
                     >
                       <Trash2 className="size-3.5" />
                     </Button>
+
                     <QuestionDialog
                       type={activeType}
                       formId={parsedFormId}
@@ -266,7 +360,31 @@ export const EvaluationFormBuilderPage = () => {
                             {catIdx + 1}.{qIdx + 1} {q.question}
                           </span>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            {/* Question Order Controls */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={qIdx === 0}
+                              onClick={() => handleMoveQuestion(category, qIdx, "up")}
+                              className="size-6 cursor-pointer rounded-lg text-muted-foreground hover:bg-muted"
+                              title="Move Question Up"
+                            >
+                              <ArrowUp className="size-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={qIdx === category.questions.length - 1}
+                              onClick={() => handleMoveQuestion(category, qIdx, "down")}
+                              className="size-6 cursor-pointer rounded-lg text-muted-foreground hover:bg-muted"
+                              title="Move Question Down"
+                            >
+                              <ArrowDown className="size-3" />
+                            </Button>
+
+                            <div className="h-3 w-px bg-border/60 mx-0.5" />
+
                             {activeType === "supervisor" && (
                               <SupervisorMeansDialog questionId={q.id} questionText={q.question} />
                             )}

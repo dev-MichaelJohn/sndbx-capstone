@@ -61,3 +61,56 @@ export const requirePermission = (...requiredPermissions: Permission[]): Request
     }
   };
 };
+
+export const requireAnyPermission = (...allowedPermissions: Permission[]): RequestHandler => {
+  return async (req, _res, next) => {
+    try {
+      const user = req.user;
+      if (!user) throw new AppError(401, "Authentication required.");
+
+      const validation = await AccountSchema.select
+        .pick({ id: true, email: true })
+        .extend({
+          personalDetails: PersonalDetailsSchema.select,
+          roles: z.array(z.enum(SystemRoles.enumValues)),
+        })
+        .safeParseAsync(user);
+      if (!validation.success) throw validation.error;
+      const parsed = validation.data;
+
+      if (parsed.roles.length === 0) {
+        throw new AppError(403, "Access denied: no roles assigned.");
+      }
+
+      const grants = await GetRecords<
+        "RolePermissions",
+        typeof RolePermissions.$inferSelect & { key: string }
+      >("RolePermissions", {
+        select: () => ({ ...getColumns(RolePermissions), key: Permissions.permission_key }),
+        join: (query) =>
+          query
+            .innerJoin(Permissions, eq(RolePermissions.permission_id, Permissions.id))
+            .innerJoin(Roles, eq(RolePermissions.role_id, Roles.id)),
+        where: (table) =>
+          and(
+            inArray(Roles.system_role, parsed.roles),
+            inArray(Permissions.permission_key, allowedPermissions),
+            isNull(table.deleted_at),
+            isNull(Roles.deleted_at),
+            isNull(Permissions.deleted_at),
+          ),
+      });
+
+      if (grants.length === 0) {
+        throw new AppError(
+          403,
+          `Access denied: requires at least one permission from [${allowedPermissions.join(", ")}]`,
+        );
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};

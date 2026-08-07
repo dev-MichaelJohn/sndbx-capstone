@@ -21,6 +21,8 @@ export const StudentEvaluationForms = pgTable(
     id: serial("id").primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
+    min_rating: integer("min_rating").notNull().default(1),
+    max_rating: integer("max_rating").notNull().default(5),
     created_at: timestamp("created_at").notNull().defaultNow(),
     updated_at: timestamp("updated_at")
       .notNull()
@@ -98,6 +100,8 @@ export const SupervisorEvaluationForms = pgTable(
     id: serial("id").primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
+    min_rating: integer("min_rating").notNull().default(1),
+    max_rating: integer("max_rating").notNull().default(5),
     created_at: timestamp("created_at").notNull().defaultNow(),
     updated_at: timestamp("updated_at")
       .notNull()

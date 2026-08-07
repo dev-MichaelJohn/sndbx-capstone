@@ -1,20 +1,25 @@
 interface RatingPillGroupProps {
-  maxRating?: number;
+  minRating: number;
+  maxRating: number;
   value?: number;
   disabled?: boolean;
   onChange: (rating: number) => void;
 }
 
 export const RatingPillGroup = ({
+  minRating = 1,
   maxRating = 5,
   value,
   disabled = false,
   onChange,
 }: RatingPillGroupProps) => {
-  const scale = Array.from({ length: maxRating }, (_, i) => i + 1);
+  const scale = Array.from(
+    { length: Math.max(1, maxRating - minRating + 1) },
+    (_, i) => minRating + i,
+  );
 
   return (
-    <div className="flex items-center gap-1.5 shrink-0">
+    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
       {scale.map((score) => {
         const active = value === score;
         return (

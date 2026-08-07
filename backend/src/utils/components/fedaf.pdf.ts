@@ -36,7 +36,7 @@ export function generateFedafPdfBuffer(data: UnifiedFacultyReportDetail): Promis
     doc.text(`Semester / AY: ${data.semester.term} / AY ${data.semester.academic_year}`);
     doc.moveDown(PDF_LAYOUT.SPACING.DEFAULT);
 
-    // Section B: Ratings Summary
+    // Section B: Faculty Evaluation Summary (Annex D Independent Scores)
     doc
       .fontSize(PDF_LAYOUT.FONT_SIZE.SECTION_TITLE)
       .font("Helvetica-Bold")
@@ -52,14 +52,14 @@ export function generateFedafPdfBuffer(data: UnifiedFacultyReportDetail): Promis
     doc
       .fontSize(PDF_LAYOUT.FONT_SIZE.SECTION_TITLE)
       .font("Helvetica-Bold")
-      .text("C. DEVELOPMENT PLAN (Jointly accomplished during 1-on-1 meeting)");
+      .text("C. DEVELOPMENT PLAN (Jointly accomplished by Supervisor and Faculty)");
     doc.font("Helvetica").fontSize(PDF_LAYOUT.FONT_SIZE.BODY_SMALL);
     doc.text(
       `Areas for Improvement:\n${data.report.areas_for_improvement || "To be filled during feedback meeting."}`,
     );
     doc.moveDown(PDF_LAYOUT.SPACING.MEDIUM);
     doc.text(
-      `Proposed Learning & Development Activities:\n${data.report.proposed_activities || "To be filled during feedback meeting."}`,
+      `Proposed Learning and Development Activities:\n${data.report.proposed_activities || "To be filled during feedback meeting."}`,
     );
     doc.moveDown(PDF_LAYOUT.SPACING.MEDIUM);
     doc.text(`Action Plan:\n${data.report.action_plan || "To be filled during feedback meeting."}`);

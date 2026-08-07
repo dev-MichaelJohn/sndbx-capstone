@@ -16,7 +16,13 @@ import { downloadFedafPdf, downloadIferPdf } from "../api/evaluation-report.serv
 import { useSemester } from "@/features/semester/api/semester.service";
 import type { IferSelect } from "backend/types/evaluation-report.type";
 
-type EvaluationReportRow = IferSelect & { faculty_name?: string };
+export type EvaluationReportRow = IferSelect & { faculty_name?: string | null };
+
+const formatScore = (val: string | null) => {
+  if (!val) return "N/A";
+  const num = Number(val);
+  return num > 5 ? `${num.toFixed(2)}%` : `${num.toFixed(2)} / 5.0`;
+};
 
 const SemesterCell = ({ semesterId }: { semesterId: number }) => {
   const { data: semester } = useSemester(semesterId);
@@ -76,19 +82,19 @@ export const getEvaluationReportColumns = (): Array<DataTableColumn<EvaluationRe
   },
   {
     header: "SET Rating",
-    className: "w-24",
+    className: "w-28",
     cell: (row) => (
       <span className="font-mono text-xs font-semibold text-emerald-400">
-        {row.overall_set_rating ? `${row.overall_set_rating} / 5.0` : "N/A"}
+        {formatScore(row.overall_set_rating)}
       </span>
     ),
   },
   {
     header: "SEF Rating",
-    className: "w-24",
+    className: "w-28",
     cell: (row) => (
       <span className="font-mono text-xs font-semibold text-sky-400">
-        {row.overall_sef_rating ? `${row.overall_sef_rating} / 5.0` : "N/A"}
+        {formatScore(row.overall_sef_rating)}
       </span>
     ),
   },

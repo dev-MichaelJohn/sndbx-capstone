@@ -4,24 +4,23 @@ import {
   IndividualFacultyEvaluationReports,
   IferClassSummaries,
 } from "@/schemas/evaluation-report.schema.js";
-import { EVALUATION_WEIGHTS, RATING_CONFIG } from "@/utils/evaluation-report.util.js";
 
 export const IferStatusSchema = z.enum(["DRAFT", "FINALIZED", "ACKNOWLEDGED"]);
 export type IferStatus = z.infer<typeof IferStatusSchema>;
 
+export const ScaleModeSchema = z.enum(["GPA_5", "PERCENTAGE_100"]);
+export type ScaleMode = z.infer<typeof ScaleModeSchema>;
+
+/** CHED CMO 19 Series 2025 Batch Generation Request Schema */
 export const GenerateBatchIferReqSchema = z.object({
   semester_id: z.number().int().positive("Valid semester_id required."),
-  set_weight: z
-    .number()
-    .min(RATING_CONFIG.MIN_WEIGHT)
-    .max(RATING_CONFIG.MAX_WEIGHT)
-    .default(EVALUATION_WEIGHTS.SET_DEFAULT),
-  sef_weight: z
-    .number()
-    .min(RATING_CONFIG.MIN_WEIGHT)
-    .max(RATING_CONFIG.MAX_WEIGHT)
-    .default(EVALUATION_WEIGHTS.SEF_DEFAULT),
+  min_rating: z.number().int().min(0).default(1),
+  max_rating: z.number().int().min(1).default(5),
+  scale_mode: ScaleModeSchema.default("PERCENTAGE_100"),
+  set_weight: z.number().min(0).max(1).optional(),
+  sef_weight: z.number().min(0).max(1).optional(),
 });
+
 export type GenerateBatchIferReq = z.infer<typeof GenerateBatchIferReqSchema>;
 
 export const UpdateDevelopmentPlanReqSchema = z.object({
