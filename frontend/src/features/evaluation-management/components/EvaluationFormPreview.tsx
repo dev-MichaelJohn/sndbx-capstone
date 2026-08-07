@@ -15,34 +15,38 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useSupervisorMeans } from "../api/evaluation-form.service";
-import type { EvaluationFormTree, EvaluationType } from "backend/types/evaluation-form.type";
+import type {
+  EvaluationFormTree,
+  EvaluationType,
+  MeanSelect,
+  QuestionSelect,
+} from "backend/types/evaluation-form.type";
+
+type QuestionWithMeans = QuestionSelect & {
+  means?: MeanSelect[];
+};
 
 interface EvaluationFormPreviewProps {
   type: EvaluationType;
-  formTree: EvaluationFormTree;
+  formTree: EvaluationFormTree & {
+    min_rating?: number;
+    max_rating?: number;
+  };
   triggerText?: string;
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "icon";
   className?: string;
 }
 
-const RATING_LEGEND = [
-  { score: 1, label: "Poor" },
-  { score: 2, label: "Fair" },
-  { score: 3, label: "Satisfactory" },
-  { score: 4, label: "Very Good" },
-  { score: 5, label: "Outstanding" },
-];
-
 const QuestionMovList = ({
   questionId,
   initialMeans,
 }: {
   questionId: number;
-  initialMeans?: any[];
+  initialMeans?: MeanSelect[];
 }) => {
   const { data: fetchedMeans, isLoading } = useSupervisorMeans(questionId);
-  const means = fetchedMeans ?? initialMeans ?? [];
+  const means: MeanSelect[] = fetchedMeans ?? initialMeans ?? [];
 
   if (isLoading && !initialMeans) {
     return <Skeleton className="h-14 w-full rounded-xl" />;
@@ -61,18 +65,15 @@ const QuestionMovList = ({
         </p>
       ) : (
         <div className="mt-2.5 flex flex-wrap gap-2">
-          {means.map((item: any, idx: number) => {
-            const label = typeof item === "string" ? item : item.descriptor;
-            return (
-              <div
-                key={item.id ?? idx}
-                className="flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-background/60 px-3 py-1.5 text-xs font-medium text-foreground/90"
-              >
-                <CheckCircle2 className="size-3.5 shrink-0 text-emerald-400" />
-                <span>{label}</span>
-              </div>
-            );
-          })}
+          {means.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-background/60 px-3 py-1.5 text-xs font-medium text-foreground/90"
+            >
+              <CheckCircle2 className="size-3.5 shrink-0 text-emerald-400" />
+              <span>{item.descriptor}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -89,6 +90,15 @@ export const EvaluationFormPreview = ({
 }: EvaluationFormPreviewProps) => {
   const [open, setOpen] = useState(false);
   const [previewAnswers, setPreviewAnswers] = useState<Record<number, number>>({});
+
+  const formMin = formTree.min_rating ?? 1;
+  const formMax = formTree.max_rating ?? 5;
+
+  // Dynamic Score Bounds Scale Generation
+  const dynamicScale = Array.from(
+    { length: Math.max(1, formMax - formMin + 1) },
+    (_, i) => formMin + i,
+  );
 
   const handleSelectRating = (questionId: number, rating: number) => {
     setPreviewAnswers((prev) => ({ ...prev, [questionId]: rating }));
@@ -123,7 +133,7 @@ export const EvaluationFormPreview = ({
                     : "border-sky-500/30 bg-sky-500/10 text-sky-400"
                 }`}
               >
-                {type} Mode
+                {type} Mode ({formMin}–{formMax} Scale)
               </Badge>
             </div>
             <DialogDescription className="mt-0.5 text-xs text-muted-foreground">
@@ -135,24 +145,24 @@ export const EvaluationFormPreview = ({
         {/* Scrollable Main Area */}
         <ScrollArea className="flex-1 px-6 py-5">
           <div className="flex w-full flex-col gap-6 pb-4">
-            {/* Rating Scale Standard Box */}
+            {/* Dynamic Rating Scale Standard Box */}
             <div className="rounded-xl border border-border/50 bg-muted/30 p-4 space-y-3">
               <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <HelpCircle className="size-3.5 text-primary" />
-                <span>Rating Scale Standard</span>
+                <span>
+                  Configured Score Scale Bounds ({formMin} to {formMax})
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
-                {RATING_LEGEND.map((item) => (
+              <div className="flex flex-wrap gap-2">
+                {dynamicScale.map((score) => (
                   <div
-                    key={item.score}
-                    className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-card/80 px-3 py-2 text-left"
+                    key={score}
+                    className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/80 px-3 py-1.5 text-left"
                   >
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-emerald-500/10 font-mono text-xs font-bold text-emerald-400">
-                      {item.score}
+                      {score}
                     </span>
-                    <span className="text-xs font-medium text-foreground/90 whitespace-nowrap">
-                      {item.label}
-                    </span>
+                    <span className="text-xs font-medium text-foreground/90">Score {score}</span>
                   </div>
                 ))}
               </div>
@@ -189,14 +199,13 @@ export const EvaluationFormPreview = ({
                       No question items under this category.
                     </p>
                   ) : (
-                    category.questions.map((q, qIdx) => {
-                      const scale = Array.from({ length: q.max_rating }, (_, i) => i + 1);
+                    category.questions.map((q: QuestionWithMeans, qIdx) => {
+                      const qMax = q.max_rating ?? formMax;
+                      const itemScale = Array.from(
+                        { length: Math.max(1, qMax - formMin + 1) },
+                        (_, i) => formMin + i,
+                      );
                       const currentVal = previewAnswers[q.id];
-                      const initialMovs =
-                        (q as any).supervisor_means ||
-                        (q as any).supervisorMeans ||
-                        (q as any).means ||
-                        (q as any).descriptors;
 
                       return (
                         <div
@@ -215,8 +224,8 @@ export const EvaluationFormPreview = ({
                             </div>
 
                             {/* Interactive Score Buttons */}
-                            <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-                              {scale.map((rating) => {
+                            <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-end sm:self-center">
+                              {itemScale.map((rating) => {
                                 const isSelected = currentVal === rating;
                                 return (
                                   <button
@@ -238,7 +247,7 @@ export const EvaluationFormPreview = ({
 
                           {/* Supervisor MOVs Block */}
                           {type === "supervisor" && (
-                            <QuestionMovList questionId={q.id} initialMeans={initialMovs} />
+                            <QuestionMovList questionId={q.id} initialMeans={q.means} />
                           )}
                         </div>
                       );

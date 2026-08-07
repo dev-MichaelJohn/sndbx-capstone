@@ -264,8 +264,6 @@ import type { ScaleMode } from "backend/types/evaluation-report.type";
 export const BatchGenerateReportDialog = () => {
   const [open, setOpen] = useState(false);
   const [semesterId, setSemesterId] = useState<string>("");
-  const [setWeight, setSetWeight] = useState<number>(0.6);
-  const [sefWeight, setSefWeight] = useState<number>(0.4);
   const [minRating, setMinRating] = useState<number>(1);
   const [maxRating, setMaxRating] = useState<number>(5);
   const [scaleMode, setScaleMode] = useState<ScaleMode>("PERCENTAGE_100");
@@ -286,16 +284,9 @@ export const BatchGenerateReportDialog = () => {
       return;
     }
 
-    if (Math.abs(setWeight + sefWeight - 1.0) > 0.001) {
-      toast.error("SET and SEF weights must sum up to 1.0 (100%).");
-      return;
-    }
-
     try {
       const result = await generateBatch.mutateAsync({
         semester_id: Number(semesterId),
-        set_weight: setWeight,
-        sef_weight: sefWeight,
         min_rating: minRating,
         max_rating: maxRating,
         scale_mode: scaleMode,
@@ -325,7 +316,7 @@ export const BatchGenerateReportDialog = () => {
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">Generate Batch Reports</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Configure consolidation formula parameters, weights, and scoring bounds.
+            Aggregate independent SET and SEF evaluation scores per CHED CMO 19 guidelines.
           </DialogDescription>
         </DialogHeader>
 
@@ -349,7 +340,7 @@ export const BatchGenerateReportDialog = () => {
             </Select>
           </div>
 
-          {/* Consolidation Scale Mode */}
+          {/* Scale Formula Mode */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs">Consolidation Scale Mode</Label>
             <Select value={scaleMode} onValueChange={(val) => setScaleMode(val as ScaleMode)}>
@@ -384,42 +375,6 @@ export const BatchGenerateReportDialog = () => {
                 type="number"
                 value={maxRating}
                 onChange={(e) => setMaxRating(Number(e.target.value))}
-                className="h-8 text-xs font-mono"
-              />
-            </div>
-          </div>
-
-          {/* SET / SEF Weights */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="space-y-1">
-              <Label className="text-xs">SET Weight (60% = 0.6)</Label>
-              <Input
-                type="number"
-                step="0.05"
-                min="0"
-                max="1"
-                value={setWeight}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setSetWeight(val);
-                  setSefWeight(Number((1 - val).toFixed(2)));
-                }}
-                className="h-8 text-xs font-mono"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">SEF Weight (40% = 0.4)</Label>
-              <Input
-                type="number"
-                step="0.05"
-                min="0"
-                max="1"
-                value={sefWeight}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setSefWeight(val);
-                  setSetWeight(Number((1 - val).toFixed(2)));
-                }}
                 className="h-8 text-xs font-mono"
               />
             </div>
@@ -472,7 +427,7 @@ import { downloadFedafPdf, downloadIferPdf } from "../api/evaluation-report.serv
 import { useSemester } from "@/features/semester/api/semester.service";
 import type { IferSelect } from "backend/types/evaluation-report.type";
 
-type EvaluationReportRow = IferSelect & { faculty_name?: string };
+export type EvaluationReportRow = IferSelect & { faculty_name?: string | null };
 
 const formatScore = (val: string | null) => {
   if (!val) return "N/A";
@@ -675,6 +630,86 @@ export const EvaluationReportStatusBadge = ({ status, className }: StatusBadgePr
 
 
 ---
+evaluation-report/components/FacultySelfReportTab.tsx
+---
+import { useState } from "react";
+import { useMyReports } from "../api/evaluation-report.service";
+import { EvaluationReportStatusBadge } from "./EvaluationReportStatusBadge";
+import { ReportDetailModal } from "./ReportDetailModal";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText, Eye } from "lucide-react";
+
+export const FacultySelfReportTab = () => {
+  const { data: myReports = [], isLoading } = useMyReports();
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-xs text-muted-foreground">
+        Loading personal reports...
+      </div>
+    );
+  }
+
+  if (myReports.length === 0) {
+    return (
+      <Card className="rounded-xl border border-dashed p-8 text-center text-xs text-muted-foreground">
+        No evaluation reports available for your account yet.
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {myReports.map((report) => (
+        <Card key={report.id} className="rounded-xl border bg-card p-4 shadow-2xs">
+          <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                <FileText className="size-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-foreground">
+                    IFER #{report.id}
+                  </span>
+                  <EvaluationReportStatusBadge status={report.status} />
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Semester ID: {report.semester_id}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 shrink-0">
+              <div className="text-right text-xs">
+                <span className="text-muted-foreground">SET Rating: </span>
+                <span className="font-mono font-bold text-emerald-500">
+                  {report.overall_set_rating ? `${report.overall_set_rating}` : "N/A"}
+                </span>
+              </div>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedReportId(report.id)}
+                className="h-8 gap-1.5 text-xs cursor-pointer"
+              >
+                <Eye className="size-3.5" /> View Report
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      <ReportDetailModal reportId={selectedReportId} onClose={() => setSelectedReportId(null)} />
+    </div>
+  );
+};
+
+
+---
 evaluation-report/components/FedafPlanForm.tsx
 ---
 import { useState, type ChangeEvent } from "react";
@@ -842,6 +877,121 @@ export const ReportSummaryCard = ({ detail }: ReportSummaryCardProps) => {
         </div>
       </div>
     </div>
+  );
+};
+
+
+---
+evaluation-report/components/ReportDetailModal.tsx
+---
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSummaryCard } from "./ReportCardSummary";
+import { FedafPlanForm } from "./FedafPlanForm";
+import { useReportDetail, useSaveDevelopmentPlan } from "../api/evaluation-report.service";
+import toast from "react-hot-toast";
+
+interface ReportDetailModalProps {
+  reportId: number | null;
+  onClose: () => void;
+}
+
+export const ReportDetailModal = ({ reportId, onClose }: ReportDetailModalProps) => {
+  const isOpen = Boolean(reportId);
+  const { data: detail, isLoading } = useReportDetail(reportId ?? 0);
+  const savePlan = useSaveDevelopmentPlan(reportId ?? 0);
+
+  const handleSavePlan = async (payload: {
+    areas_for_improvement: string;
+    proposed_activities: string;
+    action_plan: string;
+  }) => {
+    if (!reportId) return;
+    try {
+      await savePlan.mutateAsync(payload);
+      toast.success("FEDAF development plan saved successfully.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save plan.");
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 rounded-2xl overflow-hidden">
+        <DialogHeader className="p-4 border-b bg-muted/20">
+          <DialogTitle className="text-base font-semibold">
+            Faculty Evaluation Report Detail #{reportId}
+          </DialogTitle>
+        </DialogHeader>
+
+        <ScrollArea className="flex-1 p-6">
+          {isLoading || !detail ? (
+            <div className="p-8 text-center text-xs text-muted-foreground">
+              Loading report details...
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <ReportSummaryCard detail={detail} />
+
+              {/* Class Summaries shadcn Table */}
+              <Card className="rounded-xl border shadow-xs overflow-hidden">
+                <CardHeader className="py-3 px-4 border-b bg-muted/30">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Class SET Summaries
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs font-semibold">Course Code</TableHead>
+                        <TableHead className="text-xs font-semibold">Section</TableHead>
+                        <TableHead className="text-xs font-semibold">Students</TableHead>
+                        <TableHead className="text-xs font-semibold">Avg SET</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {detail.class_summaries.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-mono text-xs font-medium">
+                            {item.course_code}
+                          </TableCell>
+                          <TableCell className="text-xs">{item.section}</TableCell>
+                          <TableCell className="text-xs">{item.student_count}</TableCell>
+                          <TableCell className="font-mono text-xs font-semibold text-emerald-500">
+                            {item.average_set_rating}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* FEDAF Development Plan Form */}
+              <FedafPlanForm
+                initialPlan={{
+                  areas_for_improvement: detail.report.areas_for_improvement ?? "",
+                  proposed_activities: detail.report.proposed_activities ?? "",
+                  action_plan: detail.report.action_plan ?? "",
+                }}
+                isSaving={savePlan.isPending}
+                onSave={handleSavePlan}
+              />
+            </div>
+          )}
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 };
 

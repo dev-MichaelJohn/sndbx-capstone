@@ -23,7 +23,13 @@ EvaluationExecutionRouter.post(
   (req, res, next) => EvaluationExecutionController.submitStudentEvaluation(req, res, next),
 );
 
-// Supervisor execution endpoints
+// Supervisor summary & execution endpoints
+EvaluationExecutionRouter.get(
+  "/supervisor/schedule/:scheduleId/summary",
+  requirePermission(PERMISSIONS.EVALUATION_SUBMIT_SEF),
+  (req, res, next) => EvaluationExecutionController.getSupervisorEvaluationsSummary(req, res, next),
+);
+
 EvaluationExecutionRouter.get(
   "/supervisor/schedule/:scheduleId/course/:courseOfferingId",
   requirePermission(PERMISSIONS.EVALUATION_SUBMIT_SEF),

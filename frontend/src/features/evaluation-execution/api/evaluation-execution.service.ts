@@ -17,6 +17,8 @@ export const EVALUATION_EXECUTION_KEYS = {
     ["getStudentEvaluation", scheduleId, studentClassId] as const,
   supervisorEval: (scheduleId?: number, courseOfferingId?: number) =>
     ["getSupervisorEvaluation", scheduleId, courseOfferingId] as const,
+  supervisorSummary: (scheduleId?: number) =>
+    ["getSupervisorEvaluationsSummary", scheduleId] as const,
 };
 
 export const getRecentAnonymousSubmissions = async () => {
@@ -46,6 +48,8 @@ export const useEvaluationSocket = () => {
   useEffect(() => {
     if (!socket) return;
 
+    socket.emit("sys-admin:join");
+
     const handleLiveSubmission = (event: AnonymousSubmissionEvent) => {
       queryClient.setQueryData<AnonymousSubmissionEvent[]>(
         EVALUATION_EXECUTION_KEYS.recentSubmissions,
@@ -54,9 +58,15 @@ export const useEvaluationSocket = () => {
           return [event, ...filtered].slice(0, 10);
         },
       );
+      queryClient.invalidateQueries({
+        queryKey: EVALUATION_EXECUTION_KEYS.recentSubmissions,
+      });
     };
 
     socket.on("evaluation:submitted", handleLiveSubmission);
+    socket.on("connect", () => {
+      socket.emit("sys-admin:join");
+    });
 
     return () => {
       socket.off("evaluation:submitted", handleLiveSubmission);
@@ -69,7 +79,7 @@ export const getStudentEvaluation = async (scheduleId: number, studentClassId: n
     const response = await apiClient<
       APIResponse<{ evaluation: StudentEvalSelect; ratings: unknown[] } | null>
     >(`/protected/evaluation-execution/student/schedule/${scheduleId}/class/${studentClassId}`);
-    return response.data.data;
+    return response.data.data ?? null;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch student evaluation."), {
       cause: error,
@@ -129,7 +139,7 @@ export const getSupervisorEvaluation = async (scheduleId: number, courseOffering
     >(
       `/protected/evaluation-execution/supervisor/schedule/${scheduleId}/course/${courseOfferingId}`,
     );
-    return response.data.data;
+    return response.data.data ?? null;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch supervisor evaluation."), {
       cause: error,
@@ -146,6 +156,30 @@ export const useSupervisorEvaluation = (
     queryKey: EVALUATION_EXECUTION_KEYS.supervisorEval(scheduleId, courseOfferingId),
     queryFn: () => getSupervisorEvaluation(scheduleId!, courseOfferingId!),
     enabled: !!scheduleId && !!courseOfferingId && (options?.enabled ?? true),
+  });
+};
+
+export const getSupervisorEvaluationsSummary = async (scheduleId: number) => {
+  try {
+    const response = await apiClient<
+      APIResponse<Array<{ course_offering_id: number; is_submitted: boolean }>>
+    >(`/protected/evaluation-execution/supervisor/schedule/${scheduleId}/summary`);
+    return response.data.data ?? [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch supervisor evaluations summary."), {
+      cause: error,
+    });
+  }
+};
+
+export const useSupervisorEvaluationsSummary = (
+  scheduleId?: number,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: EVALUATION_EXECUTION_KEYS.supervisorSummary(scheduleId),
+    queryFn: () => getSupervisorEvaluationsSummary(scheduleId!),
+    enabled: !!scheduleId && (options?.enabled ?? true),
   });
 };
 
@@ -174,6 +208,9 @@ export const useSubmitSupervisorEvaluation = () => {
           variables.schedule_id,
           variables.course_offering_id,
         ),
+      });
+      queryClient.invalidateQueries({
+        queryKey: EVALUATION_EXECUTION_KEYS.supervisorSummary(variables.schedule_id),
       });
       queryClient.invalidateQueries({
         queryKey: EVALUATION_EXECUTION_KEYS.recentSubmissions,

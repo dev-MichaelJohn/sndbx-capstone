@@ -2,19 +2,8 @@ import AuthController from "@/controllers/auth.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import { Router, type IRouter } from "express";
-import rateLimit from "express-rate-limit";
 
 const AuthRouter: IRouter = Router();
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // Stricter limit for login attempts
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many login attempts, please try again later." },
-});
-
-AuthRouter.use(authLimiter);
 
 AuthRouter.post("/login", AuthController.login);
 AuthRouter.post("/verify-otp", AuthController.verifyOTP);

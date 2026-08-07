@@ -4,19 +4,8 @@ import AuthController from "@/controllers/auth.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import { Router, type IRouter } from "express";
-import rateLimit from "express-rate-limit";
 
 const AuthRouter: IRouter = Router();
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // Stricter limit for login attempts
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many login attempts, please try again later." },
-});
-
-AuthRouter.use(authLimiter);
 
 AuthRouter.post("/login", AuthController.login);
 AuthRouter.post("/verify-otp", AuthController.verifyOTP);
@@ -330,7 +319,13 @@ EvaluationExecutionRouter.post(
   (req, res, next) => EvaluationExecutionController.submitStudentEvaluation(req, res, next),
 );
 
-// Supervisor execution endpoints
+// Supervisor summary & execution endpoints
+EvaluationExecutionRouter.get(
+  "/supervisor/schedule/:scheduleId/summary",
+  requirePermission(PERMISSIONS.EVALUATION_SUBMIT_SEF),
+  (req, res, next) => EvaluationExecutionController.getSupervisorEvaluationsSummary(req, res, next),
+);
+
 EvaluationExecutionRouter.get(
   "/supervisor/schedule/:scheduleId/course/:courseOfferingId",
   requirePermission(PERMISSIONS.EVALUATION_SUBMIT_SEF),
@@ -351,7 +346,7 @@ routers/protrected/evaluation-form.route.ts
 ---
 import { Router, type IRouter } from "express";
 import EvaluationFormController from "@/controllers/evaluation-form.controller.js";
-import { requirePermission } from "@/middlewares/rbac.middleware.js";
+import { requireAnyPermission, requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 
 const EvaluationFormRouter: IRouter = Router({ mergeParams: true });
@@ -359,7 +354,7 @@ const EvaluationFormRouter: IRouter = Router({ mergeParams: true });
 // FORM ROOT
 EvaluationFormRouter.get(
   "/:type/forms",
-  requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
+  requireAnyPermission(PERMISSIONS.EVALUATION_FORM_MANAGE, PERMISSIONS.EVALUATION_FORM_READ),
   (req, res, next) => EvaluationFormController.getForms(req, res, next),
 );
 EvaluationFormRouter.post(
@@ -369,7 +364,7 @@ EvaluationFormRouter.post(
 );
 EvaluationFormRouter.get(
   "/:type/forms/:formId",
-  requirePermission(PERMISSIONS.EVALUATION_FORM_MANAGE),
+  requireAnyPermission(PERMISSIONS.EVALUATION_FORM_MANAGE, PERMISSIONS.EVALUATION_FORM_READ),
   (req, res, next) => EvaluationFormController.getFormTree(req, res, next),
 );
 
@@ -537,26 +532,41 @@ routers/protrected/evaluation-schedule.router.ts
 ---
 import { Router, type IRouter } from "express";
 import EvaluationScheduleController from "@/controllers/evaluation-schedule.controller.js";
-import { requirePermission } from "@/middlewares/rbac.middleware.js";
+import { requirePermission, requireAnyPermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 
 const EvaluationScheduleRouter: IRouter = Router({ mergeParams: true });
 
 EvaluationScheduleRouter.get(
   "/:type/schedules",
-  requirePermission(PERMISSIONS.EVALUATION_PERIOD_MANAGE),
+  requireAnyPermission(
+    PERMISSIONS.EVALUATION_PERIOD_MANAGE,
+    PERMISSIONS.EVALUATION_PERIOD_READ,
+    PERMISSIONS.EVALUATION_SUBMIT_SET,
+    PERMISSIONS.EVALUATION_SUBMIT_SEF,
+  ),
   (req, res, next) => EvaluationScheduleController.getSchedules(req, res, next),
 );
 
 EvaluationScheduleRouter.get(
   "/:type/schedules/active/:semesterId",
-  requirePermission(PERMISSIONS.EVALUATION_PERIOD_MANAGE),
+  requireAnyPermission(
+    PERMISSIONS.EVALUATION_PERIOD_MANAGE,
+    PERMISSIONS.EVALUATION_PERIOD_READ,
+    PERMISSIONS.EVALUATION_SUBMIT_SET,
+    PERMISSIONS.EVALUATION_SUBMIT_SEF,
+  ),
   (req, res, next) => EvaluationScheduleController.getActiveSchedule(req, res, next),
 );
 
 EvaluationScheduleRouter.get(
   "/:type/schedules/:id",
-  requirePermission(PERMISSIONS.EVALUATION_PERIOD_MANAGE),
+  requireAnyPermission(
+    PERMISSIONS.EVALUATION_PERIOD_MANAGE,
+    PERMISSIONS.EVALUATION_PERIOD_READ,
+    PERMISSIONS.EVALUATION_SUBMIT_SET,
+    PERMISSIONS.EVALUATION_SUBMIT_SEF,
+  ),
   (req, res, next) => EvaluationScheduleController.getSchedule(req, res, next),
 );
 

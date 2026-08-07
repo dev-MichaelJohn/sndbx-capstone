@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import type { APIResponse, PaginatedData } from "backend/utils/response.util";
 import type {
-  EvaluationAnalyticsPayload,
   GenerateBatchIferReq,
   IferSelect,
   UnifiedFacultyReportDetail,
@@ -14,6 +13,7 @@ import type {
   SubmitSupervisorEvalReq,
   SupervisorEvalSelect,
 } from "backend/types/evaluation-execution.type";
+import type { EvaluationAnalyticsPayload } from "backend/types/evaluation-analytics.type";
 
 const BASE_REPORTS = "/protected/evaluation-reports";
 const BASE_EXEC = "/protected/evaluation-execution";
@@ -77,7 +77,7 @@ export const getSupervisorSchedules = async (semesterId?: number) => {
     const res = await apiClient<APIResponse<ScheduleSelect[]>>(
       `${BASE_SCHEDULES}/supervisor/schedules${q}`,
     );
-    return res.data.data;
+    return res.data.data ?? null;
   } catch (err) {
     throw new Error(getErrorMessage(err, "Failed to fetch supervisor schedules."), { cause: err });
   }
@@ -155,11 +155,15 @@ export const useSubmitSupervisorEvaluation = () => {
       queryClient.invalidateQueries({
         queryKey: ["supervisorEval", variables.schedule_id, variables.course_offering_id],
       });
+      queryClient.invalidateQueries({ queryKey: ["supervisorSummary"] });
+      queryClient.invalidateQueries({ queryKey: ["getSupervisorEvaluationsSummary"] });
       queryClient.invalidateQueries({ queryKey: ["supervisorOfferings"] });
       queryClient.invalidateQueries({ queryKey: ["supervisorAnalytics"] });
+      queryClient.invalidateQueries({ queryKey: ["getRecentSubmissions"] });
     },
   });
 };
+6;
 
 // ── 5. Reports & Development Plan (Managed + Self) ──────────────────────────
 

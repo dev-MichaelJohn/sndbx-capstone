@@ -150,16 +150,6 @@ class programService implements IProgramService {
     return result;
   }
 
-  private async hasProgramsHandled(accountId: number, tx?: PgTransaction) {
-    const existingPrograms = await GetRecords("ProgramChairs", {
-      where: (ProgramChairs) =>
-        and(eq(ProgramChairs.chair_id, accountId), isNull(ProgramChairs.deleted_at)),
-      ...(tx && { tx }),
-    });
-
-    return existingPrograms.length > 0;
-  }
-
   private async hasCollegeHandled(accountId: number, tx?: PgTransaction) {
     const existingColleges = await GetRecords("CollegeDeans", {
       where: (CollegeDeans) =>
@@ -168,6 +158,24 @@ class programService implements IProgramService {
     });
 
     return existingColleges.length > 0;
+  }
+
+  private async hasOtherProgramsChaired(
+    accountId: number,
+    excludeProgramId?: number,
+    tx?: PgTransaction,
+  ) {
+    const existingPrograms = await GetRecords("ProgramChairs", {
+      where: (ProgramChairs) =>
+        and(
+          eq(ProgramChairs.chair_id, accountId),
+          excludeProgramId ? sql`${ProgramChairs.program_id} != ${excludeProgramId}` : undefined,
+          isNull(ProgramChairs.deleted_at),
+        ),
+      ...(tx && { tx }),
+    });
+
+    return existingPrograms.length > 0;
   }
 
   async getPrograms(searhQuery: ProgramSearchQueryType, scope?: SupervisorScope | null) {
@@ -271,6 +279,7 @@ class programService implements IProgramService {
     const chairs = await GetRecords<"Accounts", ChairCandidateType>("Accounts", {
       select: (Accounts) => ({
         account_id: Accounts.id,
+        institutional_id: PersonalDetails.institutional_id,
         first_name: PersonalDetails.first_name,
         last_name: PersonalDetails.last_name,
         middle_name: PersonalDetails.middle_name,
@@ -311,6 +320,14 @@ class programService implements IProgramService {
                 ilike(PersonalDetails.first_name, `%${search}%`),
                 ilike(PersonalDetails.last_name, `%${search}%`),
                 ilike(PersonalDetails.institutional_id, `%${search}%`),
+                ilike(
+                  sql`concat(${PersonalDetails.last_name}, ', ', ${PersonalDetails.first_name})`,
+                  `%${search}%`,
+                ),
+                ilike(
+                  sql`concat(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+                  `%${search}%`,
+                ),
               )
             : undefined,
         ),
@@ -413,23 +430,22 @@ class programService implements IProgramService {
 
         if (existingProgram.account_id) {
           if (
-            !(await this.hasProgramsHandled(existingProgram.account_id, tx)) &&
+            !(await this.hasOtherProgramsChaired(
+              existingProgram.account_id,
+              existingProgram.id,
+              tx,
+            )) &&
             !(await this.hasCollegeHandled(existingProgram.account_id, tx))
           ) {
             await this.userService.revokeRole(existingProgram.account_id, "SUPERVISOR", tx);
           }
 
-          const deleteProgramChairRecord = await SoftDeleteRecord<"ProgramChairs">(
+          await SoftDeleteRecord<"ProgramChairs">(
             "ProgramChairs",
             existingProgram.account_id,
             ProgramChairs.chair_id,
             tx,
           );
-          if (!deleteProgramChairRecord)
-            throw new AppError(
-              500,
-              "Failed to remove old program chair record. Changes during this process were rolled back.",
-            );
         }
 
         programChairRecord = await this.grantRoleAndCreateProgramChair(
@@ -460,32 +476,32 @@ class programService implements IProgramService {
 
       if (existingProgram.account_id) {
         if (
-          !(await this.hasProgramsHandled(existingProgram.account_id, tx)) &&
+          !(await this.hasOtherProgramsChaired(
+            existingProgram.account_id,
+            existingProgram.id,
+            tx,
+          )) &&
           !(await this.hasCollegeHandled(existingProgram.account_id, tx))
         ) {
           await this.userService.revokeRole(existingProgram.account_id, "SUPERVISOR", tx);
+        }
 
-          const programChair = await GetRecord<"ProgramChairs">("ProgramChairs", {
-            where: (ProgramChairs) =>
-              and(
-                eq(ProgramChairs.program_id, existingProgram.id),
-                eq(ProgramChairs.chair_id, existingProgram.account_id),
-                isNull(ProgramChairs.deleted_at),
-              ),
-          });
-          if (!programChair) throw new AppError(404, "No college dean record found.");
+        const programChair = await GetRecord<"ProgramChairs">("ProgramChairs", {
+          where: (ProgramChairs) =>
+            and(
+              eq(ProgramChairs.program_id, existingProgram.id),
+              eq(ProgramChairs.chair_id, existingProgram.account_id),
+              isNull(ProgramChairs.deleted_at),
+            ),
+        });
 
-          const deleteProgramChair = await SoftDeleteRecord<"ProgramChairs">(
+        if (programChair) {
+          await SoftDeleteRecord<"ProgramChairs">(
             "ProgramChairs",
             programChair.id,
             ProgramChairs.id,
             tx,
           );
-          if (!deleteProgramChair)
-            throw new AppError(
-              500,
-              "Failed to remove old program chair record. Changes during this process were rolled back.",
-            );
         }
       }
 

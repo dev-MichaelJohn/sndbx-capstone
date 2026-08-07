@@ -46,6 +46,10 @@ export interface IEvaluationExecutionService {
     scheduleId: number,
     courseOfferingId: number,
   ): Promise<{ evaluation: SupervisorEvalSelect; ratings: unknown[] } | null>;
+  getSupervisorEvaluationsSummary(
+    evaluatorId: number,
+    scheduleId: number,
+  ): Promise<Array<{ course_offering_id: number; is_submitted: boolean }>>;
   getRecentAnonymousSubmissions(): Promise<AnonymousSubmissionEvent[]>;
 }
 
@@ -359,20 +363,71 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
     return { evaluation, ratings };
   }
 
+  async getSupervisorEvaluationsSummary(
+    evaluatorId: number,
+    scheduleId: number,
+  ): Promise<Array<{ course_offering_id: number; is_submitted: boolean }>> {
+    const records = await GetRecords<
+      "SupervisorEvaluations",
+      { course_offering_id: number; is_submitted: boolean }
+    >("SupervisorEvaluations", {
+      select: (t) => ({
+        course_offering_id: t.course_offering_id,
+        is_submitted: sql<boolean>`${t.submitted_at} IS NOT NULL`,
+      }),
+      where: (t) => and(eq(t.evaluator_id, evaluatorId), eq(t.schedule_id, scheduleId)),
+    });
+
+    return records;
+  }
+
   async getRecentAnonymousSubmissions(): Promise<AnonymousSubmissionEvent[]> {
-    return await GetRecords<"StudentEvaluations", AnonymousSubmissionEvent>("StudentEvaluations", {
+    const studentSubmissions = await GetRecords<"StudentEvaluations", AnonymousSubmissionEvent>(
+      "StudentEvaluations",
+      {
+        select: () => ({
+          id: sql<string>`CAST(${StudentEvaluations.id} AS TEXT)`,
+          evaluator_type: sql<"STUDENT" | "SUPERVISOR">`'STUDENT'`,
+          faculty_name: sql<string>`CONCAT(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+          course_initialism: Courses.initialism,
+          course_name: Courses.name,
+          submitted_at: sql<string>`${StudentEvaluations.submitted_at}::text`,
+        }),
+        join: (q) =>
+          q
+            .innerJoin(StudentClasses, eq(StudentEvaluations.student_class_id, StudentClasses.id))
+            .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+            .innerJoin(
+              CourseCurriculums,
+              eq(CourseOfferings.course_curriculum_id, CourseCurriculums.id),
+            )
+            .innerJoin(Courses, eq(CourseCurriculums.course_id, Courses.id))
+            .innerJoin(Accounts, eq(CourseOfferings.faculty_id, Accounts.id))
+            .innerJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id))
+            .orderBy(desc(StudentEvaluations.submitted_at))
+            .limit(10),
+        where: isNotNull(StudentEvaluations.submitted_at),
+      },
+    );
+
+    const supervisorSubmissions = await GetRecords<
+      "SupervisorEvaluations",
+      AnonymousSubmissionEvent
+    >("SupervisorEvaluations", {
       select: () => ({
-        id: sql<string>`CAST(${StudentEvaluations.id} AS TEXT)`,
-        evaluator_type: sql<"STUDENT" | "SUPERVISOR">`'STUDENT'`,
+        id: sql<string>`CAST(${SupervisorEvaluations.id} AS TEXT)`,
+        evaluator_type: sql<"STUDENT" | "SUPERVISOR">`'SUPERVISOR'`,
         faculty_name: sql<string>`CONCAT(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
         course_initialism: Courses.initialism,
         course_name: Courses.name,
-        submitted_at: sql<string>`${StudentEvaluations.submitted_at}::text`,
+        submitted_at: sql<string>`${SupervisorEvaluations.submitted_at}::text`,
       }),
       join: (q) =>
         q
-          .innerJoin(StudentClasses, eq(StudentEvaluations.student_class_id, StudentClasses.id))
-          .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+          .innerJoin(
+            CourseOfferings,
+            eq(SupervisorEvaluations.course_offering_id, CourseOfferings.id),
+          )
           .innerJoin(
             CourseCurriculums,
             eq(CourseOfferings.course_curriculum_id, CourseCurriculums.id),
@@ -380,10 +435,14 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
           .innerJoin(Courses, eq(CourseCurriculums.course_id, Courses.id))
           .innerJoin(Accounts, eq(CourseOfferings.faculty_id, Accounts.id))
           .innerJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id))
-          .orderBy(desc(StudentEvaluations.submitted_at))
+          .orderBy(desc(SupervisorEvaluations.submitted_at))
           .limit(10),
-      where: isNotNull(StudentEvaluations.submitted_at),
+      where: isNotNull(SupervisorEvaluations.submitted_at),
     });
+
+    return [...studentSubmissions, ...supervisorSubmissions]
+      .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
+      .slice(0, 10);
   }
 }
 

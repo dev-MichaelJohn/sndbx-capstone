@@ -49,5 +49,6 @@ export const initSocket = (httpServer: HTTPServer) => {
 
 export const emitLiveSubmission = (payload: AnonymousSubmissionEvent) => {
   if (!io) return;
+  io.emit("evaluation:submitted", payload);
   io.to("SYS_ADMIN_ROOM").emit("evaluation:submitted", payload);
 };

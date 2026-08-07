@@ -78,8 +78,28 @@ export const OfferingEditDialog = ({
   open,
   onOpenChange,
 }: OfferingEditDialogProps) => {
+  if (!offering || !open) return null;
+
+  return (
+    <OfferingEditFormModal
+      key={offering.id}
+      offering={offering}
+      programId={programId}
+      onClose={() => onOpenChange(false)}
+    />
+  );
+};
+
+interface OfferingEditFormModalProps {
+  offering: CourseOfferingItem;
+  programId?: number;
+  onClose: () => void;
+}
+
+const OfferingEditFormModal = ({ offering, programId, onClose }: OfferingEditFormModalProps) => {
   const [facultySearch, setFacultySearch] = useState("");
   const [selectedFaculty, setSelectedFaculty] = useState<FacultyUser | null>(null);
+  const [hasClearedFaculty, setHasClearedFaculty] = useState(false);
 
   const { mutateAsync, isPending } = useUpdateCourseOffering();
 
@@ -103,13 +123,21 @@ export const OfferingEditDialog = ({
   const curriculumCourses = curriculumData?.data ?? [];
   const facultyList = (facultyData?.data ?? []) as FacultyUser[];
 
+  // Sync initial faculty selection once when list loads, unless user clicked "Change"
+  useEffect(() => {
+    if (!hasClearedFaculty && offering.faculty_id && facultyList.length && !selectedFaculty) {
+      const match = facultyList.find((user) => user.id === offering.faculty_id);
+      if (match) setSelectedFaculty(match);
+    }
+  }, [offering.faculty_id, facultyList, selectedFaculty, hasClearedFaculty]);
+
   const initialFormData: UpdateCourseOfferingParams = {
-    course_offering_id: offering?.id ?? 0,
+    course_offering_id: offering.id,
     offering: {
-      course_curriculum_id: offering?.course_curriculum_id ?? 0,
-      semester_id: offering?.semester_id ?? 0,
+      course_curriculum_id: offering.course_curriculum_id,
+      semester_id: offering.semester_id,
     },
-    faculty: offering?.faculty_id
+    faculty: offering.faculty_id
       ? { type: "existing", id: offering.faculty_id }
       : { type: "existing", id: 0 },
   };
@@ -121,7 +149,8 @@ export const OfferingEditDialog = ({
 
   const resetFacultyState = () => {
     setFacultySearch("");
-    if (offering?.faculty_id && facultyList.length) {
+    setHasClearedFaculty(false);
+    if (offering.faculty_id && facultyList.length) {
       const existing = facultyList.find((u) => u.id === offering.faculty_id) ?? null;
       setSelectedFaculty(existing);
     } else {
@@ -137,47 +166,17 @@ export const OfferingEditDialog = ({
     onReset: resetFacultyState,
   });
 
-  // Prefill form values when offering prop or open state changes
-  useEffect(() => {
-    if (offering && open) {
-      setFacultySearch("");
-      form.reset({
-        course_offering_id: offering.id,
-        offering: {
-          course_curriculum_id: offering.course_curriculum_id,
-          semester_id: offering.semester_id,
-        },
-        faculty: offering.faculty_id
-          ? { type: "existing", id: offering.faculty_id }
-          : { type: "existing", id: 0 },
-      });
+  const handleAttemptClose = () => {
+    if (form.state.isDirty) {
+      dialog.attemptClose();
+    } else {
+      onClose();
     }
-  }, [offering, open]);
+  };
 
-  // Resolve faculty record details from user list if faculty_id is present
-  useEffect(() => {
-    if (offering?.faculty_id && open && facultyList.length) {
-      const match = facultyList.find((user) => user.id === offering.faculty_id);
-      if (match) setSelectedFaculty(match);
-    }
-  }, [offering?.faculty_id, open, facultyList]);
-
-  // Sync internal dialog state to external parent state when dialog closes
-  useEffect(() => {
-    if (onOpenChange && open !== dialog.open) {
-      onOpenChange(dialog.open);
-    }
-  }, [dialog.open, open, onOpenChange]);
-
-  // Sync external parent state to internal dialog state when opened
-  useEffect(() => {
-    if (open && !dialog.open) {
-      dialog.handleOpenChange(true);
-    }
-  }, [open]);
-
-  const handleOpenChange = (newOpen: boolean) => {
-    dialog.handleOpenChange(newOpen);
+  const handleConfirmDiscard = () => {
+    dialog.confirmDiscard();
+    onClose();
   };
 
   const handleTabChange = (v: string) => {
@@ -187,12 +186,8 @@ export const OfferingEditDialog = ({
       form.setFieldValue("faculty", { type: "new", details: emptyFacultyDetails });
       setFacultySearch("");
       setSelectedFaculty(null);
+      setHasClearedFaculty(true);
     }
-  };
-
-  const handleConfirmDiscard = () => {
-    dialog.confirmDiscard();
-    onOpenChange(false);
   };
 
   const facultyChangeSummary = (() => {
@@ -213,7 +208,7 @@ export const OfferingEditDialog = ({
 
   return (
     <>
-      <Dialog open={dialog.open} onOpenChange={handleOpenChange}>
+      <Dialog open={true} onOpenChange={(nextOpen) => !nextOpen && handleAttemptClose()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Course Offering</DialogTitle>
@@ -315,6 +310,7 @@ export const OfferingEditDialog = ({
                         setSelectedFaculty(user);
                       }}
                       onClear={() => {
+                        setHasClearedFaculty(true);
                         setSelectedFaculty(null);
                         form.setFieldValue("faculty", { type: "existing", id: 0 });
                       }}
@@ -388,7 +384,7 @@ export const OfferingEditDialog = ({
             <Button
               type="button"
               variant="outline"
-              onClick={dialog.attemptClose}
+              onClick={handleAttemptClose}
               disabled={isPending}
             >
               Cancel

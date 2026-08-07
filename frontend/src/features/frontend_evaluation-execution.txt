@@ -19,6 +19,8 @@ export const EVALUATION_EXECUTION_KEYS = {
     ["getStudentEvaluation", scheduleId, studentClassId] as const,
   supervisorEval: (scheduleId?: number, courseOfferingId?: number) =>
     ["getSupervisorEvaluation", scheduleId, courseOfferingId] as const,
+  supervisorSummary: (scheduleId?: number) =>
+    ["getSupervisorEvaluationsSummary", scheduleId] as const,
 };
 
 export const getRecentAnonymousSubmissions = async () => {
@@ -71,7 +73,7 @@ export const getStudentEvaluation = async (scheduleId: number, studentClassId: n
     const response = await apiClient<
       APIResponse<{ evaluation: StudentEvalSelect; ratings: unknown[] } | null>
     >(`/protected/evaluation-execution/student/schedule/${scheduleId}/class/${studentClassId}`);
-    return response.data.data;
+    return response.data.data ?? null;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch student evaluation."), {
       cause: error,
@@ -131,7 +133,7 @@ export const getSupervisorEvaluation = async (scheduleId: number, courseOffering
     >(
       `/protected/evaluation-execution/supervisor/schedule/${scheduleId}/course/${courseOfferingId}`,
     );
-    return response.data.data;
+    return response.data.data ?? null;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch supervisor evaluation."), {
       cause: error,
@@ -148,6 +150,30 @@ export const useSupervisorEvaluation = (
     queryKey: EVALUATION_EXECUTION_KEYS.supervisorEval(scheduleId, courseOfferingId),
     queryFn: () => getSupervisorEvaluation(scheduleId!, courseOfferingId!),
     enabled: !!scheduleId && !!courseOfferingId && (options?.enabled ?? true),
+  });
+};
+
+export const getSupervisorEvaluationsSummary = async (scheduleId: number) => {
+  try {
+    const response = await apiClient<
+      APIResponse<Array<{ course_offering_id: number; is_submitted: boolean }>>
+    >(`/protected/evaluation-execution/supervisor/schedule/${scheduleId}/summary`);
+    return response.data.data ?? [];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch supervisor evaluations summary."), {
+      cause: error,
+    });
+  }
+};
+
+export const useSupervisorEvaluationsSummary = (
+  scheduleId?: number,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: EVALUATION_EXECUTION_KEYS.supervisorSummary(scheduleId),
+    queryFn: () => getSupervisorEvaluationsSummary(scheduleId!),
+    enabled: !!scheduleId && (options?.enabled ?? true),
   });
 };
 
@@ -176,6 +202,9 @@ export const useSubmitSupervisorEvaluation = () => {
           variables.schedule_id,
           variables.course_offering_id,
         ),
+      });
+      queryClient.invalidateQueries({
+        queryKey: EVALUATION_EXECUTION_KEYS.supervisorSummary(variables.schedule_id),
       });
       queryClient.invalidateQueries({
         queryKey: EVALUATION_EXECUTION_KEYS.recentSubmissions,
@@ -335,8 +364,19 @@ evaluation-execution/components/EvaluationFormContainer.tsx
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EvaluationCategorySection } from "./EvaluationCategorySection";
 import type { EvaluationFormTree, EvaluationType } from "backend/types/evaluation-form.type";
+import toast from "react-hot-toast";
 
 interface EvaluationFormContainerProps {
   type: EvaluationType;
@@ -363,9 +403,17 @@ export const EvaluationFormContainer = ({
 }: EvaluationFormContainerProps) => {
   const [ratings, setRatings] = useState<Record<number, number>>(initialRatings);
   const [comment, setComment] = useState(initialComment);
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
 
   const formMin = formTree.min_rating ?? 1;
   const formMax = formTree.max_rating ?? 5;
+
+  // Calculate total questions in form
+  const totalQuestions = formTree.categories.reduce(
+    (acc, cat) => acc + (cat.questions?.length || 0),
+    0,
+  );
+  const answeredQuestionsCount = Object.keys(ratings).length;
 
   useEffect(() => {
     setRatings(initialRatings);
@@ -385,61 +433,111 @@ export const EvaluationFormContainer = ({
     return { ratings: ratingsArray, comment, is_draft };
   };
 
-  return (
-    <div className="space-y-6">
-      {formTree.categories.map((cat, idx) => (
-        <EvaluationCategorySection
-          key={cat.id}
-          type={type}
-          category={cat}
-          catIdx={idx}
-          formMinRating={formMin}
-          formMaxRating={formMax}
-          ratingsMap={ratings}
-          disabled={isSubmitted || isSaving}
-          onRatingChange={handleRatingChange}
-        />
-      ))}
+  const handleAttemptFinalSubmit = () => {
+    if (answeredQuestionsCount < totalQuestions) {
+      toast.error(
+        `Please answer all questions before submitting. (${answeredQuestionsCount}/${totalQuestions} answered)`,
+      );
+      return;
+    }
+    setConfirmSubmitOpen(true);
+  };
 
-      {/* Qualitative Feedback */}
-      <div className="space-y-2 pt-2">
-        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Qualitative Feedback / Comments
-        </label>
-        <Textarea
-          value={comment}
-          disabled={isSubmitted || isSaving}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Enter constructive feedback or observations..."
-          className="min-h-24 text-xs"
-        />
+  const handleConfirmSubmit = () => {
+    setConfirmSubmitOpen(false);
+    onSave(buildPayload(false));
+  };
+
+  return (
+    <>
+      <div className="space-y-6">
+        {formTree.categories.map((cat, idx) => (
+          <EvaluationCategorySection
+            key={cat.id}
+            type={type}
+            category={cat}
+            catIdx={idx}
+            formMinRating={formMin}
+            formMaxRating={formMax}
+            ratingsMap={ratings}
+            disabled={isSubmitted || isSaving}
+            onRatingChange={handleRatingChange}
+          />
+        ))}
+
+        {/* Qualitative Feedback */}
+        <div className="space-y-2 pt-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Qualitative Feedback / Comments
+          </label>
+          <Textarea
+            value={comment}
+            disabled={isSubmitted || isSaving}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Enter constructive feedback or observations..."
+            className="min-h-24 text-xs"
+          />
+        </div>
+
+        {/* Actions */}
+        {!isSubmitted && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <span className="text-xs text-muted-foreground">
+              {answeredQuestionsCount} of {totalQuestions} criteria rated
+            </span>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isSaving}
+                onClick={() => onSave(buildPayload(true))}
+                className="h-8 text-xs cursor-pointer"
+              >
+                Save Draft
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isSaving}
+                onClick={handleAttemptFinalSubmit}
+                className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
+              >
+                {isSaving ? "Submitting..." : "Final Submit"}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Actions */}
-      {!isSubmitted && (
-        <div className="flex items-center justify-end gap-2 pt-4 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isSaving}
-            onClick={() => onSave(buildPayload(true))}
-            className="h-8 text-xs"
-          >
-            Save Draft
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            disabled={isSaving}
-            onClick={() => onSave(buildPayload(false))}
-            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
-          >
-            {isSaving ? "Submitting..." : "Final Submit"}
-          </Button>
-        </div>
-      )}
-    </div>
+      {/* Final Submission Friction Dialog */}
+      <AlertDialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-semibold">
+              Confirm Final Evaluation Submission?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              You are about to finalize this evaluation. Once submitted, ratings and qualitative
+              comments will be locked and cannot be edited.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSaving} className="h-8 rounded-lg text-xs">
+              Go Back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmSubmit}
+              disabled={isSaving}
+              className="h-8 rounded-lg bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-500"
+            >
+              {isSaving ? "Submitting..." : "Yes, Submit Evaluation"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
@@ -591,21 +689,22 @@ export const QuestionItem = ({
   disabled = false,
   onRatingChange,
 }: QuestionItemProps) => {
-  // Use question's max_rating override if available, else fallback to form level max_rating
   const effectiveMaxRating = question.max_rating ?? formMaxRating;
 
   return (
     <div className="rounded-xl border border-border/50 bg-card/60 p-4 space-y-3 shadow-2xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-[11px] font-semibold text-muted-foreground mt-0.5">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        {/* Statement Text Container */}
+        <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted font-mono text-xs font-semibold text-muted-foreground mt-0.5">
             {catIdx + 1}.{qIdx + 1}
           </span>
-          <p className="text-xs font-semibold leading-relaxed text-foreground">
+          <p className="text-xs font-semibold leading-relaxed text-foreground min-w-0 flex-1">
             {question.question}
           </p>
         </div>
 
+        {/* Rating Group */}
         <RatingPillGroup
           minRating={formMinRating}
           maxRating={effectiveMaxRating}
@@ -645,25 +744,33 @@ export const RatingPillGroup = ({
   );
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-      {scale.map((score) => {
-        const active = value === score;
-        return (
-          <button
-            key={score}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(score)}
-            className={`flex size-8 cursor-pointer items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-all ${
-              active
-                ? "border-emerald-500 bg-emerald-600 text-white shadow-xs scale-105"
-                : "border-border/50 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
-            } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
-          >
-            {score}
-          </button>
-        );
-      })}
+    <div className="flex flex-col items-end gap-1 shrink-0">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {scale.map((score) => {
+          const active = value === score;
+          return (
+            <button
+              key={score}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(score)}
+              className={`flex size-8 cursor-pointer items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-all ${
+                active
+                  ? "border-emerald-500 bg-emerald-600 text-white shadow-xs scale-105"
+                  : "border-border/50 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+              } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+            >
+              {score}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Score Direction Indicator */}
+      <div className="flex w-full justify-between px-0.5 text-[9px] font-semibold text-muted-foreground/70 uppercase">
+        <span>{minRating} (Lowest)</span>
+        <span>{maxRating} (Highest)</span>
+      </div>
     </div>
   );
 };
@@ -763,12 +870,14 @@ import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 
 interface SupervisorTargetListProps {
   offerings: CourseOfferingWithDetails[];
+  statusMap?: Record<number, { isSubmitted: boolean; hasDraft: boolean }>;
   isLoading?: boolean;
   onSelectOffering: (offering: CourseOfferingWithDetails) => void;
 }
 
 export const SupervisorTargetList = ({
   offerings,
+  statusMap = {},
   isLoading = false,
   onSelectOffering,
 }: SupervisorTargetListProps) => {
@@ -794,9 +903,18 @@ export const SupervisorTargetList = ({
 
   return (
     <div className="space-y-3">
-      {validTargets.map((offering) => (
-        <EvaluateeCard key={offering.id} offering={offering} onEvaluate={onSelectOffering} />
-      ))}
+      {validTargets.map((offering) => {
+        const targetStatus = statusMap[offering.id];
+        return (
+          <EvaluateeCard
+            key={offering.id}
+            offering={offering}
+            isSubmitted={targetStatus?.isSubmitted ?? false}
+            hasDraft={targetStatus?.hasDraft ?? false}
+            onEvaluate={onSelectOffering}
+          />
+        );
+      })}
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, CheckCircle2, UserCheck } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ArrowLeft, CheckCircle2, UserCheck, AlertTriangle, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 import {
   useSupervisorOfferings,
@@ -20,6 +19,7 @@ import {
   useSubmitSupervisorEvaluation,
   useSupervisorSchedules,
 } from "../api/supervisor.service";
+import { useSupervisorEvaluationsSummary } from "@/features/evaluation-execution/api/evaluation-execution.service";
 import { useEvaluationFormTree } from "@/features/evaluation-management/api/evaluation-form.service";
 import { SupervisorTargetList } from "@/features/evaluation-execution/components/SupervisorTargetList";
 import { EvaluationFormContainer } from "@/features/evaluation-execution/components/EvaluationFormContainer";
@@ -28,12 +28,45 @@ import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 export const SupervisorEvaluationPage = () => {
   const [selectedOffering, setSelectedOffering] = useState<CourseOfferingWithDetails | null>(null);
 
-  const { data: offeringsRes, isLoading: isLoadingOfferings } = useSupervisorOfferings({ page: 1 });
   const { data: schedules = [] } = useSupervisorSchedules();
+
+  // Find active schedule or fallback to latest
+  const activeSchedule = useMemo(() => {
+    if (!schedules || schedules.length === 0) return null;
+    const now = Date.now();
+    return (
+      schedules.find((s) => {
+        const open = new Date(s.open_at).getTime();
+        const close = new Date(s.close_at).getTime();
+        return now >= open && now <= close;
+      }) ?? null
+    );
+  }, [schedules]);
+
+  // Fetch all course offerings under supervisor scope (unrestricted by term mismatch)
+  const { data: offeringsRes, isLoading: isLoadingOfferings } = useSupervisorOfferings({
+    page: 1,
+  });
+
+  // Fetch submission status map for active schedule
+  const { data: summaryList = [] } = useSupervisorEvaluationsSummary(activeSchedule?.id, {
+    enabled: Boolean(activeSchedule),
+  });
+
   const submitEval = useSubmitSupervisorEvaluation();
 
   const offerings = offeringsRes?.data ?? [];
-  const activeSchedule = schedules[0]; // Active supervisor schedule
+
+  const statusMap = useMemo(() => {
+    const map: Record<number, { isSubmitted: boolean; hasDraft: boolean }> = {};
+    summaryList.forEach((item) => {
+      map[item.course_offering_id] = {
+        isSubmitted: item.is_submitted,
+        hasDraft: !item.is_submitted,
+      };
+    });
+    return map;
+  }, [summaryList]);
 
   // Form tree for SEF
   const { data: formTree, isLoading: isLoadingForm } = useEvaluationFormTree(
@@ -42,7 +75,7 @@ export const SupervisorEvaluationPage = () => {
   );
 
   // Existing draft or submission for selected target
-  const { data: existingEvalData } = useSupervisorEvaluation(
+  const { data: existingEvalData, isLoading: isLoadingEval } = useSupervisorEvaluation(
     activeSchedule?.id,
     selectedOffering?.id,
     { enabled: Boolean(selectedOffering && activeSchedule) },
@@ -106,14 +139,14 @@ export const SupervisorEvaluationPage = () => {
                 variant="outline"
                 className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1 text-[11px]"
               >
-                <CheckCircle2 className="size-3" /> Schedule Active
+                <CheckCircle2 className="size-3" /> SEF Schedule Active
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-[11px]"
+                className="border-amber-500/30 bg-amber-500/10 text-amber-400 gap-1 text-[11px]"
               >
-                Schedule Inactive
+                <AlertTriangle className="size-3" /> SEF Schedule Inactive
               </Badge>
             )}
           </div>
@@ -121,6 +154,21 @@ export const SupervisorEvaluationPage = () => {
             Evaluate instructional performance for faculty members under your supervisor scope.
           </p>
         </div>
+
+        {/* Schedule Inactive Banner */}
+        {!activeSchedule && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold">No SEF Evaluation Schedule Found</p>
+              <p>
+                There is currently no schedule configured for <strong>Supervisor (SEF)</strong>{" "}
+                evaluations. An Administrator must publish a Supervisor schedule in System &gt;
+                Evaluation Schedules.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Target List Card */}
         <Card className="rounded-xl border bg-card shadow-xs">
@@ -136,24 +184,41 @@ export const SupervisorEvaluationPage = () => {
           <CardContent className="p-4">
             <SupervisorTargetList
               offerings={offerings}
+              statusMap={statusMap}
               isLoading={isLoadingOfferings}
-              onSelectOffering={setSelectedOffering}
+              onSelectOffering={(offering) => {
+                if (!activeSchedule) {
+                  toast.error("Cannot evaluate: No active SEF schedule.");
+                  return;
+                }
+                setSelectedOffering(offering);
+              }}
             />
           </CardContent>
         </Card>
       </div>
 
-      {/* SEF Execution Dialog */}
+      {/* SEF Execution Modal */}
       <Dialog
         open={Boolean(selectedOffering)}
         onOpenChange={(open) => !open && setSelectedOffering(null)}
       >
-        <DialogContent className="max-w-4xl h-[88vh] flex flex-col p-0 rounded-2xl overflow-hidden">
-          <DialogHeader className="p-4 border-b bg-muted/20 flex flex-row items-center justify-between">
+        <DialogContent className="sm:max-w-4xl lg:max-w-5xl w-full h-[88vh] flex flex-col p-0 rounded-2xl overflow-hidden shadow-2xl border border-border/80">
+          <DialogHeader className="shrink-0 p-4 border-b bg-muted/20 flex flex-row items-center justify-between">
             <div>
-              <DialogTitle className="text-base font-bold">
-                Evaluating: {selectedOffering?.first_name} {selectedOffering?.last_name}
-              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-base font-bold">
+                  Evaluating: {selectedOffering?.first_name} {selectedOffering?.last_name}
+                </DialogTitle>
+                {isSubmitted && (
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] gap-1"
+                  >
+                    <Lock className="size-3" /> Submitted (Read Only)
+                  </Badge>
+                )}
+              </div>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 {selectedOffering?.course_name} ({selectedOffering?.course_initialism}) • Year{" "}
                 {selectedOffering?.year_level}
@@ -169,10 +234,10 @@ export const SupervisorEvaluationPage = () => {
             </Button>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 p-6">
-            {isLoadingForm || !formTree ? (
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {isLoadingForm || isLoadingEval || !formTree ? (
               <div className="p-8 text-center text-xs text-muted-foreground">
-                Loading SEF evaluation form...
+                Loading SEF evaluation form & ratings...
               </div>
             ) : (
               <EvaluationFormContainer
@@ -185,7 +250,7 @@ export const SupervisorEvaluationPage = () => {
                 onSave={handleSaveEvaluation}
               />
             )}
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

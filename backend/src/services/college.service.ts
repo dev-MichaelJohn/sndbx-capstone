@@ -198,6 +198,23 @@ class collegeService implements ICollegeService {
       throw new AppError(409, "This account is already assigned as the dean of a college.");
   }
 
+  private async hasOtherCollegesDeaned(
+    accountId: number,
+    excludeCollegeId?: number,
+    tx?: PgTransaction,
+  ) {
+    const deanships = await GetRecords("CollegeDeans", {
+      where: (CollegeDeans) =>
+        and(
+          eq(CollegeDeans.dean_id, accountId),
+          excludeCollegeId ? sql`${CollegeDeans.college_id} != ${excludeCollegeId}` : undefined,
+          isNull(CollegeDeans.deleted_at),
+        ),
+      ...(tx && { tx }),
+    });
+    return deanships.length > 0;
+  }
+
   /**
    * Creates a CollegeDeans link record tying an account to a college.
    *
@@ -337,7 +354,8 @@ class collegeService implements ICollegeService {
   async searchAvailableDeanCandidates(search: string | undefined, tx?: PgTransaction) {
     const deans = await GetRecords<"Accounts", DeanCandidate>("Accounts", {
       select: (Accounts) => ({
-        id: Accounts.id,
+        account_id: Accounts.id,
+        institutional_id: PersonalDetails.institutional_id,
         first_name: PersonalDetails.first_name,
         last_name: PersonalDetails.last_name,
         middle_name: PersonalDetails.middle_name,
@@ -379,6 +397,14 @@ class collegeService implements ICollegeService {
                 ilike(PersonalDetails.first_name, `%${search}%`),
                 ilike(PersonalDetails.last_name, `%${search}%`),
                 ilike(PersonalDetails.institutional_id, `%${search}%`),
+                ilike(
+                  sql`concat(${PersonalDetails.last_name}, ', ', ${PersonalDetails.first_name})`,
+                  `%${search}%`,
+                ),
+                ilike(
+                  sql`concat(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+                  `%${search}%`,
+                ),
               )
             : undefined,
         ),
@@ -530,8 +556,16 @@ class collegeService implements ICollegeService {
         }
 
         if (existingCollegeRecord.account_id) {
-          if (!(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)))
+          if (
+            !(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)) &&
+            !(await this.hasOtherCollegesDeaned(
+              existingCollegeRecord.account_id,
+              existingCollegeRecord.id,
+              tx,
+            ))
+          ) {
             await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
+          }
 
           const deletedCollegeDeanRecord = await SoftDeleteRecord(
             "CollegeDeans",
@@ -587,8 +621,16 @@ class collegeService implements ICollegeService {
       if (!existingCollegeRecord) throw new AppError(404, "No college record found.");
 
       if (existingCollegeRecord.account_id) {
-        if (!(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)))
+        if (
+          !(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)) &&
+          !(await this.hasOtherCollegesDeaned(
+            existingCollegeRecord.account_id,
+            existingCollegeRecord.id,
+            tx,
+          ))
+        ) {
           await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
+        }
 
         const collegeDean = await GetRecord<"CollegeDeans">("CollegeDeans", {
           where: (CollegeDeans) =>
@@ -598,19 +640,10 @@ class collegeService implements ICollegeService {
               isNull(CollegeDeans.deleted_at),
             ),
         });
-        if (!collegeDean) throw new AppError(404, "No college dean record found.");
 
-        const deletedCollegeDeanRecord = await SoftDeleteRecord(
-          "CollegeDeans",
-          collegeDean.id,
-          CollegeDeans.id,
-          tx,
-        );
-        if (!deletedCollegeDeanRecord)
-          throw new AppError(
-            500,
-            "Failed to remove old college-dean record. Changes during this process were rolled back.",
-          );
+        if (collegeDean) {
+          await SoftDeleteRecord("CollegeDeans", collegeDean.id, CollegeDeans.id, tx);
+        }
       }
 
       const deletedCollegeRecord = await SoftDeleteRecord(

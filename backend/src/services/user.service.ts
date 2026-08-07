@@ -790,11 +790,27 @@ class userService implements IUserService {
   }
 
   async revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
-    if (await this.accountHasRole(accountId, role, tx)) {
+    const roleRecord = await GetRecord("Roles", {
+      where: (Roles) => and(eq(Roles.system_role, role), isNull(Roles.deleted_at)),
+      ...(tx && { tx }),
+    });
+    if (!roleRecord) return;
+
+    const accountRole = await GetRecord("AccountRoles", {
+      where: (AccountRoles) =>
+        and(
+          eq(AccountRoles.account_id, accountId),
+          eq(AccountRoles.role_id, roleRecord.id),
+          isNull(AccountRoles.deleted_at),
+        ),
+      ...(tx && { tx }),
+    });
+
+    if (accountRole) {
       const revokedRole = await SoftDeleteRecord(
         "AccountRoles",
-        accountId,
-        AccountRoles.account_id,
+        accountRole.id,
+        AccountRoles.id,
         tx,
       );
       if (!revokedRole) throw new AppError(500, "Failed to revoke role.");

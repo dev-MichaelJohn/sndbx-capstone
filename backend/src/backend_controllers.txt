@@ -1178,6 +1178,7 @@ export interface IEvaluationExecutionController {
   submitSupervisorEvaluation(req: Request, res: Response, next: NextFunction): Promise<void>;
   getStudentEvaluation(req: Request, res: Response, next: NextFunction): Promise<void>;
   getSupervisorEvaluation(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getSupervisorEvaluationsSummary(req: Request, res: Response, next: NextFunction): Promise<void>;
   getRecentAnonymousSubmissions(req: Request, res: Response, next: NextFunction): Promise<void>;
 }
 
@@ -1250,8 +1251,31 @@ export class evaluationExecutionController implements IEvaluationExecutionContro
     }
   }
 
-  async getRecentAnonymousSubmissions(
+  async getSupervisorEvaluationsSummary(
     req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) throw new AppError(401, "Authentication required.");
+
+      const scheduleId = await this.extractId(req.params.scheduleId, "Valid scheduleId required.");
+
+      const result = await this.executionService.getSupervisorEvaluationsSummary(
+        userId,
+        scheduleId,
+      );
+      res
+        .status(200)
+        .json(createAPIResponse(200, "Supervisor evaluations summary retrieved.", result));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getRecentAnonymousSubmissions(
+    _req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {

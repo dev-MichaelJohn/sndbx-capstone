@@ -350,7 +350,6 @@ interface UserCreateDialogProps {
 const ALL_SYSTEM_ROLES: { label: string; value: SystemRole }[] = [
   { label: "Student", value: "STUDENT" },
   { label: "Faculty", value: "FACULTY" },
-  { label: "Supervisor", value: "SUPERVISOR" },
   { label: "Administrator", value: "ADMIN" },
   { label: "System Administrator", value: "SYS_ADMIN" },
 ];

@@ -5,12 +5,14 @@ import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 
 interface SupervisorTargetListProps {
   offerings: CourseOfferingWithDetails[];
+  statusMap?: Record<number, { isSubmitted: boolean; hasDraft: boolean }>;
   isLoading?: boolean;
   onSelectOffering: (offering: CourseOfferingWithDetails) => void;
 }
 
 export const SupervisorTargetList = ({
   offerings,
+  statusMap = {},
   isLoading = false,
   onSelectOffering,
 }: SupervisorTargetListProps) => {
@@ -36,9 +38,18 @@ export const SupervisorTargetList = ({
 
   return (
     <div className="space-y-3">
-      {validTargets.map((offering) => (
-        <EvaluateeCard key={offering.id} offering={offering} onEvaluate={onSelectOffering} />
-      ))}
+      {validTargets.map((offering) => {
+        const targetStatus = statusMap[offering.id];
+        return (
+          <EvaluateeCard
+            key={offering.id}
+            offering={offering}
+            isSubmitted={targetStatus?.isSubmitted ?? false}
+            hasDraft={targetStatus?.hasDraft ?? false}
+            onEvaluate={onSelectOffering}
+          />
+        );
+      })}
     </div>
   );
 };

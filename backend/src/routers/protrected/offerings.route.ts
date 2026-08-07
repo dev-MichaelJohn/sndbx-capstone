@@ -23,7 +23,7 @@ CourseOfferingRouter.post(
   requirePermission(PERMISSIONS.COURSE_OFFERING_CREATE),
   (req, res, next) => CourseOfferingController.createCourseOffering(req, res, next),
 );
-CourseOfferingRouter.patch(
+CourseOfferingRouter.put(
   "/:offeringId",
   requirePermission(PERMISSIONS.COURSE_OFFERING_UPDATE),
   (req, res, next) => CourseOfferingController.updateCourseOffering(req, res, next),
