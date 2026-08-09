@@ -191,16 +191,48 @@ const UserCreateFormModal = ({ onClose }: UserCreateFormModalProps) => {
               />
             </div>
 
-            <form.Field
-              name="personalDetails.institutional_id"
-              children={(field) => (
-                <FormTextField
-                  field={field}
-                  label="Institutional ID"
-                  placeholder="e.g. 2024-00123"
-                  disabled={isPending}
-                />
-              )}
+            {/* Reactive Institutional ID Field responding to selected Role */}
+            <form.Subscribe
+              selector={(state) => [state.values.role] as const}
+              children={([selectedRole]) => {
+                const currentYearTwoDigits = new Date().getFullYear().toString().slice(-2);
+                let idPlaceholder = `e.g. STU-${currentYearTwoDigits}-4821-001 (Auto-generated if empty)`;
+
+                if (selectedRole === "FACULTY" || selectedRole === "SUPERVISOR") {
+                  idPlaceholder = `e.g. FAC-${currentYearTwoDigits}-1042-001 (Auto-generated if empty)`;
+                } else if (selectedRole === "ADMIN" || selectedRole === "SYS_ADMIN") {
+                  idPlaceholder = `e.g. ADM-${currentYearTwoDigits}-0012-001 (Auto-generated if empty)`;
+                }
+
+                return (
+                  <form.Field
+                    name="personalDetails.institutional_id"
+                    validators={{
+                      onChange: ({ value }) => {
+                        if (!value || !value.trim()) return undefined; // Auto-generated on backend if left blank
+                        const trimmed = value.trim();
+                        const pattern = new RegExp(
+                          `^(ADM|FAC|STU)-${currentYearTwoDigits}-\\d{4}-\\d{3}$`,
+                          "i",
+                        );
+
+                        if (!pattern.test(trimmed)) {
+                          return `ID must match format PREFIX-${currentYearTwoDigits}-XXXX-XXX (e.g. STU-${currentYearTwoDigits}-1042-001).`;
+                        }
+                        return undefined;
+                      },
+                    }}
+                    children={(field) => (
+                      <FormTextField
+                        field={field}
+                        label="Institutional ID"
+                        placeholder={idPlaceholder}
+                        disabled={isPending}
+                      />
+                    )}
+                  />
+                );
+              }}
             />
 
             <div className="grid grid-cols-2 gap-3">

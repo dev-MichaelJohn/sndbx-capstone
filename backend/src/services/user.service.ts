@@ -39,6 +39,7 @@ import {
   type UserUpdateEmailData,
 } from "@/utils/email.util.js";
 import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
+import { generateInstitutionalId } from "@/utils/institutional-id.util.js";
 
 /** Result of {@link userService.createUser} — `credentials` has the password stripped. */
 type CreateUserResult = {
@@ -376,6 +377,10 @@ class userService implements IUserService {
     let plainPassword = credentials.password;
     let wasPasswordGenerated = false;
 
+    if (!personalDetails.institutional_id || !personalDetails.institutional_id.trim()) {
+      personalDetails.institutional_id = generateInstitutionalId(role);
+    }
+
     if (!plainPassword || plainPassword.trim().length === 0) {
       plainPassword = this.generatePassword();
       wasPasswordGenerated = true;
@@ -471,6 +476,10 @@ class userService implements IUserService {
       role,
     });
     if (!validation.success) throw validation.error;
+
+    if (!personalDetails.institutional_id || !personalDetails.institutional_id.trim()) {
+      personalDetails.institutional_id = generateInstitutionalId(role);
+    }
 
     const userDetails = await CreateRecord<"PersonalDetails">(
       "PersonalDetails",

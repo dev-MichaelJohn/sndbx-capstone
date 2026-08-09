@@ -40,7 +40,15 @@ export type AccountRoleUpdate = z.infer<typeof AccountRoleSchema.update>;
 
 /** An account holder's personal information (name, institutional id, etc), kept separate from login credentials. */
 export const PersonalDetailsSchema = GenerateZodSchemas(PersonalDetails, {
-  institutional_id: (schema) => schema.trim().min(8, "Institutional ID is required."),
+  institutional_id: (schema) =>
+    schema
+      .trim()
+      .min(5, "Institutional ID must be at least 5 characters.")
+      .max(32, "Institutional ID cannot exceed 32 characters.")
+      .regex(
+        /^[A-Za-z0-9-]+$/,
+        "Institutional ID can only contain letters, numbers, and hyphens (e.g. STU-26-1042-001).",
+      ),
   first_name: (schema) => schema.trim().min(2, "First name is required."),
   last_name: (schema) => schema.trim().min(2, "Last name is required."),
   middle_name: () => z.string().trim().optional().nullable(),
