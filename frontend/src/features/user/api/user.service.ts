@@ -9,11 +9,8 @@ import type {
   UserWithDetails,
 } from "backend/types/user.type";
 
-// ── API Functions ──────────────────────────────────────────────────────────
-
 /**
- * Fetches a paginated, searchable list of users with role filtering[cite: 6, 8].
- * Endpoint: GET /protected/users[cite: 6, 8]
+ * Fetches a paginated, searchable list of user accounts with optional role filtering.
  */
 export const getUsers = async (params: UserSearchType) => {
   try {
@@ -28,8 +25,7 @@ export const getUsers = async (params: UserSearchType) => {
 };
 
 /**
- * Creates a new user account, personal details, and role mapping[cite: 6, 8].
- * Endpoint: POST /protected/users[cite: 6, 8]
+ * Creates a new user account, personal details, and initial system role mapping.
  */
 export const createUserRecord = async (payload: CreateUserReqType) => {
   try {
@@ -44,8 +40,7 @@ export const createUserRecord = async (payload: CreateUserReqType) => {
 };
 
 /**
- * Updates an existing user's email and/or personal details[cite: 6, 8].
- * Endpoint: PUT /protected/users/:id[cite: 6, 8]
+ * Updates an existing user's email address and/or personal details.
  */
 export const updateUserRecord = async ({
   id,
@@ -63,8 +58,7 @@ export const updateUserRecord = async ({
 };
 
 /**
- * Soft-deletes a user account, personal details, and role mappings[cite: 6, 8].
- * Endpoint: DELETE /protected/users/:id[cite: 6, 8]
+ * Soft-deletes a user account and revokes associated system roles.
  */
 export const deleteUserRecord = async (id: number) => {
   try {
@@ -116,7 +110,7 @@ export const useStudentList = (params: Partial<Omit<UserSearchType, "role">> = {
 
 /**
  * Mutation hook for creating a new user account.
- * Automatically invalidates active user queries on success.
+ * Automatically invalidates user list and current user query cache.
  */
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
@@ -125,13 +119,14 @@ export const useCreateUser = () => {
     mutationFn: createUserRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
 
 /**
  * Mutation hook for updating an existing user account.
- * Automatically invalidates active user queries on success.
+ * Automatically invalidates user list and current user query cache.
  */
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
@@ -140,13 +135,14 @@ export const useUpdateUser = () => {
     mutationFn: updateUserRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
 
 /**
  * Mutation hook for deleting a user account.
- * Automatically invalidates active user queries on success.
+ * Automatically invalidates user list and current user query cache.
  */
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
@@ -155,6 +151,7 @@ export const useDeleteUser = () => {
     mutationFn: deleteUserRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };

@@ -65,6 +65,10 @@ const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
   }
 };
 
+/**
+ * Mutation hook for creating a program record and optional Chair assignment.
+ * Invalidates program queries, user list, and current user cache (role sync).
+ */
 export const useCreateProgram = () => {
   const queryClient = useQueryClient();
 
@@ -72,6 +76,9 @@ export const useCreateProgram = () => {
     mutationFn: createProgramRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+      queryClient.invalidateQueries({ queryKey: ["getPrograms"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -91,6 +98,10 @@ const updateProgramRecord = async ({ program_id, program, chair }: UpdateProgram
   }
 };
 
+/**
+ * Mutation hook for updating a program or reassigning a Chair.
+ * Invalidates program queries, user list, and current user cache (role sync).
+ */
 export const useUpdateProgram = () => {
   const queryClient = useQueryClient();
 
@@ -98,6 +109,9 @@ export const useUpdateProgram = () => {
     mutationFn: updateProgramRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+      queryClient.invalidateQueries({ queryKey: ["getPrograms"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -111,6 +125,10 @@ const deleteProgramRecord = async (programId: number) => {
   }
 };
 
+/**
+ * Mutation hook for soft-deleting a program record.
+ * Invalidates program queries, user list, and current user cache (role sync).
+ */
 export const useDeleteProgram = () => {
   const queryClient = useQueryClient();
 
@@ -118,6 +136,9 @@ export const useDeleteProgram = () => {
     mutationFn: deleteProgramRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+      queryClient.invalidateQueries({ queryKey: ["getPrograms"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -162,7 +183,6 @@ export function useChairSelection(initial: ChairCandidateType | null) {
   return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
 }
 
-// Helper to fetch total student count by traversing the chain
 export const fetchProgramStudentCount = async (programId: number): Promise<number> => {
   try {
     // 1. Get classes for this program

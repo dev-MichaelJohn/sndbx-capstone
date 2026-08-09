@@ -11,6 +11,9 @@ import { apiClient, getErrorMessage, type BasicSearchProps } from "@/lib/api.lib
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+/**
+ * Fetches paginated colleges joined with assigned Dean metadata.
+ */
 export const getColleges = async ({ page, search }: BasicSearchProps) => {
   try {
     const response = await apiClient<APIResponse<PaginatedData<CollegeWithDean[]>>>(
@@ -22,6 +25,9 @@ export const getColleges = async ({ page, search }: BasicSearchProps) => {
   }
 };
 
+/**
+ * Searches faculty accounts eligible for College Dean assignment.
+ */
 export const searchDeanCandidates = async (search?: string) => {
   try {
     const response = await apiClient<APIResponse<DeanCandidate[]>>(
@@ -55,6 +61,10 @@ const updateCollegeRecord = async ({ collegeId, college, dean }: UpdateCollegeRe
   }
 };
 
+/**
+ * Mutation hook for updating a college or reassigning a Dean.
+ * Invalidates college list, user list, and current user cache (role sync).
+ */
 export const useUpdateCollege = () => {
   const queryClient = useQueryClient();
 
@@ -62,6 +72,8 @@ export const useUpdateCollege = () => {
     mutationFn: updateCollegeRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -75,6 +87,10 @@ const deleteCollegeRecord = async (collegeId: number) => {
   }
 };
 
+/**
+ * Mutation hook for soft-deleting a college record.
+ * Invalidates college list, user list, and current user cache (role sync).
+ */
 export const useDeleteCollege = () => {
   const queryClient = useQueryClient();
 
@@ -82,6 +98,8 @@ export const useDeleteCollege = () => {
     mutationFn: deleteCollegeRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -97,6 +115,10 @@ const createCollegeRecord = async ({ college, dean }: CreateCollegeRecordType) =
   }
 };
 
+/**
+ * Mutation hook for creating a college record and optional Dean assignment.
+ * Invalidates college list, user list, and current user cache (role sync).
+ */
 export const useCreateCollege = () => {
   const queryClient = useQueryClient();
 
@@ -104,6 +126,8 @@ export const useCreateCollege = () => {
     mutationFn: createCollegeRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getColleges"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
