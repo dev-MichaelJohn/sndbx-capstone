@@ -31,6 +31,7 @@ const EnvSchema = z.object({
     .nonoptional("REFRESH_SECRET is required."),
   // Nodemailer config
   RESEND_API_KEY: z.string().trim().optional(),
+  EMAIL_FROM: z.string().trim().optional(),
   GMAIL_APP_USER: z
     .email("GMAIL_APP_USER is invalid.")
     .trim()

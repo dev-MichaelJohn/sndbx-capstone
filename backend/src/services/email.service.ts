@@ -46,15 +46,17 @@ class emailService implements IEmailService {
     const validation = await SendEmailSchema.safeParseAsync(info);
     if (!validation.success) throw validation.error;
 
-    const fromAddress = `"${this.INITIALISM} Notification Services" <${env.GMAIL_APP_USER}>`;
+    const smtpFromAddress = `"${this.INITIALISM} Notification Services" <${env.GMAIL_APP_USER}>`;
 
     // 1. Resend HTTP API Fast Path (~150ms)
     if (this.resendClient) {
       try {
+        // Resend testing sandbox requires from: 'onboarding@resend.dev' unless a custom domain is verified
+        const resendFromAddress =
+          env.EMAIL_FROM?.trim() || `${this.INITIALISM} <onboarding@resend.dev>`;
+
         const payload: any = {
-          from: env.GMAIL_APP_USER.includes("@resend.dev")
-            ? "PIT-FES <onboarding@resend.dev>"
-            : fromAddress,
+          from: resendFromAddress,
           to: [info.to],
           subject: info.options.subject,
         };
@@ -75,7 +77,7 @@ class emailService implements IEmailService {
 
     // 2. Nodemailer SMTP Fallback
     await transporter.sendMail({
-      from: fromAddress,
+      from: smtpFromAddress,
       to: info.to,
       ...info.options,
     });

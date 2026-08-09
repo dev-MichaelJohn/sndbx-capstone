@@ -1,11 +1,14 @@
 import rateLimit from "express-rate-limit";
 
 /**
- * Custom key generator using User ID for authenticated sessions or IP address for guests.
+ * Custom key generator using User ID for authenticated sessions or IP address for guest sessions.
  * Prevents multiple users on campus Wi-Fi or computer labs from being throttled together.
  */
 const userKeyGenerator = (req: any) => {
-  return req.user?.id ? `user:${req.user.id}` : `ip:${req.ip}`;
+  if (req.user?.id) {
+    return `user:${req.user.id}`;
+  }
+  return req.ip;
 };
 
 /**
@@ -28,6 +31,7 @@ export const standardApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3000,
   keyGenerator: userKeyGenerator,
+  validate: { keyGeneratorIpFallback: false },
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "API rate limit exceeded. Please slow down your requests." },
@@ -41,6 +45,7 @@ export const evaluationExecutionLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 100,
   keyGenerator: userKeyGenerator,
+  validate: { keyGeneratorIpFallback: false },
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Evaluation submission burst limit reached. Please wait a moment." },

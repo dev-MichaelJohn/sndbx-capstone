@@ -55,7 +55,7 @@ export const useEvaluationSocket = () => {
         EVALUATION_EXECUTION_KEYS.recentSubmissions,
         (previousData = []) => {
           const filtered = previousData.filter((item) => item.id !== event.id);
-          return [event, ...filtered].slice(0, 10);
+          return [event, ...filtered].slice(0, 5);
         },
       );
       queryClient.invalidateQueries({

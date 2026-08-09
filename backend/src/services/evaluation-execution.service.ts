@@ -405,7 +405,7 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
             .innerJoin(Accounts, eq(CourseOfferings.faculty_id, Accounts.id))
             .innerJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id))
             .orderBy(desc(StudentEvaluations.submitted_at))
-            .limit(10),
+            .limit(5),
         where: isNotNull(StudentEvaluations.submitted_at),
       },
     );
@@ -436,13 +436,13 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
           .innerJoin(Accounts, eq(CourseOfferings.faculty_id, Accounts.id))
           .innerJoin(PersonalDetails, eq(Accounts.personal_details_id, PersonalDetails.id))
           .orderBy(desc(SupervisorEvaluations.submitted_at))
-          .limit(10),
+          .limit(5),
       where: isNotNull(SupervisorEvaluations.submitted_at),
     });
 
     return [...studentSubmissions, ...supervisorSubmissions]
       .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
-      .slice(0, 10);
+      .slice(0, 5);
   }
 }
 

@@ -197,7 +197,7 @@ export class evaluationReportService implements IEvaluationReportService {
     return comments.map((c) => c.comment!).filter(Boolean);
   }
 
-  private async fetchSupervisorComments(semesterId: number): Promise<string[]> {
+  private async fetchSupervisorComments(semesterId: number, facultyId: number): Promise<string[]> {
     const comments = await GetRecords<"SupervisorEvaluations", { comment: string | null }>(
       "SupervisorEvaluations",
       {
@@ -205,13 +205,19 @@ export class evaluationReportService implements IEvaluationReportService {
         where: () =>
           and(
             eq(SupervisorEvaluationSchedules.semester_id, semesterId),
+            eq(CourseOfferings.faculty_id, facultyId),
             sql`${SupervisorEvaluations.comment} IS NOT NULL`,
           ),
         join: (q) =>
-          q.innerJoin(
-            SupervisorEvaluationSchedules,
-            eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
-          ),
+          q
+            .innerJoin(
+              SupervisorEvaluationSchedules,
+              eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
+            )
+            .innerJoin(
+              CourseOfferings,
+              eq(SupervisorEvaluations.course_offering_id, CourseOfferings.id),
+            ),
       },
     );
 
@@ -656,7 +662,10 @@ export class evaluationReportService implements IEvaluationReportService {
     }
 
     const studentComments = await this.fetchStudentComments(report.semester_id, report.faculty_id);
-    const supervisorComments = await this.fetchSupervisorComments(report.semester_id);
+    const supervisorComments = await this.fetchSupervisorComments(
+      report.semester_id,
+      report.faculty_id,
+    );
 
     const combinedRating = this.computeCombinedRating(
       report.overall_set_rating,

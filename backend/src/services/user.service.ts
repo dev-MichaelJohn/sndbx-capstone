@@ -270,7 +270,7 @@ class userService implements IUserService {
         middle_name: PersonalDetails.middle_name,
         suffix: PersonalDetails.suffix,
         system_role: Roles.system_role,
-        totalItems: sql<number>`count(*) over()::int`.as("totalItems"),
+        totalItems: sql<number>`count(distinct ${Accounts.id})::int`.as("totalItems"),
       }),
       join: (query) =>
         query

@@ -146,7 +146,10 @@ export class courseOfferingService implements ICourseOfferingService {
     const orderColumn = columns[orderBy as keyof typeof columns] ?? CourseOfferings.id;
     const orderFn = orderDir === "asc" ? asc : desc;
 
-    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
+    // Bypass supervisor scope filtering if explicitly querying by faculty_id
+    const scopeFilter = faculty_id
+      ? undefined
+      : buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
 
     const rows = await GetRecords<
       "CourseOfferings",
@@ -296,6 +299,27 @@ export class courseOfferingService implements ICourseOfferingService {
 
       const result = await CreateRecord<"CourseOfferings">("CourseOfferings", validation.data, tx);
       if (!result) throw new AppError(500, "Failed to create course offering.");
+
+      // Automatically enroll all active section students into this new course offering
+      const classStudents = await GetRecords<"ClassStudents", { student_account_id: number }>(
+        "ClassStudents",
+        {
+          select: (c) => ({ student_account_id: c.student_account_id }),
+          where: (c) => and(eq(c.class_id, offering.class_id), isNull(c.deleted_at)),
+          tx,
+        },
+      );
+
+      for (const student of classStudents) {
+        await CreateRecord<"StudentClasses">(
+          "StudentClasses",
+          {
+            student_account_id: student.student_account_id,
+            course_offering_id: result.id,
+          },
+          tx,
+        );
+      }
 
       return { courseOffering: result };
     });
