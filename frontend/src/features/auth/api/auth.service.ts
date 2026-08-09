@@ -69,6 +69,50 @@ export const fetchCurrentUser = async () => {
   }
 };
 
+export const requestPasswordResetApi = async (email: string) => {
+  try {
+    const response = await apiClient.post<APIResponse<{ resendAt: number }>>(
+      "/auth/forgot-password/request",
+      { email },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to request password reset code."), {
+      cause: error,
+    });
+  }
+};
+
+export const useRequestPasswordReset = () => {
+  return useMutation({
+    mutationFn: requestPasswordResetApi,
+  });
+};
+
+export const confirmPasswordResetApi = async (payload: {
+  email: string;
+  code: string;
+  newPassword: string;
+}) => {
+  try {
+    const response = await apiClient.post<APIResponse<null>>(
+      "/auth/forgot-password/confirm",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to reset password."), {
+      cause: error,
+    });
+  }
+};
+
+export const useConfirmPasswordReset = () => {
+  return useMutation({
+    mutationFn: confirmPasswordResetApi,
+  });
+};
+
 export const logoutRecord = async () => {
   try {
     const response = await apiClient.post<APIResponse<null>>("/auth/logout");

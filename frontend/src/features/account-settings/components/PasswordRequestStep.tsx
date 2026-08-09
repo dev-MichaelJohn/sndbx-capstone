@@ -25,8 +25,8 @@ export function PasswordRequestStep({ form }: { form: any }) {
             >
               Password
             </label>
-            <div className="relative">
-              <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex items-center">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 id={field.name}
                 name={field.name}
@@ -35,16 +35,16 @@ export function PasswordRequestStep({ form }: { form: any }) {
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 placeholder="Enter current password"
-                className="pl-9 pr-9 h-9 text-sm bg-muted/30 border-border/60"
+                className="pl-9 pr-10 h-9 text-sm bg-muted/30 border-border/60"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-1 top-1 h-7 size-7 p-0 text-muted-foreground hover:text-foreground"
+                className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </Button>
             </div>
           </div>

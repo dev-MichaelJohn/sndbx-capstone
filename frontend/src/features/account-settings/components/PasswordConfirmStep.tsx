@@ -26,8 +26,8 @@ export function PasswordConfirmStep({ form }: { form: any }) {
             >
               Authorization code
             </label>
-            <div className="relative max-w-50">
-              <ShieldAlert className="absolute left-3 top-2.5 h-4 w-4 text-primary shrink-0" />
+            <div className="relative max-w-50 flex items-center">
+              <ShieldAlert className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary shrink-0 pointer-events-none" />
               <Input
                 id={field.name}
                 name={field.name}
@@ -55,7 +55,7 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                 <label htmlFor={field.name} className="text-sm font-medium text-foreground">
                   New password
                 </label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <Input
                     id={field.name}
                     name={field.name}
@@ -64,20 +64,16 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter new password"
-                    className="h-9 pr-9 text-sm bg-muted/30 border-border/60"
+                    className="h-9 pr-10 text-sm bg-muted/30 border-border/60"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-1 top-1 h-7 size-7 p-0 text-muted-foreground hover:text-foreground"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
-                    {showNewPassword ? (
-                      <EyeOff className="size-3.5" />
-                    ) : (
-                      <Eye className="size-3.5" />
-                    )}
+                    {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </Button>
                 </div>
               </div>
@@ -91,7 +87,7 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                 <label htmlFor={field.name} className="text-sm font-medium text-foreground">
                   Confirm password
                 </label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <Input
                     id={field.name}
                     name={field.name}
@@ -100,19 +96,19 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Re-enter password"
-                    className="h-9 pr-9 text-sm bg-muted/30 border-border/60"
+                    className="h-9 pr-10 text-sm bg-muted/30 border-border/60"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-1 top-1 h-7 size-7 p-0 text-muted-foreground hover:text-foreground"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="size-3.5" />
+                      <EyeOff className="size-4" />
                     ) : (
-                      <Eye className="size-3.5" />
+                      <Eye className="size-4" />
                     )}
                   </Button>
                 </div>

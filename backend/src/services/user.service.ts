@@ -435,7 +435,7 @@ class userService implements IUserService {
       };
     });
 
-    if (wasPasswordGenerated && result.credentials.email) {
+    if (result.credentials.email) {
       const fullName = [result.details.first_name, result.details.last_name]
         .filter(Boolean)
         .join(" ");

@@ -16,9 +16,12 @@ import { VerifyOTPSchema, type VerifyOTPType } from "@/types/otp.type.js";
 import { Accounts } from "@/schemas/auth.schema.js";
 import {
   ConfirmPasswordChangeSchema,
+  ConfirmPasswordResetSchema,
   RequestPasswordChangeSchema,
+  RequestPasswordResetSchema,
   VerifyEmailConfirmSchema,
   type ConfirmPasswordChangeType,
+  type ConfirmPasswordResetType,
   type RequestPasswordChangeType,
 } from "@/types/auth.type.js";
 
@@ -46,6 +49,8 @@ export interface IAuthService {
     data: RequestPasswordChangeType,
   ): Promise<{ expires_at: Date }>;
   confirmPasswordChange(email: string, data: ConfirmPasswordChangeType): Promise<boolean>;
+  requestPasswordReset(email: string): Promise<{ expires_at: Date }>;
+  confirmPasswordReset(data: ConfirmPasswordResetType): Promise<boolean>;
 }
 
 /**
@@ -233,6 +238,61 @@ class authService implements IAuthService {
     if (!account) throw new AppError(404, "Account not found.");
 
     const newHashedPassword = await bcrypt.hash(data.newPassword, 10);
+    const updated = await UpdateRecord(
+      "Accounts",
+      account.id,
+      { password: newHashedPassword },
+      Accounts.id,
+    );
+    if (!updated) throw new AppError(500, "Failed to update password.");
+
+    return true;
+  }
+
+  /**
+   * Generates and dispatches a password reset OTP code to the requested email.
+   */
+  async requestPasswordReset(email: string) {
+    const validation = await RequestPasswordResetSchema.safeParseAsync({ email });
+    if (!validation.success) throw validation.error;
+
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) =>
+        and(eq(Accounts.email, validation.data.email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "No user account found with that email address.");
+
+    const activeOtp = await this.otpService.findActiveOTP({ email: validation.data.email });
+    if (activeOtp.hasActive) {
+      return { expires_at: activeOtp.otpData.expires_at };
+    }
+
+    const otpCode = await this.otpService.generateOTP({ email: validation.data.email });
+    if (!otpCode) throw new AppError(500, "Failed to generate password reset code.");
+
+    return { expires_at: otpCode.expires_at };
+  }
+
+  /**
+   * Confirms password reset via OTP and updates account password hash.
+   */
+  async confirmPasswordReset(data: ConfirmPasswordResetType) {
+    const validation = await ConfirmPasswordResetSchema.safeParseAsync(data);
+    if (!validation.success) throw validation.error;
+
+    const { email, code, newPassword } = validation.data;
+
+    const otpRecord = await this.otpService.verifyOTP({ email, code });
+    if (!otpRecord) throw new AppError(401, "Invalid or expired reset code.");
+
+    await HardDeleteRecord("OTPCodes", otpRecord.id);
+
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.email, email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "Account not found.");
+
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
     const updated = await UpdateRecord(
       "Accounts",
       account.id,

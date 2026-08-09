@@ -13,7 +13,12 @@ import {
   type PersonalDetailsSelect,
   type SystemRole,
 } from "@/types/user.type.js";
-import { GenerateOTPHtmlTemplate, GenerateOTPTextTemplate } from "@/utils/email.util.js";
+import {
+  GenerateOTPHtmlTemplate,
+  GenerateOTPTextTemplate,
+  GeneratePasswordResetHtmlTemplate,
+  GeneratePasswordResetTextTemplate,
+} from "@/utils/email.util.js";
 import { AppError } from "@/utils/error.util.js";
 import { createAPIResponse } from "@/utils/response.util.js";
 import { and, eq, isNull } from "drizzle-orm";
@@ -54,6 +59,8 @@ class authController {
     this.confirmEmailVerification = this.confirmEmailVerification.bind(this);
     this.requestPasswordChange = this.requestPasswordChange.bind(this);
     this.confirmPasswordChange = this.confirmPasswordChange.bind(this);
+    this.requestPasswordReset = this.requestPasswordReset.bind(this);
+    this.confirmPasswordReset = this.confirmPasswordReset.bind(this);
   }
   generateResendTime(expires_at: Date) {
     const OTP_LIFESPAN_MS = 5 * 60 * 1000; // 5 minutes
@@ -483,6 +490,46 @@ class authController {
       await this.authService.confirmPasswordChange(req.user.email, req.body);
 
       const response = createAPIResponse(200, "Password successfully updated.", null);
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  requestPasswordReset = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await this.authService.requestPasswordReset(req.body.email);
+      const otpCode = await this.otpService.findActiveOTP({ email: req.body.email });
+
+      if (otpCode.hasActive) {
+        await this.emailService.sendEmail({
+          to: req.body.email,
+          options: {
+            subject: "Password Reset Verification Code",
+            text: GeneratePasswordResetTextTemplate(otpCode.otpData.code),
+            html: GeneratePasswordResetHtmlTemplate(otpCode.otpData.code),
+          },
+        });
+      }
+
+      const resendAt = this.generateResendTime(result.expires_at);
+      const response = createAPIResponse(200, "Password reset code sent to your email address.", {
+        resendAt,
+      });
+      res.status(response.status).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  confirmPasswordReset = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await this.authService.confirmPasswordReset(req.body);
+      const response = createAPIResponse(
+        200,
+        "Password reset successfully. You may now log in.",
+        null,
+      );
       res.status(response.status).json(response);
     } catch (error) {
       next(error);
