@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CheckCircle2, AlertTriangle, Shield, Mail, User } from "lucide-react";
 import { useVerificationStatus } from "../api/account-settings.service";
 import { useUser } from "@/features/auth/context/user.context";
+import { EditPersonalDetailsModal } from "./EditPersonalDetailsModal";
 
 export function AccountOverviewCard() {
   const { user } = useUser();
@@ -21,19 +22,22 @@ export function AccountOverviewCard() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Section label */}
-      <div className="flex items-center gap-2">
-        <User className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Profile
-        </span>
+      {/* Section label & Edit Action */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Profile
+          </span>
+        </div>
+
+        <EditPersonalDetailsModal />
       </div>
 
-      <Card className="w-full overflow-hidden border-border/50 shadow-none bg-card">
+      <Card className="w-full overflow-hidden border-border/50 shadow-none bg-card rounded-xl">
         {/* Identity Row */}
         <div className="p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            {/* Avatar + info */}
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <div className="relative shrink-0">
                 <Avatar className="h-14 w-14 ring-2 ring-border">
@@ -41,7 +45,6 @@ export function AccountOverviewCard() {
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                {/* Online indicator */}
                 <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-card" />
               </div>
 
@@ -64,7 +67,7 @@ export function AccountOverviewCard() {
                   <Badge
                     key={role}
                     variant="secondary"
-                    className="gap-1.5 text-[11px] font-mono tracking-wider px-2.5 py-1 bg-primary/8 text-primary border border-primary/15 hover:bg-primary/12 transition-colors"
+                    className="gap-1.5 text-[11px] font-mono tracking-wider px-2.5 py-1 bg-primary/8 text-primary border border-primary/15"
                   >
                     <Shield className="h-3 w-3" />
                     {role}
@@ -75,7 +78,6 @@ export function AccountOverviewCard() {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="mx-6 sm:mx-8 h-px bg-border/50" />
 
         {/* Verification Row */}
@@ -85,8 +87,8 @@ export function AccountOverviewCard() {
               <p className="text-sm font-medium text-foreground mb-0.5">Email verification</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {isVerified
-                  ? "Your address is verified. All features and mutations are unlocked."
-                  : "Verify your email to unlock protected routes and system mutations."}
+                  ? "Your address is verified. All features and system mutations are unlocked."
+                  : "Verify your email address to unlock protected actions and evaluation features."}
               </p>
             </div>
 

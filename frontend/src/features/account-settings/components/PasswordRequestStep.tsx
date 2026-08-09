@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { KeyRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { KeyRound, Eye, EyeOff } from "lucide-react";
 
 export function PasswordRequestStep({ form }: { form: any }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="space-y-5 max-w-sm">
       <div>
@@ -26,13 +30,22 @@ export function PasswordRequestStep({ form }: { form: any }) {
               <Input
                 id={field.name}
                 name={field.name}
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 placeholder="Enter current password"
-                className="pl-9 h-9 text-sm bg-muted/30 border-border/60"
+                className="pl-9 pr-9 h-9 text-sm bg-muted/30 border-border/60"
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-1 top-1 h-7 size-7 p-0 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+              </Button>
             </div>
           </div>
         )}

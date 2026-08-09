@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ShieldCheck, ShieldAlert, Eye, EyeOff } from "lucide-react";
 
 export function PasswordConfirmStep({ form }: { form: any }) {
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   return (
     <div className="space-y-6 max-w-lg">
       <div className="flex items-start gap-3 p-4 rounded-lg bg-emerald-500/8 border border-emerald-500/15">
@@ -50,16 +55,31 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                 <label htmlFor={field.name} className="text-sm font-medium text-foreground">
                   New password
                 </label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Enter new password"
-                  className="h-9 text-sm bg-muted/30 border-border/60"
-                />
+                <div className="relative">
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    type={showNewPassword ? "text" : "password"}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Enter new password"
+                    className="h-9 pr-9 text-sm bg-muted/30 border-border/60"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-1 top-1 h-7 size-7 p-0 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="size-3.5" />
+                    ) : (
+                      <Eye className="size-3.5" />
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           />
@@ -71,16 +91,31 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                 <label htmlFor={field.name} className="text-sm font-medium text-foreground">
                   Confirm password
                 </label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Re-enter password"
-                  className="h-9 text-sm bg-muted/30 border-border/60"
-                />
+                <div className="relative">
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Re-enter password"
+                    className="h-9 pr-9 text-sm bg-muted/30 border-border/60"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-1 top-1 h-7 size-7 p-0 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="size-3.5" />
+                    ) : (
+                      <Eye className="size-3.5" />
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           />

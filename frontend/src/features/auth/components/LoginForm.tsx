@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { UserLoginSchema } from "backend/types/user.type";
 import { useForm } from "@tanstack/react-form";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { useValidateLogin } from "@/features/auth/api/auth.service";
 import { useAuth } from "@/features/auth/context/auth.context";
@@ -11,6 +14,7 @@ export const LoginForm = () => {
   const { mutateAsync, isPending } = useValidateLogin();
   const { setPendingAuth } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -87,16 +91,28 @@ export const LoginForm = () => {
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                <Input
-                  type="password"
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  disabled={isPending}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  aria-invalid={isInvalid}
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={isPending}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    className="pr-9"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-1 top-1 h-7 size-7 p-0 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  </Button>
+                </div>
                 {isInvalid && <FieldError errors={field.state.meta.errors} />}
               </Field>
             );
