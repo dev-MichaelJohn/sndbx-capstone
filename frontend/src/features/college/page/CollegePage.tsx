@@ -11,6 +11,7 @@ import { getColleges } from "../api/college.service";
 import { collegeColumns } from "../components/CollegeColumns";
 import { CollegeCreateDialog } from "../components/CollegeCreate";
 import { CollegeStatsCards } from "../components/CollegeStatsCards";
+import { CSVImportDialog } from "@/features/bulk-import/components/CSVImportDialog";
 
 export const CollegePage = () => {
   const [page, setPage] = useState(1);
@@ -41,7 +42,10 @@ export const CollegePage = () => {
               View and manage all college records
             </p>
           </div>
-          <CollegeCreateDialog icon={Plus} triggerText="Add College" />
+          <div className="flex items-center gap-2">
+            <CSVImportDialog entity="colleges" title="Import Colleges CSV" />
+            <CollegeCreateDialog icon={Plus} triggerText="Add College" />
+          </div>
         </div>
 
         {/* KPI Summary Cards */}

@@ -13,6 +13,7 @@ import { getProgramsViaCollegeID } from "@/features/program/api/program.service"
 import { ProgramCreateDialog } from "@/features/program/components/ProgramCreate";
 import { getProgramColumns } from "@/features/program/components/ProgramColumns";
 import { ProgramStatsCards } from "@/features/program/components/ProgramStatsCards";
+import { CSVImportDialog } from "@/features/bulk-import/components/CSVImportDialog";
 
 export const ProgramPage = () => {
   const { collegeId } = useParams<{ collegeId: string }>();
@@ -31,6 +32,7 @@ export const ProgramPage = () => {
     isPending: isProgramsPending,
     isError: isProgramsError,
     error: programError,
+    refetch,
   } = useQuery({
     queryKey: ["getProgramsViaCollegeID", numericCollegeId, search, page],
     queryFn: () => getProgramsViaCollegeID(numericCollegeId, search),
@@ -62,7 +64,19 @@ export const ProgramPage = () => {
               </p>
             </div>
           </div>
-          <ProgramCreateDialog icon={Plus} triggerText="Add Program" collegeId={numericCollegeId} />
+          <div className="flex items-center gap-2">
+            <CSVImportDialog
+              entity="programs"
+              title="Import Programs"
+              defaultContext={{ college_id: numericCollegeId }}
+              onSuccess={() => refetch()}
+            />
+            <ProgramCreateDialog
+              icon={Plus}
+              triggerText="Add Program"
+              collegeId={numericCollegeId}
+            />
+          </div>
         </div>
 
         {/* KPI Summary Cards */}

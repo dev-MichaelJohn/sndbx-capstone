@@ -23,6 +23,7 @@ import type { CourseSelect } from "backend/types/course.type";
 import { CourseCreateDialog } from "./CourseCreate";
 import { CourseEditDialog } from "./CourseEdit";
 import { CourseDeleteDialog } from "./CourseDelete";
+import { CSVImportDialog } from "@/features/bulk-import/components/CSVImportDialog";
 
 interface ProgramCoursesTabProps {
   programId: number;
@@ -37,6 +38,7 @@ export const ProgramCoursesTab = ({ programId }: ProgramCoursesTabProps) => {
     isLoading,
     isError,
     error,
+    refetch,
   } = useCourses({
     program_id: programId,
     search: search.trim() || undefined,
@@ -123,7 +125,15 @@ export const ProgramCoursesTab = ({ programId }: ProgramCoursesTabProps) => {
           />
         </div>
 
-        <CourseCreateDialog icon={Plus} triggerText="Add Course" programId={programId} />
+        <div className="flex items-center gap-2">
+          <CSVImportDialog
+            entity="courses"
+            title="Import Courses"
+            defaultContext={{ program_id: programId }}
+            onSuccess={() => refetch()}
+          />
+          <CourseCreateDialog icon={Plus} triggerText="Add Course" programId={programId} />
+        </div>
       </div>
 
       {/* Data Table */}
