@@ -32,6 +32,7 @@ export type StudentClassWithDetails = StudentClassSelect & {
   program_name: string;
   class_year_level: string;
   class_section: string;
+  faculty_name: string;
 };
 
 // Re-use properties derived from StudentClassWithDetails

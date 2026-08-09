@@ -18,6 +18,7 @@ import {
   type EligibleStudentOption,
 } from "@/types/student-class.type.js";
 import { and, asc, desc, eq, getColumns, ilike, isNull, notInArray, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
 import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
 import type { PgTransaction } from "@/configs/db.config.js";
@@ -76,6 +77,10 @@ export class studentClassService implements IStudentClassService {
     const orderColumn = columns[orderBy as keyof typeof columns] ?? StudentClasses.id;
     const orderFn = orderDir === "asc" ? asc : desc;
 
+    // Alias tables to join instructor details alongside student details
+    const FacultyAccount = alias(Accounts, "faculty_account");
+    const FacultyPersonalDetails = alias(PersonalDetails, "faculty_personal_details");
+
     const rows = await GetRecords<
       "StudentClasses",
       StudentClassWithDetails & { totalItems: number }
@@ -94,6 +99,10 @@ export class studentClassService implements IStudentClassService {
         program_name: Programs.name,
         class_year_level: Classes.year_level,
         class_section: Classes.section,
+        faculty_name:
+          sql<string>`concat(${FacultyPersonalDetails.first_name}, ' ', ${FacultyPersonalDetails.last_name})`.as(
+            "faculty_name",
+          ),
         totalItems: sql<number>`count(*) over()::int`.as("totalItems"),
       }),
       join: (query) =>
@@ -108,6 +117,11 @@ export class studentClassService implements IStudentClassService {
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
           .innerJoin(Accounts, eq(Accounts.id, StudentClasses.student_account_id))
           .innerJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id))
+          .leftJoin(FacultyAccount, eq(FacultyAccount.id, CourseOfferings.faculty_id))
+          .leftJoin(
+            FacultyPersonalDetails,
+            eq(FacultyPersonalDetails.id, FacultyAccount.personal_details_id),
+          )
           .orderBy(orderFn(orderColumn))
           .limit(PAGE_SIZE)
           .offset((page - 1) * PAGE_SIZE),
@@ -139,6 +153,8 @@ export class studentClassService implements IStudentClassService {
     if (!validation.success) throw validation.error;
 
     const parsedId = validation.data;
+    const FacultyAccount = alias(Accounts, "faculty_account");
+    const FacultyPersonalDetails = alias(PersonalDetails, "faculty_personal_details");
 
     const data = await GetRecord<"StudentClasses", StudentClassWithDetails>("StudentClasses", {
       select: (StudentClasses) => ({
@@ -155,6 +171,10 @@ export class studentClassService implements IStudentClassService {
         program_name: Programs.name,
         class_year_level: Classes.year_level,
         class_section: Classes.section,
+        faculty_name:
+          sql<string>`concat(${FacultyPersonalDetails.first_name}, ' ', ${FacultyPersonalDetails.last_name})`.as(
+            "faculty_name",
+          ),
       }),
       join: (query) =>
         query
@@ -167,7 +187,12 @@ export class studentClassService implements IStudentClassService {
           )
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
           .innerJoin(Accounts, eq(Accounts.id, StudentClasses.student_account_id))
-          .innerJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id)),
+          .innerJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id))
+          .leftJoin(FacultyAccount, eq(FacultyAccount.id, CourseOfferings.faculty_id))
+          .leftJoin(
+            FacultyPersonalDetails,
+            eq(FacultyPersonalDetails.id, FacultyAccount.personal_details_id),
+          ),
       where: () => and(eq(StudentClasses.id, parsedId), isNull(StudentClasses.deleted_at)),
       ...(tx && { tx }),
     });
@@ -182,7 +207,6 @@ export class studentClassService implements IStudentClassService {
 
     const parsedId = validation.data;
 
-    // Fetch account IDs of students already enrolled in this offering via GetRecords helper
     const enrolledRecords = await GetRecords<"StudentClasses", { student_account_id: number }>(
       "StudentClasses",
       {
@@ -195,7 +219,6 @@ export class studentClassService implements IStudentClassService {
     );
     const enrolledAccountIds = enrolledRecords.map((r) => r.student_account_id);
 
-    // Query active student accounts with home class/program metadata via GetRecords helper
     return await GetRecords<"Accounts", EligibleStudentOption>("Accounts", {
       select: (Accounts) => ({
         student_account_id: Accounts.id,

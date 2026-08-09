@@ -3,6 +3,7 @@ import { AuthRoutes } from "./AuthRoutes";
 import { SysRoutes } from "./SysRoutes";
 import { AdminRoutes } from "./AdminRoutes";
 import { SupervisorRoutes } from "./SupervisorRoutes";
+import { StudentRoutes } from "./StudentRoutes";
 
 export const AppRoutes = () => {
   return (
@@ -11,6 +12,7 @@ export const AppRoutes = () => {
       {SysRoutes()}
       {AdminRoutes()}
       {SupervisorRoutes()}
+      {StudentRoutes()}
     </Routes>
   );
 };

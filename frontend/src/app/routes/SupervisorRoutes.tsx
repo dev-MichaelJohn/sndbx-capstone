@@ -1,4 +1,4 @@
-import { Route } from "react-router";
+import { Navigate, Route } from "react-router";
 import { RequireRole } from "@/features/auth/components/RequireRole";
 import SupervisorDashboard from "@/features/dashboard/SupervisorDashboard";
 import SupervisorOverviewPage from "@/features/supervisor/page/SupervisorOverviewPage";
@@ -32,6 +32,8 @@ export const SupervisorRoutes = () => {
         <Route path="analytics" element={<SupervisorAnalyticsPage />} />
         <Route path="coverage" element={<SupervisorScopePage />} />
         <Route path="settings" element={<AccountSettingsPage />} />
+
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
     </Route>
   );

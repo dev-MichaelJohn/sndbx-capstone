@@ -33,6 +33,8 @@ export const AdminRoutes = ({ basePath = "admin" }: AdminRoutesProps = {}) => {
 
         {InstitutionRoutes()}
         {EvaluationRoutes()}
+
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
     </Route>
   );
