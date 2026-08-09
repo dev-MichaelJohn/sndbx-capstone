@@ -5,6 +5,7 @@ import {
   IndividualFacultyEvaluationReports,
   IferClassSummaries,
 } from "@/schemas/evaluation-report.schema.js";
+import { StudentClasses } from "@/schemas/institution.schema.js";
 import {
   Classes,
   Colleges,
@@ -19,6 +20,7 @@ import { RATING_CONFIG } from "@/utils/evaluation-report.util.js";
 import type { EvaluationAnalyticsPayload } from "@/types/evaluation-analytics.type.js";
 import type { SupervisorScope } from "@/types/supervisor.type.js";
 import { buildScopeFilter } from "@/utils/scope.util.js";
+import { StudentEvaluations } from "@/schemas/evaluation-execution.schema.js";
 
 const ANALYTICS_CONFIG = {
   DEFAULT_SCORE: 0.0,
@@ -27,7 +29,6 @@ const ANALYTICS_CONFIG = {
     NEUTRAL_MIN: 0.4,
   },
   PERCENTAGE_FACTOR: 100,
-  DEFAULT_COMPLETION_RATE: 0.0,
   COURSE_RANKING_LIMIT: 5,
   DECIMAL_PRECISION: 1,
 } as const;
@@ -48,20 +49,66 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
   }
 
   /**
-   * Computes the percentage distribution of positive, neutral, and negative sentiment scores
-   * based on AFINN qualitative feedback analysis.
-   *
-   * Thresholds:
-   *  - Positive: score > 0
-   *  - Neutral: score === 0 (or uncommented / null)
-   *  - Negative: score < 0
+   * Dynamically calculates student evaluation completion rate percentage:
+   * (Total Finalized Submissions / Total Expected Student Class Enrollments) * 100
    */
+  private async calculateCompletionRate(
+    semesterId?: number,
+    scope?: SupervisorScope | null,
+  ): Promise<number> {
+    const scopeFilter = buildScopeFilter(scope, { collegeTable: Colleges, programTable: Programs });
+
+    const totalExpectedResult = await GetRecords<"StudentClasses", { count: number }>(
+      "StudentClasses",
+      {
+        select: () => ({ count: sql<number>`count(${StudentClasses.id})::int` }),
+        where: () =>
+          and(
+            isNull(StudentClasses.deleted_at),
+            semesterId ? eq(CourseOfferings.semester_id, semesterId) : undefined,
+            scopeFilter,
+          ),
+        join: (q) =>
+          q
+            .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+            .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
+            .innerJoin(Programs, eq(Classes.program_id, Programs.id))
+            .leftJoin(Colleges, eq(Programs.college_id, Colleges.id)),
+      },
+    );
+
+    const totalSubmittedResult = await GetRecords<"StudentEvaluations", { count: number }>(
+      "StudentEvaluations",
+      {
+        select: () => ({ count: sql<number>`count(${StudentEvaluations.id})::int` }),
+        where: () =>
+          and(
+            sql`${StudentEvaluations.submitted_at} IS NOT NULL`,
+            semesterId ? eq(CourseOfferings.semester_id, semesterId) : undefined,
+            scopeFilter,
+          ),
+        join: (q) =>
+          q
+            .innerJoin(StudentClasses, eq(StudentEvaluations.student_class_id, StudentClasses.id))
+            .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+            .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
+            .innerJoin(Programs, eq(Classes.program_id, Programs.id))
+            .leftJoin(Colleges, eq(Programs.college_id, Colleges.id)),
+      },
+    );
+
+    const totalExpected = totalExpectedResult[0]?.count ?? 0;
+    const totalSubmitted = totalSubmittedResult[0]?.count ?? 0;
+
+    if (totalExpected === 0) return 0.0;
+    return Number(((totalSubmitted / totalExpected) * 100).toFixed(1));
+  }
+
   private calculateSentimentDistribution(sentimentScores: Array<string | null>): {
     positive_pct: number;
     neutral_pct: number;
     negative_pct: number;
   } {
-    // Filter out NaN entries; null/uncommented scores map to 0 (Neutral)
     const validScores = sentimentScores.map((score) => (score !== null ? Number(score) : 0));
 
     if (validScores.length === 0) {
@@ -99,6 +146,9 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
     };
   }
 
+  /**
+   * Aggregates SET vs. SEF performance scores per Academic College.
+   */
   private async fetchCollegePerformance(
     scope?: SupervisorScope | null,
   ): Promise<Array<{ college: string; avg_set: number; avg_sef: number }>> {
@@ -108,7 +158,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
       { college: string; avg_set: number; avg_sef: number }
     >("IndividualFacultyEvaluationReports", {
       select: () => ({
-        college: Programs.initialism,
+        college: sql<string>`coalesce(${Colleges.initialism}, ${Programs.initialism})`,
         avg_set: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_set_rating}::numeric), 0)::float`,
         avg_sef: sql<number>`coalesce(avg(${IndividualFacultyEvaluationReports.overall_sef_rating}::numeric), 0)::float`,
       }),
@@ -120,7 +170,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
           .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
           .innerJoin(Programs, eq(Classes.program_id, Programs.id))
           .leftJoin(Colleges, eq(Programs.college_id, Colleges.id))
-          .groupBy(Programs.initialism) as unknown as PgSelect,
+          .groupBy(Colleges.id, Colleges.initialism, Programs.initialism) as unknown as PgSelect,
     });
 
     return collegeRecords.map((collegeRecord) => ({
@@ -359,6 +409,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
 
     const meanSet = this.calculateMeanRating(reports.map((report) => report.overall_set_rating));
     const meanSef = this.calculateMeanRating(reports.map((report) => report.overall_sef_rating));
+    const completionRate = await this.calculateCompletionRate(semesterId, scope);
 
     const collegePerformance = await this.fetchCollegePerformance(scope);
     const courseRankings = await this.fetchCourseRankings(scope);
@@ -373,7 +424,7 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
       kpis: {
         avg_set_rating: meanSet,
         avg_sef_rating: meanSef,
-        completion_rate_percentage: ANALYTICS_CONFIG.DEFAULT_COMPLETION_RATE,
+        completion_rate_percentage: completionRate,
         total_reports_generated: reports.length,
       },
       college_performance: collegePerformance,

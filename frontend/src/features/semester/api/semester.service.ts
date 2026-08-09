@@ -76,7 +76,7 @@ const updateSemesterRecord = async ({
   ...payload
 }: SemesterUpdate & { semester_id: number }) => {
   try {
-    const response = await apiClient.patch<APIResponse<SemesterSelect>>(
+    const response = await apiClient.put<APIResponse<SemesterSelect>>(
       `/protected/semesters/${semester_id}`,
       payload,
     );

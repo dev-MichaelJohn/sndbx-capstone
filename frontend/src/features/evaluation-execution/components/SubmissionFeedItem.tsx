@@ -4,13 +4,27 @@ import type { AnonymousSubmissionEvent } from "backend/types/socket.type";
 
 const formatTimeAgo = (isoString: string) => {
   if (!isoString) return "Just now";
-  const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+
+  // Normalize string: replace space with 'T' and append 'Z' if missing timezone offset
+  const normalizedStr = isoString.includes("T")
+    ? isoString.endsWith("Z") || isoString.includes("+")
+      ? isoString
+      : `${isoString}Z`
+    : `${isoString.replace(" ", "T")}Z`;
+
+  const submittedTime = new Date(normalizedStr).getTime();
+  const seconds = Math.floor((Date.now() - submittedTime) / 1000);
+
+  // If clock skew causes negative seconds, fallback to "Just now"
   if (seconds < 10) return "Just now";
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 };
 
 interface SubmissionFeedItemProps {
