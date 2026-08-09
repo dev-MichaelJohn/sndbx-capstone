@@ -4,6 +4,7 @@ import EvaluationFormBuilderPage from "@/features/evaluation-management/page/Eva
 import EvaluationSchedulePage from "@/features/evaluation-schedule/page/EvaluationSchedulePage";
 import EvaluationReportPage from "@/features/evaluation-report/page/EvaluationReportPage";
 import EvaluationAnalyticsPage from "@/features/analytics/page/EvaluationAnalyticsPage";
+import EvaluationReportDetailPage from "@/features/evaluation-report/page/EvaluationReportDetailPage";
 
 interface EvaluationRoutesProps {
   path?: string;
@@ -17,7 +18,10 @@ export const EvaluationRoutes = ({ path = "evaluation" }: EvaluationRoutesProps 
       <Route path=":type/:formId" element={<EvaluationFormBuilderPage />} />
     </Route>
     <Route path="schedules" element={<EvaluationSchedulePage />} />
-    <Route path="reports" element={<EvaluationReportPage />} />
+    <Route path="reports">
+      <Route index element={<EvaluationReportPage />} />
+      <Route path=":reportId" element={<EvaluationReportDetailPage />} />
+    </Route>
     <Route path="analytics" element={<EvaluationAnalyticsPage />} />
   </Route>
 );

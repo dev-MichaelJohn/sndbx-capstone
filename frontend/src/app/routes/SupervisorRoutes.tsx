@@ -8,6 +8,7 @@ import SupervisorAnalyticsPage from "@/features/supervisor/page/SupervisorAnalyt
 import SupervisorScopePage from "@/features/supervisor/page/SupervisorScopePage";
 import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
 import EmailVerificationDialog from "@/features/auth/components/EmailVerificationDialog";
+import EvaluationReportDetailPage from "@/features/evaluation-report/page/EvaluationReportDetailPage";
 
 export const SupervisorRoutes = () => {
   return (
@@ -23,8 +24,11 @@ export const SupervisorRoutes = () => {
         <Route index element={<SupervisorOverviewPage />} />
         <Route path="dashboard" element={<SupervisorOverviewPage />} />
         <Route path="evaluate" element={<SupervisorEvaluationPage />} />
-        <Route path="reports" element={<SupervisorReportsPage />} />
-        <Route path="reports/:id" element={<SupervisorReportsPage />} />
+        <Route path="reports">
+          <Route index element={<SupervisorReportsPage />} />
+          <Route path=":id" element={<SupervisorReportsPage />} />
+          <Route path=":reportId" element={<EvaluationReportDetailPage />} />
+        </Route>
         <Route path="analytics" element={<SupervisorAnalyticsPage />} />
         <Route path="coverage" element={<SupervisorScopePage />} />
         <Route path="settings" element={<AccountSettingsPage />} />
