@@ -46,6 +46,16 @@ export function NavUser({
   const pathSegments = location.pathname.split("/").filter(Boolean);
   const basePath = pathSegments.length > 0 ? `/${pathSegments[0]}` : "/sys";
 
+  const initials = user.name
+    ? user.name
+        .trim()
+        .split(/\s+/)
+        .map((n) => n[0])
+        .filter((_, i, a) => i === 0 || i === a.length - 1)
+        .join("")
+        .toUpperCase()
+    : "U";
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -57,7 +67,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
