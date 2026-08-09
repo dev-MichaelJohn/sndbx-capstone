@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, CheckCircle2, Lock, User, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Lock, User, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,78 @@ import {
 import { useEvaluationFormTree } from "@/features/evaluation-management/api/evaluation-form.service";
 import { EvaluationFormContainer } from "@/features/evaluation-execution/components/EvaluationFormContainer";
 import type { StudentClassWithDetails } from "backend/types/student-class.type";
+
+/**
+ * Individual course card displaying evaluation status badge (Submitted, Draft, Pending)
+ */
+const StudentCourseItem = ({
+  item,
+  activeScheduleId,
+  onSelect,
+}: {
+  item: StudentClassWithDetails;
+  activeScheduleId?: number;
+  onSelect: (item: StudentClassWithDetails) => void;
+}) => {
+  const { data: evalData } = useStudentEvaluation(activeScheduleId, item.id, {
+    enabled: Boolean(activeScheduleId && item.id),
+  });
+
+  const evaluation = evalData?.evaluation;
+  const isSubmitted = Boolean(evaluation?.submitted_at);
+  const hasDraft = Boolean(evaluation && !evaluation.submitted_at);
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-2xs">
+      <div className="space-y-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <h4 className="text-xs font-semibold text-foreground truncate">{item.course_name}</h4>
+          <Badge variant="outline" className="font-mono text-[10px]">
+            {item.course_initialism}
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <User className="size-3.5 shrink-0" />
+          <span className="font-medium text-foreground">
+            {item.faculty_name ?? "Assigned Instructor"}
+          </span>
+          <span>• Section {item.class_section}</span>
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+        {isSubmitted ? (
+          <Badge
+            variant="outline"
+            className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[11px]"
+          >
+            <CheckCircle2 className="size-3" /> Submitted
+          </Badge>
+        ) : hasDraft ? (
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-500/30 bg-amber-500/10 text-amber-400 text-[11px]"
+          >
+            <Clock className="size-3" /> Draft
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-[11px]">
+            Pending
+          </Badge>
+        )}
+
+        <Button
+          size="sm"
+          disabled={!activeScheduleId}
+          onClick={() => onSelect(item)}
+          className="h-8 text-xs font-medium cursor-pointer"
+        >
+          {isSubmitted ? "View Evaluation" : hasDraft ? "Continue Evaluation" : "Evaluate Teacher"}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 /**
  * Student Evaluation Portal page enabling students to select their enrolled subjects,
@@ -175,37 +247,12 @@ export const StudentEvaluationPage = () => {
               </div>
             ) : (
               enrolledClasses.map((item) => (
-                <div
+                <StudentCourseItem
                   key={item.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-2xs"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-semibold text-foreground truncate">
-                        {item.course_name}
-                      </h4>
-                      <Badge variant="outline" className="font-mono text-[10px]">
-                        {item.course_initialism}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <User className="size-3.5 shrink-0" />
-                      <span className="font-medium text-foreground">
-                        {item.faculty_name ?? "Assigned Instructor"}
-                      </span>
-                      <span>• Section {item.class_section}</span>
-                    </p>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    disabled={!activeSchedule}
-                    onClick={() => setSelectedStudentClass(item)}
-                    className="h-8 text-xs font-medium cursor-pointer shrink-0 self-end sm:self-center"
-                  >
-                    Evaluate Teacher
-                  </Button>
-                </div>
+                  item={item}
+                  activeScheduleId={activeSchedule?.id}
+                  onSelect={setSelectedStudentClass}
+                />
               ))
             )}
           </CardContent>

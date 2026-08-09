@@ -48,7 +48,10 @@ export const PersonalDetailsSchema = GenerateZodSchemas(PersonalDetails, {
       .regex(
         /^[A-Za-z0-9-]+$/,
         "Institutional ID can only contain letters, numbers, and hyphens (e.g. STU-26-1042-001).",
-      ),
+      )
+      .optional()
+      .nullable()
+      .or(z.literal("")),
   first_name: (schema) => schema.trim().min(2, "First name is required."),
   last_name: (schema) => schema.trim().min(2, "Last name is required."),
   middle_name: () => z.string().trim().optional().nullable(),

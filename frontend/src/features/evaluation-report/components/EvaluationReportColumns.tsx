@@ -107,8 +107,6 @@ export const getEvaluationReportColumns = (): Array<DataTableColumn<EvaluationRe
     header: "Actions",
     className: "w-px whitespace-nowrap",
     cell: (row) => {
-      const navigate = useNavigate();
-
       return (
         <div className="flex justify-end">
           <DropdownMenu>
@@ -123,16 +121,6 @@ export const getEvaluationReportColumns = (): Array<DataTableColumn<EvaluationRe
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-52 rounded-xl p-1">
-              <DropdownMenuItem
-                className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs focus:bg-accent"
-                onClick={() => navigate(`${row.id}`)}
-              >
-                <Eye className="mr-2 size-3.5 text-muted-foreground" />
-                View Detailed Report
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="my-1" />
-
               <DropdownMenuItem
                 className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs focus:bg-accent"
                 onClick={() => downloadIferPdf(row.id)}

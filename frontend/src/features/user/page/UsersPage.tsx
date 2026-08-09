@@ -32,6 +32,7 @@ import { UserCreateDialog } from "../components/UserCreate";
 import { UserEditDialog } from "../components/UserEdit";
 import { UserStatsCards } from "../components/UserStatsCards";
 import { useUser } from "@/features/auth/context/user.context";
+import { CSVImportDialog } from "@/features/bulk-import/components/CSVImportDialog";
 
 export const UsersPage = () => {
   const { user: currentUser } = useUser();
@@ -54,6 +55,7 @@ export const UsersPage = () => {
     isPending: isUsersPending,
     isError: isUsersError,
     error: usersError,
+    refetch,
   } = useUsers({
     page,
     search: search.trim() || undefined,
@@ -107,13 +109,17 @@ export const UsersPage = () => {
               Manage system accounts, user details, and system role access permissions.
             </p>
           </div>
-          <Button
-            size="sm"
-            className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto gap-1.5"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            <Plus className="size-3.5" /> Add User
-          </Button>
+
+          <div className="flex items-center gap-2">
+            <CSVImportDialog entity="users" title="Import Users" onSuccess={() => refetch()} />
+            <Button
+              size="sm"
+              className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto gap-1.5"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <Plus className="size-3.5" /> Add User
+            </Button>
+          </div>
         </div>
 
         {/* Dedicated Stat Cards Component */}

@@ -34,7 +34,7 @@ export const StudentRoutes = () => (
       <Route path="settings" element={<AccountSettingsPage />} />
 
       {/* Fallback wildcard redirect */}
-      <Route path="*" element={<Navigate to="dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/student/dashboard" replace />} />
     </Route>
   </Route>
 );

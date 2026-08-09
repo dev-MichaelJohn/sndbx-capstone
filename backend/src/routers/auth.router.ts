@@ -6,10 +6,6 @@ import { Router, type IRouter } from "express";
 
 const AuthRouter: IRouter = Router();
 
-AuthRouter.use(authLimiter);
-
-AuthRouter.post("/login", AuthController.login);
-AuthRouter.post("/verify-otp", AuthController.verifyOTP);
 AuthRouter.post("/logout", AuthController.logout);
 AuthRouter.get("/me", AuthController.verifyJWT, (req, res, next) => {
   AuthController.me(req, res, next);
@@ -22,6 +18,10 @@ AuthRouter.get(
   requirePermission(PERMISSIONS.ACCOUNT_UPDATE_OWN),
   AuthController.getVerificationStatus,
 );
+
+AuthRouter.use(authLimiter);
+AuthRouter.post("/login", AuthController.login);
+AuthRouter.post("/verify-otp", AuthController.verifyOTP);
 
 // Dispatch Email Verification OTP
 AuthRouter.post(

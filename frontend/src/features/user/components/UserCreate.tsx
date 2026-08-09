@@ -211,14 +211,15 @@ const UserCreateFormModal = ({ onClose }: UserCreateFormModalProps) => {
                       onChange: ({ value }) => {
                         if (!value || !value.trim()) return undefined; // Auto-generated on backend if left blank
                         const trimmed = value.trim();
-                        const pattern = new RegExp(
-                          `^(ADM|FAC|STU)-${currentYearTwoDigits}-\\d{4}-\\d{3}$`,
-                          "i",
-                        );
 
-                        if (!pattern.test(trimmed)) {
-                          return `ID must match format PREFIX-${currentYearTwoDigits}-XXXX-XXX (e.g. STU-${currentYearTwoDigits}-1042-001).`;
+                        if (trimmed.length < 5) {
+                          return "Institutional ID must be at least 5 characters long.";
                         }
+
+                        if (!/^[A-Za-z0-9-]+$/.test(trimmed)) {
+                          return "Institutional ID can only contain letters, numbers, and hyphens.";
+                        }
+
                         return undefined;
                       },
                     }}

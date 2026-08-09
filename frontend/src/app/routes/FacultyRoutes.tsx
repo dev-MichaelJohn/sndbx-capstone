@@ -27,7 +27,7 @@ export const FacultyRoutes = () => (
       <Route path="settings" element={<AccountSettingsPage />} />
 
       {/* Wildcard redirect */}
-      <Route path="*" element={<Navigate to="dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/faculty/dashboard" replace />} />
     </Route>
   </Route>
 );

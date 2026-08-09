@@ -33,7 +33,7 @@ export const SupervisorRoutes = () => {
         <Route path="coverage" element={<SupervisorScopePage />} />
         <Route path="settings" element={<AccountSettingsPage />} />
 
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/supervisor/dashboard" replace />} />
       </Route>
     </Route>
   );

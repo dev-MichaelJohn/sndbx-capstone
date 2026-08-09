@@ -248,6 +248,34 @@ class userService implements IUserService {
         )
       : undefined;
 
+    const countResult = await GetRecords<"Accounts", { totalItems: number }>("Accounts", {
+      select: () => ({
+        totalItems: sql<number>`count(distinct ${Accounts.id})::int`,
+      }),
+      join: (query) =>
+        query
+          .innerJoin(
+            PersonalDetails,
+            and(
+              eq(PersonalDetails.id, Accounts.personal_details_id),
+              isNull(PersonalDetails.deleted_at),
+            ),
+          )
+          .leftJoin(
+            AccountRoles,
+            and(eq(AccountRoles.account_id, Accounts.id), isNull(AccountRoles.deleted_at)),
+          )
+          .leftJoin(Roles, and(eq(Roles.id, AccountRoles.role_id), isNull(Roles.deleted_at))),
+      where: () =>
+        and(
+          isNull(Accounts.deleted_at),
+          searchCondition,
+          role ? eq(Roles.system_role, role) : undefined,
+        ),
+    });
+
+    const totalItems = countResult[0]?.totalItems ?? 0;
+
     const rows = await GetRecords<
       "Accounts",
       Omit<AccountSelect, "password"> & {
@@ -257,7 +285,6 @@ class userService implements IUserService {
         middle_name: string | null;
         suffix: string | null;
         system_role: SystemRole | null;
-        totalItems: number;
       }
     >("Accounts", {
       select: (Accounts) => ({
@@ -270,7 +297,6 @@ class userService implements IUserService {
         middle_name: PersonalDetails.middle_name,
         suffix: PersonalDetails.suffix,
         system_role: Roles.system_role,
-        totalItems: sql<number>`count(distinct ${Accounts.id})::int`.as("totalItems"),
       }),
       join: (query) =>
         query
@@ -297,11 +323,9 @@ class userService implements IUserService {
         ),
     });
 
-    const totalItems = rows[0]?.totalItems ?? 0;
-
     const accountMap = new Map<number, UserWithDetails>();
     for (const row of rows) {
-      const { system_role, totalItems, ...rest } = row;
+      const { system_role, ...rest } = row;
       if (!accountMap.has(rest.id)) {
         accountMap.set(rest.id, { ...rest, roles: [] });
       }

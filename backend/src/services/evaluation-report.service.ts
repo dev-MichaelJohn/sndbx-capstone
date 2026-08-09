@@ -57,12 +57,6 @@ export class evaluationReportService implements IEvaluationReportService {
     return val.toFixed(RATING_CONFIG.DECIMAL_PLACES);
   }
 
-  // ── Score Transformation (CHED CMO 19 Annex C Formula) ─────────────────────
-
-  /** Scale transformation:
-   *  Mode PERCENTAGE_100: Rating = ((Raw - Min) / (Max - Min)) * 100
-   *  Mode GPA_5: Raw GPA score (1.00 - 5.00)
-   */
   private transformScore(
     rawRating: number,
     minRating: number,
@@ -78,7 +72,6 @@ export class evaluationReportService implements IEvaluationReportService {
     return rawRating;
   }
 
-  /** CHED Annex C Step 4: Combined Rating = (SET * set_weight) + (SEF * sef_weight) */
   private computeCombinedRating(
     setRating: string | number | null,
     sefRating: string | number | null,
@@ -95,8 +88,6 @@ export class evaluationReportService implements IEvaluationReportService {
     }
     return null;
   }
-
-  // ── Validation Helpers ──────────────────────────────────────────────────────
 
   private async findActiveReportById(reportId: number): Promise<IferSelect> {
     const report = (await GetRecord("IndividualFacultyEvaluationReports", {
@@ -136,6 +127,10 @@ export class evaluationReportService implements IEvaluationReportService {
     }
   }
 
+  /**
+   * Enforces that BOTH Student (SET) AND Supervisor (SEF) evaluations must be submitted
+   * for the target semester before batch report generation can proceed.
+   */
   private async validateHasSubmittedEvaluations(semesterId: number): Promise<void> {
     const studentSubmissions = await GetRecords("StudentEvaluations", {
       select: (t) => ({ id: t.id }),
@@ -166,16 +161,15 @@ export class evaluationReportService implements IEvaluationReportService {
         ),
     });
 
-    if (studentSubmissions.length === 0 && supervisorSubmissions.length === 0) {
+    if (studentSubmissions.length === 0 || supervisorSubmissions.length === 0) {
       throw new AppError(
         400,
-        "Cannot generate reports: No submitted student or supervisor evaluations found for this semester.",
+        "Cannot generate batch reports: Both Student (SET) and Supervisor (SEF) evaluations must be submitted for this semester.",
       );
     }
   }
 
-  // ── Comments & Rollup Helpers ───────────────────────────────────────────────
-
+  /** Corrected SQL join sequence connecting StudentEvaluations -> StudentClasses -> CourseOfferings */
   private async fetchStudentComments(semesterId: number, facultyId: number): Promise<string[]> {
     const comments = await GetRecords<"StudentEvaluations", { comment: string | null }>(
       "StudentEvaluations",
@@ -189,7 +183,7 @@ export class evaluationReportService implements IEvaluationReportService {
           ),
         join: (q) =>
           q
-            .innerJoin(StudentClasses, eq(StudentClasses.course_offering_id, CourseOfferings.id))
+            .innerJoin(StudentClasses, eq(StudentEvaluations.student_class_id, StudentClasses.id))
             .innerJoin(CourseOfferings, eq(StudentClasses.course_offering_id, CourseOfferings.id)),
       },
     );
@@ -256,9 +250,6 @@ export class evaluationReportService implements IEvaluationReportService {
     return Array.from(courseMap.values());
   }
 
-  // ── Single Responsibility Aggregation Modules ─────────────────────────────
-
-  /** Annex C Steps 1–3: Class SET Summaries & Weighted SET Score. */
   private async aggregateClassSummaries(
     semesterId: number,
     facultyId: number,
@@ -303,8 +294,6 @@ export class evaluationReportService implements IEvaluationReportService {
     const activeSummaries = rawSummaries.filter((c) => c.student_count > 0);
     const totalStudents = activeSummaries.reduce((acc, c) => acc + c.student_count, 0);
 
-    // Step 1: Average SET Rating
-    // Step 2: Weighted SET Score = No. Students * Avg SET Rating
     const activeClassSummariesWithScores = activeSummaries.map((item) => {
       const classAvgRating = this.transformScore(
         item.avg_set_rating,
@@ -326,7 +315,6 @@ export class evaluationReportService implements IEvaluationReportService {
       0,
     );
 
-    // Step 3: Overall SET Rating = Total Weighted SET Score / Total Students
     const overallSetRating =
       totalStudents > 0 ? this.formatRating(totalWeightedSetScore / totalStudents) : null;
 
@@ -345,7 +333,6 @@ export class evaluationReportService implements IEvaluationReportService {
     };
   }
 
-  /** Annex C Step 4: Overall SEF Rating. */
   private async aggregateSupervisorRatings(
     semesterId: number,
     minRating: number,
@@ -393,7 +380,6 @@ export class evaluationReportService implements IEvaluationReportService {
     return { overallSefRating, avgSupervisorSentiment };
   }
 
-  /** Transaction module to persist IFER report + Class Summaries table. */
   private async saveIferTransaction(
     semesterId: number,
     facultyId: number,
@@ -464,8 +450,6 @@ export class evaluationReportService implements IEvaluationReportService {
       }
     });
   }
-
-  // ── Public Service Implementation ──────────────────────────────────────────
 
   async getAllReports(
     scope?: SupervisorScope | null,
@@ -581,6 +565,11 @@ export class evaluationReportService implements IEvaluationReportService {
         scale_mode,
       );
 
+      // Require BOTH SET and SEF scores to be present before generating report
+      if (!overallSetRating || !overallSefRating) {
+        continue;
+      }
+
       // Save IFER + Annex C Table
       await this.saveIferTransaction(
         semester_id,
@@ -593,6 +582,13 @@ export class evaluationReportService implements IEvaluationReportService {
       );
 
       generatedCount++;
+    }
+
+    if (generatedCount === 0) {
+      throw new AppError(
+        400,
+        "No reports generated. Faculty members must have BOTH completed Student (SET) and Supervisor (SEF) evaluations.",
+      );
     }
 
     return { generated_count: generatedCount };
@@ -618,6 +614,33 @@ export class evaluationReportService implements IEvaluationReportService {
     const semester = await GetRecord("Semesters", {
       where: (s) => eq(s.id, report.semester_id),
     });
+
+    // Dynamically resolve actual College & Program department name for this faculty in this term
+    const departmentInfo = await GetRecord<
+      "CourseOfferings",
+      { college_name: string | null; college_code: string | null; program_name: string | null }
+    >("CourseOfferings", {
+      select: () => ({
+        college_name: Colleges.name,
+        college_code: Colleges.initialism,
+        program_name: Programs.name,
+      }),
+      join: (q) =>
+        q
+          .innerJoin(Classes, eq(CourseOfferings.class_id, Classes.id))
+          .innerJoin(Programs, eq(Classes.program_id, Programs.id))
+          .leftJoin(Colleges, eq(Programs.college_id, Colleges.id)),
+      where: (co) =>
+        and(
+          eq(co.faculty_id, report.faculty_id),
+          eq(co.semester_id, report.semester_id),
+          isNull(co.deleted_at),
+        ),
+    });
+
+    const resolvedDepartment = departmentInfo?.college_name
+      ? `${departmentInfo.college_name}${departmentInfo.program_name ? ` (${departmentInfo.program_name})` : ""}`
+      : "Palompon Institute of Technology";
 
     let classSummaries = await GetRecords<
       "IferClassSummaries",
@@ -677,7 +700,7 @@ export class evaluationReportService implements IEvaluationReportService {
       faculty: {
         id: report.faculty_id,
         name: faculty ? `${faculty.first_name ?? ""} ${faculty.last_name ?? ""}`.trim() : "Unknown",
-        department: "Academic Department",
+        department: resolvedDepartment,
       },
       semester: {
         id: report.semester_id,

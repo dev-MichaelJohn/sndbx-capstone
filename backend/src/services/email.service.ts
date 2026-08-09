@@ -24,7 +24,7 @@ export interface IEmailService {
 
 /**
  * High-performance Email Service using Resend HTTP API with automatic
- * Nodemailer SMTP fallback for backward compatibility.
+ * Nodemailer Gmail SMTP fallback whenever Resend API fails or returns errors.
  */
 class emailService implements IEmailService {
   private resendClient: Resend | null = null;
@@ -40,7 +40,8 @@ class emailService implements IEmailService {
   }
 
   /**
-   * Sends an email via Resend HTTP API or Nodemailer SMTP fallback.
+   * Sends an email via Resend HTTP API. Automatically falls back to Nodemailer Gmail SMTP
+   * if Resend fails, hits sandbox restrictions, or throws API errors.
    */
   async sendEmail(info: SendEmailType): Promise<void> {
     const validation = await SendEmailSchema.safeParseAsync(info);
@@ -51,7 +52,6 @@ class emailService implements IEmailService {
     // 1. Resend HTTP API Fast Path (~150ms)
     if (this.resendClient) {
       try {
-        // Resend testing sandbox requires from: 'onboarding@resend.dev' unless a custom domain is verified
         const resendFromAddress =
           env.EMAIL_FROM?.trim() || `${this.INITIALISM} <onboarding@resend.dev>`;
 
@@ -68,14 +68,27 @@ class emailService implements IEmailService {
           payload.text = info.options.text;
         }
 
-        await this.resendClient.emails.send(payload);
-        return;
+        const { data, error } = await this.resendClient.emails.send(payload);
+
+        if (error) {
+          logger.warn(
+            `Resend API error [${error.name}]: ${error.message}. Falling back to Nodemailer SMTP...`,
+          );
+          throw new Error(error.message);
+        }
+
+        if (data) {
+          return; // Sent successfully via Resend
+        }
       } catch (resendError) {
-        logger.warn("Resend HTTP API send failed. Falling back to SMTP transport...", resendError);
+        logger.warn(
+          "Resend HTTP API failed. Executing Nodemailer Gmail SMTP fallback...",
+          resendError,
+        );
       }
     }
 
-    // 2. Nodemailer SMTP Fallback
+    // 2. Nodemailer Gmail SMTP Fallback
     await transporter.sendMail({
       from: smtpFromAddress,
       to: info.to,
