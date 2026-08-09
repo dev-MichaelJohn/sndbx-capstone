@@ -10,6 +10,7 @@ import {
   ClipboardList,
   FileBarChart2,
   Landmark,
+  Settings,
   SquareTerminal,
   Users,
 } from "lucide-react";
@@ -54,6 +55,7 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
     { title: "Evaluation Reports", url: `${basePath}/evaluation/reports`, icon: FileBarChart2 },
     { title: "Evaluation Analytics", url: `${basePath}/evaluation/analytics`, icon: BarChart3 },
     { title: "System Logs", url: `${basePath}/logs`, icon: ClipboardClock },
+    { title: "Account Settings", url: `${basePath}/settings`, icon: Settings },
   ].filter((item) => {
     const required = NAV_PERMISSIONS[item.title];
     if (!required || required.length === 0) return true;

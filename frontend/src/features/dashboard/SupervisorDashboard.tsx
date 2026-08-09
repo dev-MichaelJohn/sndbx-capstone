@@ -2,7 +2,14 @@ import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useUser } from "@/features/auth/context/user.context";
-import { BarChart3, Building2, FileBarChart2, SquareTerminal, UserCheck } from "lucide-react";
+import {
+  BarChart3,
+  Building2,
+  FileBarChart2,
+  Settings,
+  SquareTerminal,
+  UserCheck,
+} from "lucide-react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { PERMISSIONS, ROLE_PERMISSION_MATRIX, type Permission } from "backend/types/seeder.type";
 
@@ -37,6 +44,7 @@ export const SupervisorDashboard = ({ basePath = "/supervisor" }: SupervisorDash
     { title: "Evaluation Reports", url: `${basePath}/reports`, icon: FileBarChart2 },
     { title: "Evaluation Analytics", url: `${basePath}/analytics`, icon: BarChart3 },
     { title: "Jurisdiction Coverage", url: `${basePath}/coverage`, icon: Building2 },
+    { title: "Account Settings", url: `${basePath}/settings`, icon: Settings },
   ].filter((item) => {
     const required = NAV_PERMISSIONS[item.title];
     if (!required || required.length === 0) return true;
