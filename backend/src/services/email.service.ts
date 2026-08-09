@@ -1,6 +1,8 @@
 import transporter from "@/configs/email.config.js";
 import env from "@/configs/env.config.js";
+import { Resend } from "resend";
 import z from "zod";
+import { logger } from "@/utils/logger.util.js";
 
 export const SendEmailSchema = z.object({
   to: z.email(),
@@ -16,37 +18,64 @@ export const SendEmailSchema = z.object({
 });
 export type SendEmailType = z.infer<typeof SendEmailSchema>;
 
-/** Public surface of {@link emailService}, for dependency injection/mocking. */
 export interface IEmailService {
   sendEmail(info: SendEmailType): Promise<void>;
 }
 
 /**
- * Thin wrapper around the configured Nodemailer transporter for sending
- * outbound emails (e.g. OTP codes, notifications) under a shared sender name.
+ * High-performance Email Service using Resend HTTP API with automatic
+ * Nodemailer SMTP fallback for backward compatibility.
  */
 class emailService implements IEmailService {
-  constructor(private mailer = transporter) {}
-
-  /** Sender name shown before the app's email address in outgoing mail. */
+  private resendClient: Resend | null = null;
   private INITIALISM = "PIT-FES";
 
+  constructor() {
+    if (env.RESEND_API_KEY) {
+      this.resendClient = new Resend(env.RESEND_API_KEY);
+      logger.info("⚡ Transactional Email Engine: Resend HTTP API initialized.");
+    } else {
+      logger.info("📧 Transactional Email Engine: Using Nodemailer SMTP transport.");
+    }
+  }
+
   /**
-   * Sends an email via the configured transporter.
-   *
-   * @param info.to - recipient email address
-   * @param info.options.subject - email subject line
-   * @param info.options.text - plaintext body (required if `html` is omitted)
-   * @param info.options.html - HTML body (required if `text` is omitted)
-   * @throws {ZodError} if `info` fails schema validation, including when
-   *   both `text` and `html` are omitted
+   * Sends an email via Resend HTTP API or Nodemailer SMTP fallback.
    */
   async sendEmail(info: SendEmailType): Promise<void> {
     const validation = await SendEmailSchema.safeParseAsync(info);
     if (!validation.success) throw validation.error;
 
-    await this.mailer.sendMail({
-      from: `"${this.INITIALISM} Notification Services" ${env.GMAIL_APP_USER}`,
+    const fromAddress = `"${this.INITIALISM} Notification Services" <${env.GMAIL_APP_USER}>`;
+
+    // 1. Resend HTTP API Fast Path (~150ms)
+    if (this.resendClient) {
+      try {
+        const payload: any = {
+          from: env.GMAIL_APP_USER.includes("@resend.dev")
+            ? "PIT-FES <onboarding@resend.dev>"
+            : fromAddress,
+          to: [info.to],
+          subject: info.options.subject,
+        };
+
+        if (info.options.html) {
+          payload.html = info.options.html;
+        }
+        if (info.options.text) {
+          payload.text = info.options.text;
+        }
+
+        await this.resendClient.emails.send(payload);
+        return;
+      } catch (resendError) {
+        logger.warn("Resend HTTP API send failed. Falling back to SMTP transport...", resendError);
+      }
+    }
+
+    // 2. Nodemailer SMTP Fallback
+    await transporter.sendMail({
+      from: fromAddress,
       to: info.to,
       ...info.options,
     });

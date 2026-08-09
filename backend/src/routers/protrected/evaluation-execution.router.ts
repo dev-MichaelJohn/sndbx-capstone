@@ -2,8 +2,11 @@ import { Router, type IRouter } from "express";
 import EvaluationExecutionController from "@/controllers/evaluation-execution.controller.js";
 import { requirePermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
+import { evaluationExecutionLimiter } from "@/utils/rate-limiter.util.js";
 
 const EvaluationExecutionRouter: IRouter = Router({ mergeParams: true });
+
+EvaluationExecutionRouter.use(evaluationExecutionLimiter);
 
 // Live activity feed endpoint
 EvaluationExecutionRouter.get("/recent-submissions", (req, res, next) =>

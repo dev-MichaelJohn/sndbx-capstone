@@ -2,19 +2,18 @@ import express, { type Express } from "express";
 import passport from "passport";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 import "@/configs/passport.config.js";
 
 /**
- * Builds and configures the Express app instance: JSON body parsing,
- * Passport initialization (strategies registered via the side-effect
- * import of `passport.config.js`), cookie parsing, CORS for the
- * frontend's local dev origin (with PDF content-type exposed), and a
- * global rate limiter.
- *
- * @returns a configured but not-yet-listening Express app
+ * Builds and configures the Express application with response compression,
+ * JSON body parsing, CORS headers, cookie handling, and Passport auth strategies.
  */
 export const createApp = (): Express => {
   const app = express();
+
+  // Enable Gzip/Brotli response compression (~70% payload size reduction)
+  app.use(compression());
 
   app.use(express.json());
   app.use(passport.initialize());

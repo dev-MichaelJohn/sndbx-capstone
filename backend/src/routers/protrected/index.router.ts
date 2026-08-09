@@ -17,25 +17,19 @@ import EvaluationExecutionRouter from "./evaluation-execution.router.js";
 import EvaluationReportRouter from "./evaluation-report.route.js";
 import EvaluationAnalyticsRouter from "./evaluation-analytics.route.js";
 import SystemLogRouter from "./system-log.route.js";
-import rateLimit from "express-rate-limit";
 import BulkImportRouter from "./bulk-import.route.js";
+import { standardApiLimiter } from "@/utils/rate-limiter.util.js";
 
 const ProtectedRouter: IRouter = Router();
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1500,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." },
-});
+// Apply User-ID aware Generous Rate Limiter across protected routes
+ProtectedRouter.use(standardApiLimiter);
 
 ProtectedRouter.use(AuthController.verifyJWT);
 ProtectedRouter.use(AuthController.isVerified);
 
 ProtectedRouter.use("/users", UserRouter);
 ProtectedRouter.use("/colleges", CollegeRouter);
-ProtectedRouter.use("/programs", ProgramRouter);
 ProtectedRouter.use("/programs", ProgramRouter);
 ProtectedRouter.use("/semesters", SemesterRouter);
 ProtectedRouter.use("/courses", CourseRouter);
