@@ -47,31 +47,44 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
     return Number((sum / numericValues.length).toFixed(RATING_CONFIG.DECIMAL_PLACES));
   }
 
+  /**
+   * Computes the percentage distribution of positive, neutral, and negative sentiment scores
+   * based on AFINN qualitative feedback analysis.
+   *
+   * Thresholds:
+   *  - Positive: score > 0
+   *  - Neutral: score === 0 (or uncommented / null)
+   *  - Negative: score < 0
+   */
   private calculateSentimentDistribution(sentimentScores: Array<string | null>): {
     positive_pct: number;
     neutral_pct: number;
     negative_pct: number;
   } {
-    const validScores = sentimentScores
-      .map((score) => Number(score))
-      .filter((score) => !isNaN(score));
-    const totalCount = validScores.length || 1;
+    // Filter out NaN entries; null/uncommented scores map to 0 (Neutral)
+    const validScores = sentimentScores.map((score) => (score !== null ? Number(score) : 0));
+
+    if (validScores.length === 0) {
+      return { positive_pct: 0, neutral_pct: 100, negative_pct: 0 };
+    }
 
     let positiveCount = 0;
     let neutralCount = 0;
     let negativeCount = 0;
 
     for (const score of validScores) {
-      if (score > ANALYTICS_CONFIG.SENTIMENT_THRESHOLDS.POSITIVE_MIN) {
-        positiveCount++;
-      } else if (score >= ANALYTICS_CONFIG.SENTIMENT_THRESHOLDS.NEUTRAL_MIN) {
+      if (isNaN(score) || score === 0) {
         neutralCount++;
+      } else if (score > 0) {
+        positiveCount++;
       } else {
         negativeCount++;
       }
     }
 
-    const { PERCENTAGE_FACTOR, DECIMAL_PRECISION } = ANALYTICS_CONFIG;
+    const totalCount = validScores.length;
+    const PERCENTAGE_FACTOR = 100;
+    const DECIMAL_PRECISION = 1;
 
     return {
       positive_pct: Number(
