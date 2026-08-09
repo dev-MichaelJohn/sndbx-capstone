@@ -50,6 +50,8 @@ export const useEvaluationSocket = () => {
   useEffect(() => {
     if (!socket) return;
 
+    socket.emit("sys-admin:join");
+
     const handleLiveSubmission = (event: AnonymousSubmissionEvent) => {
       queryClient.setQueryData<AnonymousSubmissionEvent[]>(
         EVALUATION_EXECUTION_KEYS.recentSubmissions,
@@ -58,9 +60,15 @@ export const useEvaluationSocket = () => {
           return [event, ...filtered].slice(0, 10);
         },
       );
+      queryClient.invalidateQueries({
+        queryKey: EVALUATION_EXECUTION_KEYS.recentSubmissions,
+      });
     };
 
     socket.on("evaluation:submitted", handleLiveSubmission);
+    socket.on("connect", () => {
+      socket.emit("sys-admin:join");
+    });
 
     return () => {
       socket.off("evaluation:submitted", handleLiveSubmission);
@@ -404,11 +412,11 @@ export const EvaluationFormContainer = ({
   const [ratings, setRatings] = useState<Record<number, number>>(initialRatings);
   const [comment, setComment] = useState(initialComment);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [confirmDraftOpen, setConfirmDraftOpen] = useState(false);
 
   const formMin = formTree.min_rating ?? 1;
   const formMax = formTree.max_rating ?? 5;
 
-  // Calculate total questions in form
   const totalQuestions = formTree.categories.reduce(
     (acc, cat) => acc + (cat.questions?.length || 0),
     0,
@@ -431,6 +439,11 @@ export const EvaluationFormContainer = ({
       rating,
     }));
     return { ratings: ratingsArray, comment, is_draft };
+  };
+
+  const handleConfirmSaveDraft = () => {
+    setConfirmDraftOpen(false);
+    onSave(buildPayload(true));
   };
 
   const handleAttemptFinalSubmit = () => {
@@ -465,7 +478,6 @@ export const EvaluationFormContainer = ({
           />
         ))}
 
-        {/* Qualitative Feedback */}
         <div className="space-y-2 pt-2">
           <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Qualitative Feedback / Comments
@@ -479,7 +491,6 @@ export const EvaluationFormContainer = ({
           />
         </div>
 
-        {/* Actions */}
         {!isSubmitted && (
           <div className="flex items-center justify-between pt-4 border-t">
             <span className="text-xs text-muted-foreground">
@@ -492,7 +503,7 @@ export const EvaluationFormContainer = ({
                 variant="outline"
                 size="sm"
                 disabled={isSaving}
-                onClick={() => onSave(buildPayload(true))}
+                onClick={() => setConfirmDraftOpen(true)}
                 className="h-8 text-xs cursor-pointer"
               >
                 Save Draft
@@ -510,6 +521,33 @@ export const EvaluationFormContainer = ({
           </div>
         )}
       </div>
+
+      {/* Save Draft Friction Dialog */}
+      <AlertDialog open={confirmDraftOpen} onOpenChange={setConfirmDraftOpen}>
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-semibold">
+              Save Evaluation Draft?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Your current ratings and qualitative comments will be saved as a draft. You can return
+              and modify your responses anytime before final submission.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSaving} className="h-8 rounded-lg text-xs">
+              Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmSaveDraft}
+              disabled={isSaving}
+              className="h-8 rounded-lg text-xs font-medium"
+            >
+              {isSaving ? "Saving Draft..." : "Yes, Save Draft"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Final Submission Friction Dialog */}
       <AlertDialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>

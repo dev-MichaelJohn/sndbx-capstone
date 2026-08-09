@@ -136,6 +136,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CheckCircle2, AlertTriangle, Shield, Mail, User } from "lucide-react";
 import { useVerificationStatus } from "../api/account-settings.service";
 import { useUser } from "@/features/auth/context/user.context";
+import { EditPersonalDetailsModal } from "./EditPersonalDetailsModal";
 
 export function AccountOverviewCard() {
   const { user } = useUser();
@@ -153,19 +154,22 @@ export function AccountOverviewCard() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Section label */}
-      <div className="flex items-center gap-2">
-        <User className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Profile
-        </span>
+      {/* Section label & Edit Action */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Profile
+          </span>
+        </div>
+
+        <EditPersonalDetailsModal />
       </div>
 
-      <Card className="w-full overflow-hidden border-border/50 shadow-none bg-card">
+      <Card className="w-full overflow-hidden border-border/50 shadow-none bg-card rounded-xl">
         {/* Identity Row */}
         <div className="p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            {/* Avatar + info */}
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <div className="relative shrink-0">
                 <Avatar className="h-14 w-14 ring-2 ring-border">
@@ -173,7 +177,6 @@ export function AccountOverviewCard() {
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                {/* Online indicator */}
                 <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-card" />
               </div>
 
@@ -196,7 +199,7 @@ export function AccountOverviewCard() {
                   <Badge
                     key={role}
                     variant="secondary"
-                    className="gap-1.5 text-[11px] font-mono tracking-wider px-2.5 py-1 bg-primary/8 text-primary border border-primary/15 hover:bg-primary/12 transition-colors"
+                    className="gap-1.5 text-[11px] font-mono tracking-wider px-2.5 py-1 bg-primary/8 text-primary border border-primary/15"
                   >
                     <Shield className="h-3 w-3" />
                     {role}
@@ -207,7 +210,6 @@ export function AccountOverviewCard() {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="mx-6 sm:mx-8 h-px bg-border/50" />
 
         {/* Verification Row */}
@@ -217,8 +219,8 @@ export function AccountOverviewCard() {
               <p className="text-sm font-medium text-foreground mb-0.5">Email verification</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {isVerified
-                  ? "Your address is verified. All features and mutations are unlocked."
-                  : "Verify your email to unlock protected routes and system mutations."}
+                  ? "Your address is verified. All features and system mutations are unlocked."
+                  : "Verify your email address to unlock protected actions and evaluation features."}
               </p>
             </div>
 
@@ -247,6 +249,168 @@ export function AccountOverviewCard() {
     </div>
   );
 }
+
+
+---
+account-settings/components/EditPersonalDetailsModal.tsx
+---
+import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import { User, Check } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { FormTextField } from "@/components/form-text-field";
+import { useUser } from "@/features/auth/context/user.context";
+import { useUpdateUser } from "@/features/user/api/user.service";
+
+/**
+ * Modal dialog enabling logged-in users to update their personal profile details
+ * via the existing `PUT /protected/users/:id` endpoint.
+ */
+export const EditPersonalDetailsModal = () => {
+  const [open, setOpen] = useState(false);
+  const { user } = useUser();
+  const updateUserMutation = useUpdateUser();
+
+  const details = user?.personalDetails;
+
+  const form = useForm({
+    defaultValues: {
+      first_name: details?.first_name ?? "",
+      last_name: details?.last_name ?? "",
+      middle_name: details?.middle_name ?? "",
+      suffix: details?.suffix ?? "",
+    },
+    onSubmit: async ({ value }) => {
+      if (!user) return;
+      try {
+        await updateUserMutation.mutateAsync({
+          id: user.id,
+          payload: {
+            personalDetails: value,
+          },
+        });
+        toast.success("Profile details updated successfully!");
+        setOpen(false);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update profile.");
+      }
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
+        >
+          <User className="size-3.5 text-primary" />
+          <span>Edit Profile</span>
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold">Edit Personal Profile</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Update your personal name details displayed across reports and rosters.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+          className="space-y-4 py-2"
+        >
+          <FieldGroup className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="first_name"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="First Name"
+                    disabled={updateUserMutation.isPending}
+                  />
+                )}
+              />
+              <form.Field
+                name="last_name"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Last Name"
+                    disabled={updateUserMutation.isPending}
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <form.Field
+                name="middle_name"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Middle Name"
+                    disabled={updateUserMutation.isPending}
+                  />
+                )}
+              />
+              <form.Field
+                name="suffix"
+                children={(field) => (
+                  <FormTextField
+                    field={field}
+                    label="Suffix"
+                    placeholder="Jr., III"
+                    disabled={updateUserMutation.isPending}
+                  />
+                )}
+              />
+            </div>
+          </FieldGroup>
+
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={updateUserMutation.isPending}
+              className="h-8 rounded-lg text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={updateUserMutation.isPending}
+              className="h-8 gap-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground cursor-pointer"
+            >
+              <Check className="size-3.5" />
+              <span>{updateUserMutation.isPending ? "Saving..." : "Save Changes"}</span>
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 
 ---
@@ -418,10 +582,15 @@ export function PasswordChangeCard() {
 ---
 account-settings/components/PasswordConfirmStep.tsx
 ---
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ShieldCheck, ShieldAlert, Eye, EyeOff } from "lucide-react";
 
 export function PasswordConfirmStep({ form }: { form: any }) {
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   return (
     <div className="space-y-6 max-w-lg">
       <div className="flex items-start gap-3 p-4 rounded-lg bg-emerald-500/8 border border-emerald-500/15">
@@ -441,8 +610,8 @@ export function PasswordConfirmStep({ form }: { form: any }) {
             >
               Authorization code
             </label>
-            <div className="relative max-w-50">
-              <ShieldAlert className="absolute left-3 top-2.5 h-4 w-4 text-primary shrink-0" />
+            <div className="relative max-w-50 flex items-center">
+              <ShieldAlert className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary shrink-0 pointer-events-none" />
               <Input
                 id={field.name}
                 name={field.name}
@@ -470,16 +639,27 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                 <label htmlFor={field.name} className="text-sm font-medium text-foreground">
                   New password
                 </label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Enter new password"
-                  className="h-9 text-sm bg-muted/30 border-border/60"
-                />
+                <div className="relative flex items-center">
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    type={showNewPassword ? "text" : "password"}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Enter new password"
+                    className="h-9 pr-10 text-sm bg-muted/30 border-border/60"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                </div>
               </div>
             )}
           />
@@ -491,16 +671,31 @@ export function PasswordConfirmStep({ form }: { form: any }) {
                 <label htmlFor={field.name} className="text-sm font-medium text-foreground">
                   Confirm password
                 </label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Re-enter password"
-                  className="h-9 text-sm bg-muted/30 border-border/60"
-                />
+                <div className="relative flex items-center">
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Re-enter password"
+                    className="h-9 pr-10 text-sm bg-muted/30 border-border/60"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           />
@@ -514,10 +709,14 @@ export function PasswordConfirmStep({ form }: { form: any }) {
 ---
 account-settings/components/PasswordRequestStep.tsx
 ---
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { KeyRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { KeyRound, Eye, EyeOff } from "lucide-react";
 
 export function PasswordRequestStep({ form }: { form: any }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="space-y-5 max-w-sm">
       <div>
@@ -537,18 +736,27 @@ export function PasswordRequestStep({ form }: { form: any }) {
             >
               Password
             </label>
-            <div className="relative">
-              <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex items-center">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 id={field.name}
                 name={field.name}
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 placeholder="Enter current password"
-                className="pl-9 h-9 text-sm bg-muted/30 border-border/60"
+                className="pl-9 pr-10 h-9 text-sm bg-muted/30 border-border/60"
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </Button>
             </div>
           </div>
         )}

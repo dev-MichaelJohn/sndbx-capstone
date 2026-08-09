@@ -18,9 +18,12 @@ import { VerifyOTPSchema, type VerifyOTPType } from "@/types/otp.type.js";
 import { Accounts } from "@/schemas/auth.schema.js";
 import {
   ConfirmPasswordChangeSchema,
+  ConfirmPasswordResetSchema,
   RequestPasswordChangeSchema,
+  RequestPasswordResetSchema,
   VerifyEmailConfirmSchema,
   type ConfirmPasswordChangeType,
+  type ConfirmPasswordResetType,
   type RequestPasswordChangeType,
 } from "@/types/auth.type.js";
 
@@ -48,6 +51,8 @@ export interface IAuthService {
     data: RequestPasswordChangeType,
   ): Promise<{ expires_at: Date }>;
   confirmPasswordChange(email: string, data: ConfirmPasswordChangeType): Promise<boolean>;
+  requestPasswordReset(email: string): Promise<{ expires_at: Date }>;
+  confirmPasswordReset(data: ConfirmPasswordResetType): Promise<boolean>;
 }
 
 /**
@@ -245,11 +250,354 @@ class authService implements IAuthService {
 
     return true;
   }
+
+  /**
+   * Generates and dispatches a password reset OTP code to the requested email.
+   */
+  async requestPasswordReset(email: string) {
+    const validation = await RequestPasswordResetSchema.safeParseAsync({ email });
+    if (!validation.success) throw validation.error;
+
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) =>
+        and(eq(Accounts.email, validation.data.email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "No user account found with that email address.");
+
+    const activeOtp = await this.otpService.findActiveOTP({ email: validation.data.email });
+    if (activeOtp.hasActive) {
+      return { expires_at: activeOtp.otpData.expires_at };
+    }
+
+    const otpCode = await this.otpService.generateOTP({ email: validation.data.email });
+    if (!otpCode) throw new AppError(500, "Failed to generate password reset code.");
+
+    return { expires_at: otpCode.expires_at };
+  }
+
+  /**
+   * Confirms password reset via OTP and updates account password hash.
+   */
+  async confirmPasswordReset(data: ConfirmPasswordResetType) {
+    const validation = await ConfirmPasswordResetSchema.safeParseAsync(data);
+    if (!validation.success) throw validation.error;
+
+    const { email, code, newPassword } = validation.data;
+
+    const otpRecord = await this.otpService.verifyOTP({ email, code });
+    if (!otpRecord) throw new AppError(401, "Invalid or expired reset code.");
+
+    await HardDeleteRecord("OTPCodes", otpRecord.id);
+
+    const account = await GetRecord("Accounts", {
+      where: (Accounts) => and(eq(Accounts.email, email), isNull(Accounts.deleted_at)),
+    });
+    if (!account) throw new AppError(404, "Account not found.");
+
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+    const updated = await UpdateRecord(
+      "Accounts",
+      account.id,
+      { password: newHashedPassword },
+      Accounts.id,
+    );
+    if (!updated) throw new AppError(500, "Failed to update password.");
+
+    return true;
+  }
 }
 
 const AuthService = new authService();
 export default AuthService;
 export { authService };
+
+
+---
+services/bulk-import.service.ts
+---
+import { and, eq, isNull } from "drizzle-orm";
+import db from "@/configs/db.config.js";
+import { GetRecord } from "./db.service.js";
+import UserService, { type IUserService } from "./user.service.js";
+import { AppError } from "@/utils/error.util.js";
+import { Colleges, Programs, Classes, Courses } from "@/schemas/institution.schema.js";
+import {
+  CollegeCsvRowSchema,
+  ProgramCsvRowSchema,
+  ClassCsvRowSchema,
+  CourseCsvRowSchema,
+  UserCsvRowSchema,
+  type BulkEntity,
+  type BulkImportResult,
+} from "@/types/bulk-import.type.js";
+
+export interface IBulkImportService {
+  executeImport(entity: BulkEntity, rows: unknown[]): Promise<BulkImportResult>;
+}
+
+export class bulkImportService implements IBulkImportService {
+  constructor(private userService: IUserService = UserService) {}
+
+  async executeImport(entity: BulkEntity, rows: unknown[]): Promise<BulkImportResult> {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new AppError(400, "No CSV rows provided for import.");
+    }
+
+    const result: BulkImportResult = {
+      totalRows: rows.length,
+      successCount: 0,
+      failedCount: 0,
+      errors: [],
+    };
+
+    switch (entity) {
+      case "colleges":
+        await this.importColleges(rows, result);
+        break;
+      case "programs":
+        await this.importPrograms(rows, result);
+        break;
+      case "classes":
+        await this.importClasses(rows, result);
+        break;
+      case "courses":
+        await this.importCourses(rows, result);
+        break;
+      case "users":
+        await this.importUsers(rows, result);
+        break;
+      default:
+        throw new AppError(400, `Unsupported import entity: ${entity}`);
+    }
+
+    return result;
+  }
+
+  private async importColleges(rows: unknown[], result: BulkImportResult) {
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 1;
+      const validation = await CollegeCsvRowSchema.safeParseAsync(rows[i]);
+      if (!validation.success) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: validation.error.issues.map((j) => j.message).join(", "),
+        });
+        continue;
+      }
+
+      try {
+        await db.transaction(async (tx) => {
+          const existing = await GetRecord("Colleges", {
+            where: (c) => and(eq(c.initialism, validation.data.initialism), isNull(c.deleted_at)),
+            tx,
+          });
+          if (existing) throw new AppError(409, `College ${validation.data.initialism} exists.`);
+
+          await tx.insert(Colleges).values(validation.data);
+          result.successCount++;
+        });
+      } catch (err) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: err instanceof Error ? err.message : "Failed to import college row.",
+        });
+      }
+    }
+  }
+
+  private async importPrograms(rows: unknown[], result: BulkImportResult) {
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 1;
+      const validation = await ProgramCsvRowSchema.safeParseAsync(rows[i]);
+      if (!validation.success) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: validation.error.issues.map((j) => j.message).join(", "),
+        });
+        continue;
+      }
+
+      try {
+        await db.transaction(async (tx) => {
+          let collegeId = validation.data.college_id;
+
+          if (!collegeId && validation.data.college_initialism) {
+            const college = await GetRecord("Colleges", {
+              where: (c) =>
+                and(eq(c.initialism, validation.data.college_initialism!), isNull(c.deleted_at)),
+              tx,
+            });
+            if (!college)
+              throw new AppError(
+                404,
+                `Parent College '${validation.data.college_initialism}' not found.`,
+              );
+            collegeId = college.id;
+          }
+
+          if (!collegeId) throw new AppError(400, "Could not resolve parent College ID.");
+
+          await tx.insert(Programs).values({
+            college_id: collegeId,
+            name: validation.data.name,
+            initialism: validation.data.initialism,
+          });
+          result.successCount++;
+        });
+      } catch (err) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: err instanceof Error ? err.message : "Failed to import program row.",
+        });
+      }
+    }
+  }
+
+  private async importClasses(rows: unknown[], result: BulkImportResult) {
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 1;
+      const validation = await ClassCsvRowSchema.safeParseAsync(rows[i]);
+      if (!validation.success) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: validation.error.issues.map((j) => j.message).join(", "),
+        });
+        continue;
+      }
+
+      try {
+        await db.transaction(async (tx) => {
+          let programId = validation.data.program_id;
+
+          if (!programId && validation.data.program_initialism) {
+            const program = await GetRecord("Programs", {
+              where: (p) =>
+                and(eq(p.initialism, validation.data.program_initialism!), isNull(p.deleted_at)),
+              tx,
+            });
+            if (!program)
+              throw new AppError(404, `Program '${validation.data.program_initialism}' not found.`);
+            programId = program.id;
+          }
+
+          if (!programId) throw new AppError(400, "Could not resolve parent Program ID.");
+
+          await tx.insert(Classes).values({
+            program_id: programId,
+            year_level: validation.data.year_level,
+            section: validation.data.section,
+          });
+          result.successCount++;
+        });
+      } catch (err) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: err instanceof Error ? err.message : "Failed to import class row.",
+        });
+      }
+    }
+  }
+
+  private async importCourses(rows: unknown[], result: BulkImportResult) {
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 1;
+      const validation = await CourseCsvRowSchema.safeParseAsync(rows[i]);
+      if (!validation.success) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: validation.error.issues.map((j) => j.message).join(", "),
+        });
+        continue;
+      }
+
+      try {
+        await db.transaction(async (tx) => {
+          let programId = validation.data.program_id;
+
+          if (!programId && validation.data.program_initialism) {
+            const program = await GetRecord("Programs", {
+              where: (p) =>
+                and(eq(p.initialism, validation.data.program_initialism!), isNull(p.deleted_at)),
+              tx,
+            });
+            if (!program)
+              throw new AppError(404, `Program '${validation.data.program_initialism}' not found.`);
+            programId = program.id;
+          }
+
+          if (!programId) throw new AppError(400, "Could not resolve parent Program ID.");
+
+          await tx.insert(Courses).values({
+            program_id: programId,
+            initialism: validation.data.initialism,
+            name: validation.data.name,
+          });
+          result.successCount++;
+        });
+      } catch (err) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: err instanceof Error ? err.message : "Failed to import course row.",
+        });
+      }
+    }
+  }
+
+  private async importUsers(rows: unknown[], result: BulkImportResult) {
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 1;
+      const validation = await UserCsvRowSchema.safeParseAsync(rows[i]);
+      if (!validation.success) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: validation.error.issues.map((j) => j.message).join(", "),
+        });
+        continue;
+      }
+
+      const { email, institutional_id, first_name, last_name, middle_name, suffix, role } =
+        validation.data;
+
+      try {
+        await db.transaction(async (tx) => {
+          await this.userService.createUserRecordViaExistingTx(
+            {
+              credentials: { email },
+              personalDetails: {
+                institutional_id,
+                first_name,
+                last_name,
+                middle_name,
+                suffix,
+              },
+              role,
+            },
+            tx,
+          );
+          result.successCount++;
+        });
+      } catch (err) {
+        result.failedCount++;
+        result.errors.push({
+          row: rowNum,
+          message: err instanceof Error ? err.message : "Failed to import user account row.",
+        });
+      }
+    }
+  }
+}
+
+const BulkImportService = new bulkImportService();
+export default BulkImportService;
 
 
 ---
@@ -892,6 +1240,23 @@ class collegeService implements ICollegeService {
       throw new AppError(409, "This account is already assigned as the dean of a college.");
   }
 
+  private async hasOtherCollegesDeaned(
+    accountId: number,
+    excludeCollegeId?: number,
+    tx?: PgTransaction,
+  ) {
+    const deanships = await GetRecords("CollegeDeans", {
+      where: (CollegeDeans) =>
+        and(
+          eq(CollegeDeans.dean_id, accountId),
+          excludeCollegeId ? sql`${CollegeDeans.college_id} != ${excludeCollegeId}` : undefined,
+          isNull(CollegeDeans.deleted_at),
+        ),
+      ...(tx && { tx }),
+    });
+    return deanships.length > 0;
+  }
+
   /**
    * Creates a CollegeDeans link record tying an account to a college.
    *
@@ -1031,7 +1396,8 @@ class collegeService implements ICollegeService {
   async searchAvailableDeanCandidates(search: string | undefined, tx?: PgTransaction) {
     const deans = await GetRecords<"Accounts", DeanCandidate>("Accounts", {
       select: (Accounts) => ({
-        id: Accounts.id,
+        account_id: Accounts.id,
+        institutional_id: PersonalDetails.institutional_id,
         first_name: PersonalDetails.first_name,
         last_name: PersonalDetails.last_name,
         middle_name: PersonalDetails.middle_name,
@@ -1073,6 +1439,14 @@ class collegeService implements ICollegeService {
                 ilike(PersonalDetails.first_name, `%${search}%`),
                 ilike(PersonalDetails.last_name, `%${search}%`),
                 ilike(PersonalDetails.institutional_id, `%${search}%`),
+                ilike(
+                  sql`concat(${PersonalDetails.last_name}, ', ', ${PersonalDetails.first_name})`,
+                  `%${search}%`,
+                ),
+                ilike(
+                  sql`concat(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+                  `%${search}%`,
+                ),
               )
             : undefined,
         ),
@@ -1224,8 +1598,16 @@ class collegeService implements ICollegeService {
         }
 
         if (existingCollegeRecord.account_id) {
-          if (!(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)))
+          if (
+            !(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)) &&
+            !(await this.hasOtherCollegesDeaned(
+              existingCollegeRecord.account_id,
+              existingCollegeRecord.id,
+              tx,
+            ))
+          ) {
             await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
+          }
 
           const deletedCollegeDeanRecord = await SoftDeleteRecord(
             "CollegeDeans",
@@ -1281,8 +1663,16 @@ class collegeService implements ICollegeService {
       if (!existingCollegeRecord) throw new AppError(404, "No college record found.");
 
       if (existingCollegeRecord.account_id) {
-        if (!(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)))
+        if (
+          !(await this.hasProgramsHandled(existingCollegeRecord.account_id, tx)) &&
+          !(await this.hasOtherCollegesDeaned(
+            existingCollegeRecord.account_id,
+            existingCollegeRecord.id,
+            tx,
+          ))
+        ) {
           await this.userService.revokeRole(existingCollegeRecord.account_id, "SUPERVISOR", tx);
+        }
 
         const collegeDean = await GetRecord<"CollegeDeans">("CollegeDeans", {
           where: (CollegeDeans) =>
@@ -1292,19 +1682,10 @@ class collegeService implements ICollegeService {
               isNull(CollegeDeans.deleted_at),
             ),
         });
-        if (!collegeDean) throw new AppError(404, "No college dean record found.");
 
-        const deletedCollegeDeanRecord = await SoftDeleteRecord(
-          "CollegeDeans",
-          collegeDean.id,
-          CollegeDeans.id,
-          tx,
-        );
-        if (!deletedCollegeDeanRecord)
-          throw new AppError(
-            500,
-            "Failed to remove old college-dean record. Changes during this process were rolled back.",
-          );
+        if (collegeDean) {
+          await SoftDeleteRecord("CollegeDeans", collegeDean.id, CollegeDeans.id, tx);
+        }
       }
 
       const deletedCollegeRecord = await SoftDeleteRecord(
@@ -2132,31 +2513,44 @@ export class EvaluationAnalyticsService implements IEvaluationAnalyticsService {
     return Number((sum / numericValues.length).toFixed(RATING_CONFIG.DECIMAL_PLACES));
   }
 
+  /**
+   * Computes the percentage distribution of positive, neutral, and negative sentiment scores
+   * based on AFINN qualitative feedback analysis.
+   *
+   * Thresholds:
+   *  - Positive: score > 0
+   *  - Neutral: score === 0 (or uncommented / null)
+   *  - Negative: score < 0
+   */
   private calculateSentimentDistribution(sentimentScores: Array<string | null>): {
     positive_pct: number;
     neutral_pct: number;
     negative_pct: number;
   } {
-    const validScores = sentimentScores
-      .map((score) => Number(score))
-      .filter((score) => !isNaN(score));
-    const totalCount = validScores.length || 1;
+    // Filter out NaN entries; null/uncommented scores map to 0 (Neutral)
+    const validScores = sentimentScores.map((score) => (score !== null ? Number(score) : 0));
+
+    if (validScores.length === 0) {
+      return { positive_pct: 0, neutral_pct: 100, negative_pct: 0 };
+    }
 
     let positiveCount = 0;
     let neutralCount = 0;
     let negativeCount = 0;
 
     for (const score of validScores) {
-      if (score > ANALYTICS_CONFIG.SENTIMENT_THRESHOLDS.POSITIVE_MIN) {
-        positiveCount++;
-      } else if (score >= ANALYTICS_CONFIG.SENTIMENT_THRESHOLDS.NEUTRAL_MIN) {
+      if (isNaN(score) || score === 0) {
         neutralCount++;
+      } else if (score > 0) {
+        positiveCount++;
       } else {
         negativeCount++;
       }
     }
 
-    const { PERCENTAGE_FACTOR, DECIMAL_PRECISION } = ANALYTICS_CONFIG;
+    const totalCount = validScores.length;
+    const PERCENTAGE_FACTOR = 100;
+    const DECIMAL_PRECISION = 1;
 
     return {
       positive_pct: Number(
@@ -5087,16 +5481,6 @@ class programService implements IProgramService {
     return result;
   }
 
-  private async hasProgramsHandled(accountId: number, tx?: PgTransaction) {
-    const existingPrograms = await GetRecords("ProgramChairs", {
-      where: (ProgramChairs) =>
-        and(eq(ProgramChairs.chair_id, accountId), isNull(ProgramChairs.deleted_at)),
-      ...(tx && { tx }),
-    });
-
-    return existingPrograms.length > 0;
-  }
-
   private async hasCollegeHandled(accountId: number, tx?: PgTransaction) {
     const existingColleges = await GetRecords("CollegeDeans", {
       where: (CollegeDeans) =>
@@ -5105,6 +5489,24 @@ class programService implements IProgramService {
     });
 
     return existingColleges.length > 0;
+  }
+
+  private async hasOtherProgramsChaired(
+    accountId: number,
+    excludeProgramId?: number,
+    tx?: PgTransaction,
+  ) {
+    const existingPrograms = await GetRecords("ProgramChairs", {
+      where: (ProgramChairs) =>
+        and(
+          eq(ProgramChairs.chair_id, accountId),
+          excludeProgramId ? sql`${ProgramChairs.program_id} != ${excludeProgramId}` : undefined,
+          isNull(ProgramChairs.deleted_at),
+        ),
+      ...(tx && { tx }),
+    });
+
+    return existingPrograms.length > 0;
   }
 
   async getPrograms(searhQuery: ProgramSearchQueryType, scope?: SupervisorScope | null) {
@@ -5208,6 +5610,7 @@ class programService implements IProgramService {
     const chairs = await GetRecords<"Accounts", ChairCandidateType>("Accounts", {
       select: (Accounts) => ({
         account_id: Accounts.id,
+        institutional_id: PersonalDetails.institutional_id,
         first_name: PersonalDetails.first_name,
         last_name: PersonalDetails.last_name,
         middle_name: PersonalDetails.middle_name,
@@ -5248,6 +5651,14 @@ class programService implements IProgramService {
                 ilike(PersonalDetails.first_name, `%${search}%`),
                 ilike(PersonalDetails.last_name, `%${search}%`),
                 ilike(PersonalDetails.institutional_id, `%${search}%`),
+                ilike(
+                  sql`concat(${PersonalDetails.last_name}, ', ', ${PersonalDetails.first_name})`,
+                  `%${search}%`,
+                ),
+                ilike(
+                  sql`concat(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
+                  `%${search}%`,
+                ),
               )
             : undefined,
         ),
@@ -5350,23 +5761,22 @@ class programService implements IProgramService {
 
         if (existingProgram.account_id) {
           if (
-            !(await this.hasProgramsHandled(existingProgram.account_id, tx)) &&
+            !(await this.hasOtherProgramsChaired(
+              existingProgram.account_id,
+              existingProgram.id,
+              tx,
+            )) &&
             !(await this.hasCollegeHandled(existingProgram.account_id, tx))
           ) {
             await this.userService.revokeRole(existingProgram.account_id, "SUPERVISOR", tx);
           }
 
-          const deleteProgramChairRecord = await SoftDeleteRecord<"ProgramChairs">(
+          await SoftDeleteRecord<"ProgramChairs">(
             "ProgramChairs",
             existingProgram.account_id,
             ProgramChairs.chair_id,
             tx,
           );
-          if (!deleteProgramChairRecord)
-            throw new AppError(
-              500,
-              "Failed to remove old program chair record. Changes during this process were rolled back.",
-            );
         }
 
         programChairRecord = await this.grantRoleAndCreateProgramChair(
@@ -5397,32 +5807,32 @@ class programService implements IProgramService {
 
       if (existingProgram.account_id) {
         if (
-          !(await this.hasProgramsHandled(existingProgram.account_id, tx)) &&
+          !(await this.hasOtherProgramsChaired(
+            existingProgram.account_id,
+            existingProgram.id,
+            tx,
+          )) &&
           !(await this.hasCollegeHandled(existingProgram.account_id, tx))
         ) {
           await this.userService.revokeRole(existingProgram.account_id, "SUPERVISOR", tx);
+        }
 
-          const programChair = await GetRecord<"ProgramChairs">("ProgramChairs", {
-            where: (ProgramChairs) =>
-              and(
-                eq(ProgramChairs.program_id, existingProgram.id),
-                eq(ProgramChairs.chair_id, existingProgram.account_id),
-                isNull(ProgramChairs.deleted_at),
-              ),
-          });
-          if (!programChair) throw new AppError(404, "No college dean record found.");
+        const programChair = await GetRecord<"ProgramChairs">("ProgramChairs", {
+          where: (ProgramChairs) =>
+            and(
+              eq(ProgramChairs.program_id, existingProgram.id),
+              eq(ProgramChairs.chair_id, existingProgram.account_id),
+              isNull(ProgramChairs.deleted_at),
+            ),
+        });
 
-          const deleteProgramChair = await SoftDeleteRecord<"ProgramChairs">(
+        if (programChair) {
+          await SoftDeleteRecord<"ProgramChairs">(
             "ProgramChairs",
             programChair.id,
             ProgramChairs.id,
             tx,
           );
-          if (!deleteProgramChair)
-            throw new AppError(
-              500,
-              "Failed to remove old program chair record. Changes during this process were rolled back.",
-            );
         }
       }
 
@@ -5782,6 +6192,7 @@ import {
   type EligibleStudentOption,
 } from "@/types/student-class.type.js";
 import { and, asc, desc, eq, getColumns, ilike, isNull, notInArray, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { CreateRecord, GetRecord, GetRecords, SoftDeleteRecord } from "./db.service.js";
 import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
 import type { PgTransaction } from "@/configs/db.config.js";
@@ -5840,6 +6251,10 @@ export class studentClassService implements IStudentClassService {
     const orderColumn = columns[orderBy as keyof typeof columns] ?? StudentClasses.id;
     const orderFn = orderDir === "asc" ? asc : desc;
 
+    // Alias tables to join instructor details alongside student details
+    const FacultyAccount = alias(Accounts, "faculty_account");
+    const FacultyPersonalDetails = alias(PersonalDetails, "faculty_personal_details");
+
     const rows = await GetRecords<
       "StudentClasses",
       StudentClassWithDetails & { totalItems: number }
@@ -5858,6 +6273,10 @@ export class studentClassService implements IStudentClassService {
         program_name: Programs.name,
         class_year_level: Classes.year_level,
         class_section: Classes.section,
+        faculty_name:
+          sql<string>`concat(${FacultyPersonalDetails.first_name}, ' ', ${FacultyPersonalDetails.last_name})`.as(
+            "faculty_name",
+          ),
         totalItems: sql<number>`count(*) over()::int`.as("totalItems"),
       }),
       join: (query) =>
@@ -5872,6 +6291,11 @@ export class studentClassService implements IStudentClassService {
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
           .innerJoin(Accounts, eq(Accounts.id, StudentClasses.student_account_id))
           .innerJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id))
+          .leftJoin(FacultyAccount, eq(FacultyAccount.id, CourseOfferings.faculty_id))
+          .leftJoin(
+            FacultyPersonalDetails,
+            eq(FacultyPersonalDetails.id, FacultyAccount.personal_details_id),
+          )
           .orderBy(orderFn(orderColumn))
           .limit(PAGE_SIZE)
           .offset((page - 1) * PAGE_SIZE),
@@ -5903,6 +6327,8 @@ export class studentClassService implements IStudentClassService {
     if (!validation.success) throw validation.error;
 
     const parsedId = validation.data;
+    const FacultyAccount = alias(Accounts, "faculty_account");
+    const FacultyPersonalDetails = alias(PersonalDetails, "faculty_personal_details");
 
     const data = await GetRecord<"StudentClasses", StudentClassWithDetails>("StudentClasses", {
       select: (StudentClasses) => ({
@@ -5919,6 +6345,10 @@ export class studentClassService implements IStudentClassService {
         program_name: Programs.name,
         class_year_level: Classes.year_level,
         class_section: Classes.section,
+        faculty_name:
+          sql<string>`concat(${FacultyPersonalDetails.first_name}, ' ', ${FacultyPersonalDetails.last_name})`.as(
+            "faculty_name",
+          ),
       }),
       join: (query) =>
         query
@@ -5931,7 +6361,12 @@ export class studentClassService implements IStudentClassService {
           )
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
           .innerJoin(Accounts, eq(Accounts.id, StudentClasses.student_account_id))
-          .innerJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id)),
+          .innerJoin(PersonalDetails, eq(PersonalDetails.id, Accounts.personal_details_id))
+          .leftJoin(FacultyAccount, eq(FacultyAccount.id, CourseOfferings.faculty_id))
+          .leftJoin(
+            FacultyPersonalDetails,
+            eq(FacultyPersonalDetails.id, FacultyAccount.personal_details_id),
+          ),
       where: () => and(eq(StudentClasses.id, parsedId), isNull(StudentClasses.deleted_at)),
       ...(tx && { tx }),
     });
@@ -5946,7 +6381,6 @@ export class studentClassService implements IStudentClassService {
 
     const parsedId = validation.data;
 
-    // Fetch account IDs of students already enrolled in this offering via GetRecords helper
     const enrolledRecords = await GetRecords<"StudentClasses", { student_account_id: number }>(
       "StudentClasses",
       {
@@ -5959,7 +6393,6 @@ export class studentClassService implements IStudentClassService {
     );
     const enrolledAccountIds = enrolledRecords.map((r) => r.student_account_id);
 
-    // Query active student accounts with home class/program metadata via GetRecords helper
     return await GetRecords<"Accounts", EligibleStudentOption>("Accounts", {
       select: (Accounts) => ({
         student_account_id: Accounts.id,
@@ -6469,6 +6902,7 @@ import {
   type UserUpdateEmailData,
 } from "@/utils/email.util.js";
 import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
+import { generateInstitutionalId } from "@/utils/institutional-id.util.js";
 
 /** Result of {@link userService.createUser} — `credentials` has the password stripped. */
 type CreateUserResult = {
@@ -6806,6 +7240,10 @@ class userService implements IUserService {
     let plainPassword = credentials.password;
     let wasPasswordGenerated = false;
 
+    if (!personalDetails.institutional_id || !personalDetails.institutional_id.trim()) {
+      personalDetails.institutional_id = generateInstitutionalId(role);
+    }
+
     if (!plainPassword || plainPassword.trim().length === 0) {
       plainPassword = this.generatePassword();
       wasPasswordGenerated = true;
@@ -6860,7 +7298,7 @@ class userService implements IUserService {
       };
     });
 
-    if (wasPasswordGenerated && result.credentials.email) {
+    if (result.credentials.email) {
       const fullName = [result.details.first_name, result.details.last_name]
         .filter(Boolean)
         .join(" ");
@@ -6901,6 +7339,10 @@ class userService implements IUserService {
       role,
     });
     if (!validation.success) throw validation.error;
+
+    if (!personalDetails.institutional_id || !personalDetails.institutional_id.trim()) {
+      personalDetails.institutional_id = generateInstitutionalId(role);
+    }
 
     const userDetails = await CreateRecord<"PersonalDetails">(
       "PersonalDetails",
@@ -7220,11 +7662,27 @@ class userService implements IUserService {
   }
 
   async revokeRole(accountId: number, role: SystemRole, tx?: PgTransaction): Promise<void> {
-    if (await this.accountHasRole(accountId, role, tx)) {
+    const roleRecord = await GetRecord("Roles", {
+      where: (Roles) => and(eq(Roles.system_role, role), isNull(Roles.deleted_at)),
+      ...(tx && { tx }),
+    });
+    if (!roleRecord) return;
+
+    const accountRole = await GetRecord("AccountRoles", {
+      where: (AccountRoles) =>
+        and(
+          eq(AccountRoles.account_id, accountId),
+          eq(AccountRoles.role_id, roleRecord.id),
+          isNull(AccountRoles.deleted_at),
+        ),
+      ...(tx && { tx }),
+    });
+
+    if (accountRole) {
       const revokedRole = await SoftDeleteRecord(
         "AccountRoles",
-        accountId,
-        AccountRoles.account_id,
+        accountRole.id,
+        AccountRoles.id,
         tx,
       );
       if (!revokedRole) throw new AppError(500, "Failed to revoke role.");

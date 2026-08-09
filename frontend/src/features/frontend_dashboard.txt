@@ -1,10 +1,145 @@
+dashboard/FacultyDashboard.tsx
+---
+import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useUser } from "@/features/auth/context/user.context";
+import { BookOpen, FileText, Settings, SquareTerminal } from "lucide-react";
+import { Navigate, Outlet, useLocation } from "react-router";
+
+interface FacultyDashboardProps {
+  basePath?: string;
+}
+
+/**
+ * Shell layout for the Faculty Portal containing sidebar navigation,
+ * page header, and outlet route renderer.
+ */
+export const FacultyDashboard = ({ basePath = "/faculty" }: FacultyDashboardProps) => {
+  const { user } = useUser();
+  const location = useLocation();
+
+  if (!user) return <Navigate to="/auth/login" replace />;
+
+  const navMain: SysSidebarData["navMain"] = [
+    { title: "Overview", url: `${basePath}/dashboard`, icon: SquareTerminal },
+    { title: "Teaching Classes", url: `${basePath}/classes`, icon: BookOpen },
+    { title: "Evaluation Reports", url: `${basePath}/reports`, icon: FileText },
+    { title: "Account Settings", url: `${basePath}/settings`, icon: Settings },
+  ];
+
+  const activePageName =
+    navMain.find(
+      (item) =>
+        location.pathname === item.url ||
+        location.pathname.startsWith(item.url + "/") ||
+        item.items?.some((sub) => location.pathname === sub.url),
+    )?.title ?? "Overview";
+
+  const data: SysSidebarData = {
+    user: {
+      name: `${user.personalDetails.first_name} ${user.personalDetails.last_name}`,
+      email: user.email,
+      avatar: "",
+    },
+    navMain,
+  };
+
+  return (
+    <SidebarProvider>
+      <AppSidebar data={data} />
+      <SidebarInset>
+        <SiteHeader pageName={activePageName} />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-3">
+          <Outlet />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+};
+
+export default FacultyDashboard;
+
+
+---
+dashboard/StudentDashboard.tsx
+---
+import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useUser } from "@/features/auth/context/user.context";
+import { BookOpen, Settings, SquareTerminal, UserCheck } from "lucide-react";
+import { Navigate, Outlet, useLocation } from "react-router";
+
+interface StudentDashboardProps {
+  basePath?: string;
+}
+
+/**
+ * Shell layout for the Student Portal containing sidebar navigation,
+ * page header, and outlet route renderer.
+ */
+export const StudentDashboard = ({ basePath = "/student" }: StudentDashboardProps) => {
+  const { user } = useUser();
+  const location = useLocation();
+
+  if (!user) return <Navigate to="/auth/login" replace />;
+
+  const navMain: SysSidebarData["navMain"] = [
+    { title: "Overview", url: `${basePath}/dashboard`, icon: SquareTerminal },
+    { title: "Evaluate Teachers", url: `${basePath}/evaluate`, icon: UserCheck },
+    { title: "Enrolled Classes", url: `${basePath}/classes`, icon: BookOpen },
+    { title: "Account Settings", url: `${basePath}/settings`, icon: Settings },
+  ];
+
+  const activePageName =
+    navMain.find(
+      (item) =>
+        location.pathname === item.url ||
+        location.pathname.startsWith(item.url + "/") ||
+        item.items?.some((sub) => location.pathname === sub.url),
+    )?.title ?? "Overview";
+
+  const data: SysSidebarData = {
+    user: {
+      name: `${user.personalDetails.first_name} ${user.personalDetails.last_name}`,
+      email: user.email,
+      avatar: "",
+    },
+    navMain,
+  };
+
+  return (
+    <SidebarProvider>
+      <AppSidebar data={data} />
+      <SidebarInset>
+        <SiteHeader pageName={activePageName} />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-3">
+          <Outlet />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+};
+
+export default StudentDashboard;
+
+
+---
 dashboard/SupervisorDashboard.tsx
 ---
 import { AppSidebar, type SysSidebarData } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useUser } from "@/features/auth/context/user.context";
-import { BarChart3, Building2, FileBarChart2, SquareTerminal, UserCheck } from "lucide-react";
+import {
+  BarChart3,
+  Building2,
+  FileBarChart2,
+  Settings,
+  SquareTerminal,
+  UserCheck,
+} from "lucide-react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { PERMISSIONS, ROLE_PERMISSION_MATRIX, type Permission } from "backend/types/seeder.type";
 
@@ -39,6 +174,7 @@ export const SupervisorDashboard = ({ basePath = "/supervisor" }: SupervisorDash
     { title: "Evaluation Reports", url: `${basePath}/reports`, icon: FileBarChart2 },
     { title: "Evaluation Analytics", url: `${basePath}/analytics`, icon: BarChart3 },
     { title: "Jurisdiction Coverage", url: `${basePath}/coverage`, icon: Building2 },
+    { title: "Account Settings", url: `${basePath}/settings`, icon: Settings },
   ].filter((item) => {
     const required = NAV_PERMISSIONS[item.title];
     if (!required || required.length === 0) return true;
@@ -93,6 +229,7 @@ import {
   ClipboardList,
   FileBarChart2,
   Landmark,
+  Settings,
   SquareTerminal,
   Users,
 } from "lucide-react";
@@ -137,6 +274,7 @@ export const SysDashboard = ({ basePath = "/sys" }: SysDashboardProps) => {
     { title: "Evaluation Reports", url: `${basePath}/evaluation/reports`, icon: FileBarChart2 },
     { title: "Evaluation Analytics", url: `${basePath}/evaluation/analytics`, icon: BarChart3 },
     { title: "System Logs", url: `${basePath}/logs`, icon: ClipboardClock },
+    { title: "Account Settings", url: `${basePath}/settings`, icon: Settings },
   ].filter((item) => {
     const required = NAV_PERMISSIONS[item.title];
     if (!required || required.length === 0) return true;

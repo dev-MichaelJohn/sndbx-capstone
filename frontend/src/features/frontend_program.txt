@@ -1618,6 +1618,10 @@ const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
   }
 };
 
+/**
+ * Mutation hook for creating a program record and optional Chair assignment.
+ * Invalidates program queries, user list, and current user cache (role sync).
+ */
 export const useCreateProgram = () => {
   const queryClient = useQueryClient();
 
@@ -1625,6 +1629,9 @@ export const useCreateProgram = () => {
     mutationFn: createProgramRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+      queryClient.invalidateQueries({ queryKey: ["getPrograms"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -1644,6 +1651,10 @@ const updateProgramRecord = async ({ program_id, program, chair }: UpdateProgram
   }
 };
 
+/**
+ * Mutation hook for updating a program or reassigning a Chair.
+ * Invalidates program queries, user list, and current user cache (role sync).
+ */
 export const useUpdateProgram = () => {
   const queryClient = useQueryClient();
 
@@ -1651,6 +1662,9 @@ export const useUpdateProgram = () => {
     mutationFn: updateProgramRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+      queryClient.invalidateQueries({ queryKey: ["getPrograms"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -1664,6 +1678,10 @@ const deleteProgramRecord = async (programId: number) => {
   }
 };
 
+/**
+ * Mutation hook for soft-deleting a program record.
+ * Invalidates program queries, user list, and current user cache (role sync).
+ */
 export const useDeleteProgram = () => {
   const queryClient = useQueryClient();
 
@@ -1671,6 +1689,9 @@ export const useDeleteProgram = () => {
     mutationFn: deleteProgramRecord,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getProgramsViaCollegeID"] });
+      queryClient.invalidateQueries({ queryKey: ["getPrograms"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 };
@@ -1715,7 +1736,6 @@ export function useChairSelection(initial: ChairCandidateType | null) {
   return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
 }
 
-// Helper to fetch total student count by traversing the chain
 export const fetchProgramStudentCount = async (programId: number): Promise<number> => {
   try {
     // 1. Get classes for this program
@@ -3252,6 +3272,7 @@ import { getProgramsViaCollegeID } from "@/features/program/api/program.service"
 import { ProgramCreateDialog } from "@/features/program/components/ProgramCreate";
 import { getProgramColumns } from "@/features/program/components/ProgramColumns";
 import { ProgramStatsCards } from "@/features/program/components/ProgramStatsCards";
+import { CSVImportDialog } from "@/features/bulk-import/components/CSVImportDialog";
 
 export const ProgramPage = () => {
   const { collegeId } = useParams<{ collegeId: string }>();
@@ -3270,6 +3291,7 @@ export const ProgramPage = () => {
     isPending: isProgramsPending,
     isError: isProgramsError,
     error: programError,
+    refetch,
   } = useQuery({
     queryKey: ["getProgramsViaCollegeID", numericCollegeId, search, page],
     queryFn: () => getProgramsViaCollegeID(numericCollegeId, search),
@@ -3301,7 +3323,19 @@ export const ProgramPage = () => {
               </p>
             </div>
           </div>
-          <ProgramCreateDialog icon={Plus} triggerText="Add Program" collegeId={numericCollegeId} />
+          <div className="flex items-center gap-2">
+            <CSVImportDialog
+              entity="programs"
+              title="Import Programs"
+              defaultContext={{ college_id: numericCollegeId }}
+              onSuccess={() => refetch()}
+            />
+            <ProgramCreateDialog
+              icon={Plus}
+              triggerText="Add Program"
+              collegeId={numericCollegeId}
+            />
+          </div>
         </div>
 
         {/* KPI Summary Cards */}

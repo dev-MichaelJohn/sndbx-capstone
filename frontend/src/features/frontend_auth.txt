@@ -71,6 +71,50 @@ export const fetchCurrentUser = async () => {
   }
 };
 
+export const requestPasswordResetApi = async (email: string) => {
+  try {
+    const response = await apiClient.post<APIResponse<{ resendAt: number }>>(
+      "/auth/forgot-password/request",
+      { email },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to request password reset code."), {
+      cause: error,
+    });
+  }
+};
+
+export const useRequestPasswordReset = () => {
+  return useMutation({
+    mutationFn: requestPasswordResetApi,
+  });
+};
+
+export const confirmPasswordResetApi = async (payload: {
+  email: string;
+  code: string;
+  newPassword: string;
+}) => {
+  try {
+    const response = await apiClient.post<APIResponse<null>>(
+      "/auth/forgot-password/confirm",
+      payload,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to reset password."), {
+      cause: error,
+    });
+  }
+};
+
+export const useConfirmPasswordReset = () => {
+  return useMutation({
+    mutationFn: confirmPasswordResetApi,
+  });
+};
+
 export const logoutRecord = async () => {
   try {
     const response = await apiClient.post<APIResponse<null>>("/auth/logout");
@@ -106,6 +150,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   useVerificationStatus,
@@ -123,8 +168,8 @@ export default function EmailVerificationDialog() {
   const [step, setStep] = useState<"PROMPT" | "VERIFY">("PROMPT");
   const [resendAt, setResendAt] = useState<number | null>(null);
   const [countdown, setCountdown] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Auto-open dialog if authenticated user is unverified
   useEffect(() => {
     if (!isCheckingStatus && status && !status.isVerified) {
       setIsOpen(true);
@@ -133,7 +178,6 @@ export default function EmailVerificationDialog() {
     }
   }, [status, isCheckingStatus]);
 
-  // Resend cooldown timer
   useEffect(() => {
     if (!resendAt) return;
     const interval = setInterval(() => {
@@ -145,13 +189,18 @@ export default function EmailVerificationDialog() {
   }, [resendAt]);
 
   const handleRequestOtp = () => {
+    setErrorMessage(null);
     requestOtpMutation.mutate(undefined, {
       onSuccess: (data) => {
         toast.success("Verification code sent to your registered email.");
         if (data?.resendAt) setResendAt(data.resendAt);
         setStep("VERIFY");
       },
-      onError: (error) => toast.error(error.message),
+      onError: (error) => {
+        const msg = error.message || "Failed to send verification code.";
+        setErrorMessage(msg);
+        toast.error(msg);
+      },
     });
   };
 
@@ -160,9 +209,12 @@ export default function EmailVerificationDialog() {
       code: "",
     },
     onSubmit: async ({ value }) => {
+      setErrorMessage(null);
       const validation = VerifyEmailConfirmSchema.safeParse(value);
       if (!validation.success) {
-        toast.error(validation.error.issues[0]?.message ?? "Invalid OTP code format.");
+        const msg = validation.error.issues[0]?.message ?? "Invalid OTP code format.";
+        setErrorMessage(msg);
+        toast.error(msg);
         return;
       }
 
@@ -171,7 +223,9 @@ export default function EmailVerificationDialog() {
         toast.success("Email verified successfully!");
         setIsOpen(false);
       } catch (error: any) {
-        toast.error(error?.message ?? "Failed to verify code.");
+        const msg = error?.message ?? "Failed to verify code.";
+        setErrorMessage(msg);
+        toast.error(msg);
       }
     },
   });
@@ -180,21 +234,31 @@ export default function EmailVerificationDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && setIsOpen(true)}>
-      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+      <DialogContent className="sm:max-w-md rounded-2xl" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Account Verification Required</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base font-semibold">
+            Account Verification Required
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
             {step === "PROMPT"
               ? "Your email address is currently unverified. You must verify your institutional account to proceed."
-              : "Enter the 8-character verification code sent to your email address."}
+              : "Enter the 8-character verification code sent to your registered email address."}
           </DialogDescription>
         </DialogHeader>
 
+        {errorMessage && (
+          <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         {step === "PROMPT" ? (
-          <div className="flex flex-col gap-3 mt-4">
+          <div className="flex flex-col gap-3 mt-2">
             <Button
               onClick={handleRequestOtp}
               disabled={requestOtpMutation.isPending || countdown > 0}
+              className="h-9 text-xs font-medium bg-primary text-primary-foreground cursor-pointer"
             >
               {requestOtpMutation.isPending
                 ? "Sending code..."
@@ -221,9 +285,12 @@ export default function EmailVerificationDialog() {
                     name={field.name}
                     value={field.state.value}
                     onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(e) => {
+                      setErrorMessage(null);
+                      field.handleChange(e.target.value);
+                    }}
                     placeholder="ENTER 8-CHAR OTP"
-                    className="text-center tracking-widest font-mono uppercase"
+                    className="text-center tracking-widest font-mono uppercase h-9 text-sm"
                     maxLength={8}
                   />
                   {field.state.meta.errors.length > 0 && (
@@ -234,7 +301,11 @@ export default function EmailVerificationDialog() {
             />
 
             <div className="flex flex-col gap-2 pt-2">
-              <Button type="submit" disabled={confirmOtpMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={confirmOtpMutation.isPending}
+                className="h-9 text-xs font-medium cursor-pointer"
+              >
                 {confirmOtpMutation.isPending ? "Verifying..." : "Confirm Verification"}
               </Button>
               <Button
@@ -242,6 +313,7 @@ export default function EmailVerificationDialog() {
                 variant="ghost"
                 onClick={handleRequestOtp}
                 disabled={requestOtpMutation.isPending || countdown > 0}
+                className="h-8 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 {countdown > 0 ? `Resend code in ${countdown}s` : "Resend Code"}
               </Button>
@@ -252,6 +324,113 @@ export default function EmailVerificationDialog() {
     </Dialog>
   );
 }
+
+
+---
+auth/components/ForgotPasswordCard.tsx
+---
+import { useForm } from "@tanstack/react-form";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Link, useNavigate } from "react-router";
+import toast from "react-hot-toast";
+import { useRequestPasswordReset } from "../api/auth.service";
+
+/**
+ * Step 1: Forgot Password card for requesting a reset OTP via email.
+ */
+export const ForgotPasswordCard = () => {
+  const navigate = useNavigate();
+  const requestMutation = useRequestPasswordReset();
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+    },
+    onSubmit: async ({ value }) => {
+      let toastId: string | undefined;
+      try {
+        toastId = toast.loading("Sending reset code...");
+        await requestMutation.mutateAsync(value.email);
+        toast.success("Reset code sent! Check your inbox.", { id: toastId });
+        navigate("/auth/reset-password", { state: { email: value.email } });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to send reset code.", {
+          id: toastId,
+        });
+      }
+    },
+  });
+
+  return (
+    <Card className="w-full max-w-sm shadow rounded-2xl border border-border/80">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Forgot Password</CardTitle>
+        <CardDescription className="text-xs">
+          Enter your institutional email address to receive a password reset verification code.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          id="form-forgot-password"
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+        >
+          <FieldGroup>
+            <form.Field
+              name="email"
+              children={(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Email Address</FieldLabel>
+                  <Input
+                    type="email"
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={requestMutation.isPending}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="m@example.com"
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <FieldError errors={field.state.meta.errors} />
+                  )}
+                </Field>
+              )}
+            />
+          </FieldGroup>
+        </form>
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        <Button
+          type="submit"
+          form="form-forgot-password"
+          disabled={requestMutation.isPending}
+          className="w-full text-xs font-bold h-9 cursor-pointer"
+        >
+          {requestMutation.isPending ? "Sending Code..." : "Send Reset Code"}
+        </Button>
+        <Link
+          to="/auth/login"
+          className="ml-auto inline-block text-xs underline-offset-4 hover:underline text-muted-foreground"
+        >
+          Back to login
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+};
 
 
 ---
@@ -267,13 +446,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { LoginForm } from "./LoginForm";
+import { Link } from "react-router";
 
 export const LoginCard = () => {
   return (
-    <Card className="w-full max-w-sm shadow">
+    <Card className="w-full max-w-sm shadow rounded-2xl border border-border/80">
       <CardHeader>
-        <CardTitle className="text-lg font-bold">Login to you account</CardTitle>
-        <CardDescription className="text-md">
+        <CardTitle className="text-lg font-bold">Login to your account</CardTitle>
+        <CardDescription className="text-xs">
           Enter your email below to login to your account.
         </CardDescription>
       </CardHeader>
@@ -281,15 +461,27 @@ export const LoginCard = () => {
         <LoginForm />
       </CardContent>
       <CardFooter className="flex-col gap-2">
-        <Button type="submit" form="form-login" className="w-full text-sm font-bold">
+        <Button
+          type="submit"
+          form="form-login"
+          className="w-full text-xs font-bold h-9 cursor-pointer"
+        >
           Login
         </Button>
-        <a
-          href="#"
-          className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-chart-5"
-        >
-          Back to home
-        </a>
+        <div className="flex w-full justify-between text-xs pt-1">
+          <Link
+            to="/auth/forgot-password"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Forgot password?
+          </Link>
+          <a
+            href="#"
+            className="inline-block underline-offset-4 hover:underline text-muted-foreground"
+          >
+            Back to home
+          </a>
+        </div>
       </CardFooter>
     </Card>
   );
@@ -299,10 +491,13 @@ export const LoginCard = () => {
 ---
 auth/components/LoginForm.tsx
 ---
+import { useState } from "react";
 import { UserLoginSchema } from "backend/types/user.type";
 import { useForm } from "@tanstack/react-form";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { useValidateLogin } from "@/features/auth/api/auth.service";
 import { useAuth } from "@/features/auth/context/auth.context";
@@ -312,6 +507,7 @@ export const LoginForm = () => {
   const { mutateAsync, isPending } = useValidateLogin();
   const { setPendingAuth } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -388,16 +584,28 @@ export const LoginForm = () => {
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                <Input
-                  type="password"
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  disabled={isPending}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  aria-invalid={isInvalid}
-                />
+                <div className="relative flex items-center">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={isPending}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                </div>
                 {isInvalid && <FieldError errors={field.state.meta.errors} />}
               </Field>
             );
@@ -685,6 +893,209 @@ export const ResendBtn = ({ resendAt, onResend, isLoading }: ResendBtnProps) => 
     >
       Didn't get a code? Resend
     </Button>
+  );
+};
+
+
+---
+auth/components/ResetPasswordCard.tsx
+---
+import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import { useLocation, useNavigate, Link } from "react-router";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
+import { useConfirmPasswordReset } from "../api/auth.service";
+
+/**
+ * Step 2: Reset Password card requiring the 8-character OTP code and new credentials.
+ */
+export const ResetPasswordCard = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const confirmMutation = useConfirmPasswordReset();
+
+  const initialEmail = (location.state as any)?.email ?? "";
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const form = useForm({
+    defaultValues: {
+      email: initialEmail,
+      code: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+    onSubmit: async ({ value }) => {
+      if (value.newPassword !== value.confirmPassword) {
+        toast.error("Passwords do not match.");
+        return;
+      }
+
+      let toastId: string | undefined;
+      try {
+        toastId = toast.loading("Updating password...");
+        await confirmMutation.mutateAsync({
+          email: value.email,
+          code: value.code,
+          newPassword: value.newPassword,
+        });
+        toast.success("Password reset successfully! Please log in.", { id: toastId });
+        navigate("/auth/login");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to reset password.", {
+          id: toastId,
+        });
+      }
+    },
+  });
+
+  return (
+    <Card className="w-full max-w-sm shadow rounded-2xl border border-border/80">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Reset Password</CardTitle>
+        <CardDescription className="text-xs">
+          Enter the 8-character code sent to your email alongside your new password.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          id="form-reset-password"
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+        >
+          <FieldGroup className="space-y-3">
+            <form.Field
+              name="email"
+              children={(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Email Address</FieldLabel>
+                  <Input
+                    type="email"
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={confirmMutation.isPending}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="m@example.com"
+                  />
+                </Field>
+              )}
+            />
+
+            <form.Field
+              name="code"
+              children={(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Reset OTP Code</FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={confirmMutation.isPending}
+                    onChange={(e) => field.handleChange(e.target.value.toUpperCase())}
+                    placeholder="8K9P2X1Q"
+                    className="font-mono uppercase tracking-widest text-center"
+                    maxLength={8}
+                  />
+                </Field>
+              )}
+            />
+
+            <form.Field
+              name="newPassword"
+              children={(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                  <div className="relative flex items-center">
+                    <Input
+                      type={showNewPassword ? "text" : "password"}
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      disabled={confirmMutation.isPending}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </Button>
+                  </div>
+                </Field>
+              )}
+            />
+
+            <form.Field
+              name="confirmPassword"
+              children={(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
+                  <div className="relative flex items-center">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      disabled={confirmMutation.isPending}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </Button>
+                  </div>
+                </Field>
+              )}
+            />
+          </FieldGroup>
+        </form>
+      </CardContent>
+      <CardFooter className="flex-col gap-2 pt-2">
+        <Button
+          type="submit"
+          form="form-reset-password"
+          disabled={confirmMutation.isPending}
+          className="w-full text-xs font-bold h-9 cursor-pointer"
+        >
+          {confirmMutation.isPending ? "Confirming..." : "Confirm New Password"}
+        </Button>
+        <Link
+          to="/auth/login"
+          className="ml-auto inline-block text-xs underline-offset-4 hover:underline text-muted-foreground"
+        >
+          Back to login
+        </Link>
+      </CardFooter>
+    </Card>
   );
 };
 

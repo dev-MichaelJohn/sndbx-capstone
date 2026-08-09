@@ -157,11 +157,15 @@ export const useSubmitSupervisorEvaluation = () => {
       queryClient.invalidateQueries({
         queryKey: ["supervisorEval", variables.schedule_id, variables.course_offering_id],
       });
+      queryClient.invalidateQueries({ queryKey: ["supervisorSummary"] });
+      queryClient.invalidateQueries({ queryKey: ["getSupervisorEvaluationsSummary"] });
       queryClient.invalidateQueries({ queryKey: ["supervisorOfferings"] });
       queryClient.invalidateQueries({ queryKey: ["supervisorAnalytics"] });
+      queryClient.invalidateQueries({ queryKey: ["getRecentSubmissions"] });
     },
   });
 };
+6;
 
 // ── 5. Reports & Development Plan (Managed + Self) ──────────────────────────
 
@@ -674,12 +678,13 @@ export const SupervisorEvaluationPage = () => {
   const activeSchedule = useMemo(() => {
     if (!schedules || schedules.length === 0) return null;
     const now = Date.now();
-    const currentActive = schedules.find((s) => {
-      const open = new Date(s.open_at).getTime();
-      const close = new Date(s.close_at).getTime();
-      return now >= open && now <= close;
-    });
-    return currentActive ?? schedules[0] ?? null;
+    return (
+      schedules.find((s) => {
+        const open = new Date(s.open_at).getTime();
+        const close = new Date(s.close_at).getTime();
+        return now >= open && now <= close;
+      }) ?? null
+    );
   }, [schedules]);
 
   // Fetch all course offerings under supervisor scope (unrestricted by term mismatch)

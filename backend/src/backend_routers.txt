@@ -54,6 +54,10 @@ AuthRouter.post(
   AuthController.confirmPasswordChange,
 );
 
+AuthRouter.post("/forgot-password/request", AuthController.requestPasswordReset);
+
+AuthRouter.post("/forgot-password/confirm", AuthController.confirmPasswordReset);
+
 export default AuthRouter;
 
 
@@ -70,6 +74,25 @@ v1Router.use("/auth", AuthRouter);
 v1Router.use("/protected", ProtectedRouter);
 
 export default v1Router;
+
+
+---
+routers/protrected/bulk-import.route.ts
+---
+import { Router, type IRouter } from "express";
+import BulkImportController from "@/controllers/bulk-import.controller.js";
+import { requirePermission } from "@/middlewares/rbac.middleware.js";
+import { PERMISSIONS } from "@/types/seeder.type.js";
+
+const BulkImportRouter: IRouter = Router({ mergeParams: true });
+
+BulkImportRouter.post(
+  "/:entity",
+  requirePermission(PERMISSIONS.BULK_IMPORT_EXECUTE),
+  (req, res, next) => BulkImportController.executeImport(req, res, next),
+);
+
+export default BulkImportRouter;
 
 
 ---
@@ -614,6 +637,7 @@ import EvaluationReportRouter from "./evaluation-report.route.js";
 import EvaluationAnalyticsRouter from "./evaluation-analytics.route.js";
 import SystemLogRouter from "./system-log.route.js";
 import rateLimit from "express-rate-limit";
+import BulkImportRouter from "./bulk-import.route.js";
 
 const ProtectedRouter: IRouter = Router();
 
@@ -645,6 +669,7 @@ ProtectedRouter.use("/evaluation-execution", EvaluationExecutionRouter);
 ProtectedRouter.use("/evaluation-reports", EvaluationReportRouter);
 ProtectedRouter.use("/evaluation-analytics", EvaluationAnalyticsRouter);
 ProtectedRouter.use("/logs", SystemLogRouter);
+ProtectedRouter.use("/bulk-import", BulkImportRouter);
 
 ProtectedRouter.get("/", (_req: Request, res: Response, _next: NextFunction) => {
   const response = createAPIResponse(200, "Welcome to Super Admin Routes!.");
@@ -682,7 +707,7 @@ CourseOfferingRouter.post(
   requirePermission(PERMISSIONS.COURSE_OFFERING_CREATE),
   (req, res, next) => CourseOfferingController.createCourseOffering(req, res, next),
 );
-CourseOfferingRouter.patch(
+CourseOfferingRouter.put(
   "/:offeringId",
   requirePermission(PERMISSIONS.COURSE_OFFERING_UPDATE),
   (req, res, next) => CourseOfferingController.updateCourseOffering(req, res, next),
@@ -867,7 +892,7 @@ export default SystemLogRouter;
 routers/protrected/user.router.ts
 ---
 import UserController from "@/controllers/user.controller.js";
-import { requirePermission } from "@/middlewares/rbac.middleware.js";
+import { requireAnyPermission, requirePermission } from "@/middlewares/rbac.middleware.js";
 import { preventSysAdminCreation } from "@/middlewares/user.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import { Router, type IRouter } from "express";
@@ -888,9 +913,12 @@ UserRouter.get("/", requirePermission(PERMISSIONS.ACCOUNT_READ), async (req, res
 });
 
 UserRouter.route("/:id")
-  .put(requirePermission(PERMISSIONS.ACCOUNT_UPDATE), async (req, res, next) => {
-    await UserController.updateUser(req, res, next);
-  })
+  .put(
+    requireAnyPermission(PERMISSIONS.ACCOUNT_UPDATE, PERMISSIONS.ACCOUNT_UPDATE_OWN),
+    async (req, res, next) => {
+      await UserController.updateUser(req, res, next);
+    },
+  )
   .delete(requirePermission(PERMISSIONS.ACCOUNT_DELETE), async (req, res, next) => {
     await UserController.deleteUser(req, res, next);
   });

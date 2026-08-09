@@ -1222,6 +1222,7 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import type { ClassSelect } from "backend/types/class.type";
+import { CSVImportDialog } from "@/features/bulk-import/components/CSVImportDialog";
 
 interface ClassesTabProps {
   programId: number;
@@ -1242,7 +1243,11 @@ export const ClassesTab = ({ programId }: ClassesTabProps) => {
   const [yearLevelFilter, setYearLevelFilter] = useState<string>("ALL");
   const [sectionFilter, setSectionFilter] = useState<string>("ALL");
 
-  const { data: paginatedData, isLoading } = useClasses({
+  const {
+    data: paginatedData,
+    isLoading,
+    refetch,
+  } = useClasses({
     program_id: programId,
     search: search || undefined,
     year_level: yearLevelFilter !== "ALL" ? (yearLevelFilter as any) : undefined,
@@ -1290,7 +1295,15 @@ export const ClassesTab = ({ programId }: ClassesTabProps) => {
           </Select>
         </div>
 
-        <ClassCreateDialog programId={programId} icon={Plus} triggerText="Create Class" />
+        <div className="flex items-center gap-2">
+          <CSVImportDialog
+            entity="classes"
+            title="Import Classes"
+            defaultContext={{ program_id: programId }}
+            onSuccess={() => refetch()}
+          />
+          <ClassCreateDialog programId={programId} icon={Plus} triggerText="Create Class" />
+        </div>
       </CardHeader>
 
       {/* ── Card Content / Year Level Sections ──────────────────────────── */}

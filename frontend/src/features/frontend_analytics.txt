@@ -764,15 +764,21 @@ const sentimentMeta = [
   },
 ];
 
+/**
+ * Donut chart component representing student qualitative feedback sentiment breakdown.
+ * Defaults gracefully to Neutral when no comments are present.
+ */
 export const SentimentBreakdownChart = ({ sentimentBreakdown }: SentimentBreakdownChartProps) => {
   const sentimentData = sentimentMeta.map(({ key, label, color }) => ({
     name: label,
-    value: sentimentBreakdown[key],
+    value: sentimentBreakdown?.[key] ?? 0,
     fill: color,
   }));
 
   const hasData = sentimentData.some((d) => d.value > 0);
-  const dominant = hasData ? sentimentData.reduce((a, b) => (a.value > b.value ? a : b)) : null;
+  const dominant = hasData
+    ? sentimentData.reduce((a, b) => (a.value > b.value ? a : b))
+    : { name: "Neutral", value: 100 };
 
   return (
     <Card className="rounded-xl shadow-xs">
@@ -784,7 +790,7 @@ export const SentimentBreakdownChart = ({ sentimentBreakdown }: SentimentBreakdo
           <div>
             <CardTitle className="text-base font-semibold">Student Feedback Sentiment</CardTitle>
             <CardDescription className="mt-0.5">
-              Qualitative evaluation sentiment proportions
+              Qualitative evaluation sentiment proportions (AFINN NLP)
             </CardDescription>
           </div>
         </div>
@@ -796,15 +802,15 @@ export const SentimentBreakdownChart = ({ sentimentBreakdown }: SentimentBreakdo
               <MessageSquare className="h-6 w-6 text-muted-foreground/50" strokeWidth={1.5} />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-muted-foreground">No sentiment data</p>
+              <p className="text-sm font-medium text-muted-foreground">Neutral / No Feedback</p>
               <p className="text-xs text-muted-foreground/60 mt-0.5">
-                Sentiment is derived from open-ended feedback responses.
+                Sentiment will populate as students provide qualitative feedback.
               </p>
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            {/* Donut chart */}
+            {/* Donut Chart */}
             <div className="relative">
               <ChartContainer config={sentimentConfig} className="h-52 w-52">
                 <PieChart>
@@ -825,23 +831,24 @@ export const SentimentBreakdownChart = ({ sentimentBreakdown }: SentimentBreakdo
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              {/* Center label */}
-              {dominant && (
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold">{dominant.value}%</span>
-                  <span className="text-xs text-muted-foreground">{dominant.name}</span>
-                </div>
-              )}
+
+              {/* Center Label */}
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold">{dominant.value}%</span>
+                <span className="text-xs text-muted-foreground">{dominant.name}</span>
+              </div>
             </div>
 
-            {/* Legend row */}
+            {/* Legend Row */}
             <div className="flex items-center justify-center gap-5">
               {sentimentMeta.map(({ key, label, dot }) => (
                 <div key={key} className="flex items-center gap-1.5">
                   <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
                   <span className="text-xs text-muted-foreground">
                     {label}{" "}
-                    <span className="font-medium text-foreground">{sentimentBreakdown[key]}%</span>
+                    <span className="font-medium text-foreground">
+                      {sentimentBreakdown?.[key] ?? 0}%
+                    </span>
                   </span>
                 </div>
               ))}

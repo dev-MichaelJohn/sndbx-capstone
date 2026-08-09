@@ -7,34 +7,128 @@ import { AccountSchema } from "./user.type.js";
 // 1. Email Verification Schemas
 // ==========================================
 
-/** Payload to confirm email address via the 8-character OTP code sent to user. */
 export const VerifyEmailConfirmSchema = z.object({
   code: z.string().trim().length(8, "Verification code must be exactly 8 characters."),
 });
 export type VerifyEmailConfirmType = z.infer<typeof VerifyEmailConfirmSchema>;
 
 // ==========================================
-// 2. Password Change (2FA) Schemas
+// 2. Password Change (2FA) & Reset Schemas
 // ==========================================
 
-/**
- * Step 1: Initial password update request.
- * Validates current credentials and ensures new password meets complexity rules.
- */
 export const RequestPasswordChangeSchema = z.object({
   currentPassword: z.string().trim().min(1, "Current password is required."),
 });
 export type RequestPasswordChangeType = z.infer<typeof RequestPasswordChangeSchema>;
 
-/**
- * Step 2: Final confirmation of password update.
- * Requires the OTP code sent during Step 1 alongside the new password.
- */
 export const ConfirmPasswordChangeSchema = z.object({
   code: z.string().trim().length(8, "Verification code must be exactly 8 characters."),
   newPassword: AccountSchema.insert.shape.password,
 });
 export type ConfirmPasswordChangeType = z.infer<typeof ConfirmPasswordChangeSchema>;
+
+export const RequestPasswordResetSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address format.")),
+});
+export type RequestPasswordResetType = z.infer<typeof RequestPasswordResetSchema>;
+
+export const ConfirmPasswordResetSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address format.")),
+  code: z.string().trim().length(8, "Verification code must be exactly 8 characters."),
+  newPassword: AccountSchema.insert.shape.password,
+});
+export type ConfirmPasswordResetType = z.infer<typeof ConfirmPasswordResetSchema>;
+
+
+---
+types/bulk-import.type.ts
+---
+import z from "zod";
+import { SystemRoles } from "../schemas/auth.schema.js";
+import { YearLevelEnum, SectionEnum } from "../schemas/institution.schema.js";
+
+export const BulkEntitySchema = z.enum(["colleges", "programs", "classes", "courses", "users"]);
+export type BulkEntity = z.infer<typeof BulkEntitySchema>;
+
+/** College CSV Row Schema */
+export const CollegeCsvRowSchema = z.object({
+  name: z.string().trim().min(3, "College name min 3 chars."),
+  initialism: z.string().trim().min(2).max(10).toUpperCase(),
+});
+
+/** Program CSV Row Schema */
+export const ProgramCsvRowSchema = z
+  .object({
+    college_id: z.coerce.number().int().positive().optional(),
+    college_initialism: z.string().trim().min(2).optional(),
+    name: z.string().trim().min(3, "Program name required."),
+    initialism: z.string().trim().min(2).max(10).toUpperCase(),
+  })
+  .refine((data) => Boolean(data.college_id || data.college_initialism?.trim()), {
+    message: "Either college_id or college_initialism must be provided.",
+    path: ["college_initialism"],
+  });
+
+/** Class CSV Row Schema */
+export const ClassCsvRowSchema = z
+  .object({
+    program_id: z.coerce.number().int().positive().optional(),
+    program_initialism: z.string().trim().min(2).optional(),
+    year_level: z.enum(YearLevelEnum.enumValues, {
+      message: "Valid year_level (I, II, III, IV, V) required.",
+    }),
+    section: z.enum(SectionEnum.enumValues, {
+      message: "Valid section (A, B, C, D, E, F) required.",
+    }),
+  })
+  .refine((data) => Boolean(data.program_id || data.program_initialism?.trim()), {
+    message: "Either program_id or program_initialism must be provided.",
+    path: ["program_initialism"],
+  });
+
+/** Course CSV Row Schema */
+export const CourseCsvRowSchema = z
+  .object({
+    program_id: z.coerce.number().int().positive().optional(),
+    program_initialism: z.string().trim().min(2).optional(),
+    initialism: z.string().trim().min(2).toUpperCase(),
+    name: z.string().trim().min(3, "Course name required."),
+  })
+  .refine((data) => Boolean(data.program_id || data.program_initialism?.trim()), {
+    message: "Either program_id or program_initialism must be provided.",
+    path: ["program_initialism"],
+  });
+
+/** User CSV Row Schema (Admin Roles Forbidden) */
+export const UserCsvRowSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email("Valid email required."),
+    institutional_id: z.string().trim().min(5, "Institutional ID required."),
+    first_name: z.string().trim().min(2, "First name required."),
+    last_name: z.string().trim().min(2, "Last name required."),
+    middle_name: z.string().trim().optional(),
+    suffix: z.string().trim().optional(),
+    role: z.enum(SystemRoles.enumValues, {
+      message: "Role must be STUDENT, FACULTY, or SUPERVISOR.",
+    }),
+  })
+  .refine((row) => row.role !== "SYS_ADMIN" && row.role !== "ADMIN", {
+    message: "FORBIDDEN: Administrator roles (SYS_ADMIN, ADMIN) cannot be imported via CSV.",
+    path: ["role"],
+  });
+
+export type CollegeCsvRow = z.infer<typeof CollegeCsvRowSchema>;
+export type ProgramCsvRow = z.infer<typeof ProgramCsvRowSchema>;
+export type ClassCsvRow = z.infer<typeof ClassCsvRowSchema>;
+export type CourseCsvRow = z.infer<typeof CourseCsvRowSchema>;
+export type UserCsvRow = z.infer<typeof UserCsvRowSchema>;
+
+export interface BulkImportResult {
+  totalRows: number;
+  successCount: number;
+  failedCount: number;
+  errors: Array<{ row: number; message: string }>;
+}
 
 
 ---
@@ -1010,6 +1104,7 @@ export const ROLE_PERMISSION_MATRIX: Record<RoleName, Permission[]> = {
     PERMISSIONS.CLASS_READ,
     PERMISSIONS.CLASS_STUDENT_READ,
     PERMISSIONS.STUDENT_CLASS_READ,
+    PERMISSIONS.COURSE_OFFERING_READ,
     PERMISSIONS.EVALUATION_PERIOD_READ,
     PERMISSIONS.EVALUATION_FORM_READ,
     PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
@@ -1158,6 +1253,7 @@ export type StudentClassWithDetails = StudentClassSelect & {
   program_name: string;
   class_year_level: string;
   class_section: string;
+  faculty_name: string;
 };
 
 // Re-use properties derived from StudentClassWithDetails
@@ -1306,7 +1402,15 @@ export type AccountRoleUpdate = z.infer<typeof AccountRoleSchema.update>;
 
 /** An account holder's personal information (name, institutional id, etc), kept separate from login credentials. */
 export const PersonalDetailsSchema = GenerateZodSchemas(PersonalDetails, {
-  institutional_id: (schema) => schema.trim().min(8, "Institutional ID is required."),
+  institutional_id: (schema) =>
+    schema
+      .trim()
+      .min(5, "Institutional ID must be at least 5 characters.")
+      .max(32, "Institutional ID cannot exceed 32 characters.")
+      .regex(
+        /^[A-Za-z0-9-]+$/,
+        "Institutional ID can only contain letters, numbers, and hyphens (e.g. STU-26-1042-001).",
+      ),
   first_name: (schema) => schema.trim().min(2, "First name is required."),
   last_name: (schema) => schema.trim().min(2, "Last name is required."),
   middle_name: () => z.string().trim().optional().nullable(),

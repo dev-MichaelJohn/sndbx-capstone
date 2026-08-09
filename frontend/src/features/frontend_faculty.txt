@@ -1,0 +1,524 @@
+faculty/api/faculty.service.ts
+---
+import { useCourseOfferings } from "@/features/offerings/api/offerings.service";
+import {
+  useMyReports,
+  useAcknowledgeReport,
+} from "@/features/evaluation-report/api/evaluation-report.service";
+
+/**
+ * Fetches assigned teaching course offerings for a specific faculty member.
+ */
+export const useFacultyOfferings = (facultyId?: number) => {
+  return useCourseOfferings({
+    faculty_id: facultyId,
+    page: 1,
+  });
+};
+
+/**
+ * Hook to retrieve personal Individual Faculty Evaluation Reports (IFER).
+ */
+export const useFacultySelfReports = () => {
+  return useMyReports();
+};
+
+/**
+ * Hook to execute CHED-mandated report acknowledgment.
+ */
+export const useAcknowledgeFacultyReport = (reportId: number) => {
+  return useAcknowledgeReport(reportId);
+};
+
+
+---
+faculty/page/FacultyClassesPage.tsx
+---
+import { useMemo } from "react";
+import { BookOpen } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { DataTable, type DataTableColumn } from "@/components/main-data-table";
+import { useUser } from "@/features/auth/context/user.context";
+import { useFacultyOfferings } from "../api/faculty.service";
+import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
+
+/**
+ * Page component displaying all course offerings assigned to the logged-in faculty member.
+ */
+export const FacultyClassesPage = () => {
+  const { user } = useUser();
+  const { data: offeringsRes, isLoading, isError, error } = useFacultyOfferings(user?.id);
+  const myOfferings = offeringsRes?.data ?? [];
+
+  const columns: Array<DataTableColumn<CourseOfferingWithDetails>> = useMemo(
+    () => [
+      {
+        header: "Course Code",
+        cell: (row) => (
+          <span className="font-mono text-xs font-bold text-primary">{row.course_initialism}</span>
+        ),
+      },
+      {
+        header: "Course Title",
+        cell: (row) => (
+          <span className="text-xs font-semibold text-foreground">{row.course_name}</span>
+        ),
+      },
+      {
+        header: "Year & Term",
+        cell: (row) => (
+          <Badge variant="outline" className="font-mono text-[10px]">
+            Year {row.year_level} • {row.semester_term} Term
+          </Badge>
+        ),
+      },
+      {
+        header: "Offering Ref ID",
+        cell: (row) => (
+          <span className="font-mono text-xs text-muted-foreground">#CO-{row.id}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            My Teaching Classes
+          </h1>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            Overview of course offerings assigned to you for instruction and evaluation.
+          </p>
+        </div>
+
+        <Card className="rounded-xl border bg-card shadow-xs overflow-hidden">
+          <CardHeader className="border-b pb-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="size-4 text-primary" />
+              <CardTitle className="text-base font-semibold">Assigned Teaching Workload</CardTitle>
+            </div>
+            <CardDescription className="text-xs">
+              {myOfferings.length} active course offering(s)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <DataTable
+              columns={columns}
+              data={myOfferings}
+              getRowId={(row) => row.id}
+              isLoading={isLoading}
+              isError={isError}
+              error={error}
+              emptyMessage="No teaching course offerings assigned to your account."
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default FacultyClassesPage;
+
+
+---
+faculty/page/FacultyOverviewPage.tsx
+---
+import { useMemo } from "react";
+import { useNavigate } from "react-router";
+import { BookOpen, FileText, Star, ArrowRight, ShieldAlert, UserCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/features/auth/context/user.context";
+import { useFacultyOfferings, useFacultySelfReports } from "../api/faculty.service";
+import { EvaluationReportStatusBadge } from "@/features/evaluation-report/components/EvaluationReportStatusBadge";
+
+/**
+ * Faculty Overview component displaying teaching workload KPIs, latest SET/SEF
+ * evaluation results, and pending report acknowledgment alerts.
+ */
+export const FacultyOverviewPage = () => {
+  const navigate = useNavigate();
+  const { user } = useUser();
+
+  const { data: offeringsRes, isLoading: isLoadingOfferings } = useFacultyOfferings(user?.id);
+  const myOfferings = offeringsRes?.data ?? [];
+
+  const { data: myReports = [] } = useFacultySelfReports();
+
+  const latestReport = useMemo(() => {
+    if (!myReports.length) return null;
+    return myReports[0];
+  }, [myReports]);
+
+  const unacknowledgedCount = useMemo(() => {
+    return myReports.filter((r) => r.status === "FINALIZED").length;
+  }, [myReports]);
+
+  const facultyName = user?.personalDetails
+    ? `${user.personalDetails.first_name} ${user.personalDetails.last_name}`
+    : "Faculty Member";
+  const institutionalId = user?.personalDetails?.institutional_id ?? "N/A";
+
+  return (
+    <div className="flex h-full flex-1 flex-col overflow-y-auto p-6 gap-6">
+      {/* Faculty Hero Banner */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-primary/5 p-6 shadow-xs">
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className="gap-1 border-primary/30 bg-primary/10 text-primary text-xs"
+          >
+            <BookOpen className="size-3.5" /> Faculty Instruction Portal
+          </Badge>
+          <span className="font-mono text-xs text-muted-foreground">ID: {institutionalId}</span>
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Welcome back, {facultyName}!
+        </h1>
+        <p className="text-xs text-muted-foreground sm:text-sm max-w-2xl">
+          Access your teaching workload, student class rosters, and review your CHED Individual
+          Faculty Evaluation Reports (IFER).
+        </p>
+      </div>
+
+      {/* Unacknowledged Report Notice */}
+      {unacknowledgedCount > 0 && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-600 dark:text-amber-400">
+          <div className="flex items-start gap-2.5">
+            <ShieldAlert className="size-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Action Required: Pending Report Acknowledgment</p>
+              <p className="mt-0.5">
+                You have {unacknowledgedCount} finalized evaluation report(s) awaiting your formal
+                acknowledgment per CHED CMO 19 regulations.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => navigate("/faculty/reports")}
+            className="h-8 shrink-0 bg-amber-600 hover:bg-amber-500 text-white text-xs cursor-pointer"
+          >
+            Review & Acknowledge
+          </Button>
+        </div>
+      )}
+
+      {/* Teaching & Evaluation KPIs */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <Card className="rounded-xl border bg-card shadow-xs">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Teaching Classes
+              </p>
+              <h2 className="text-2xl font-bold text-foreground">
+                {isLoadingOfferings ? "—" : myOfferings.length}
+              </h2>
+              <p className="text-[10px] text-muted-foreground">Active course offerings</p>
+            </div>
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <BookOpen className="size-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border bg-card shadow-xs">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Latest SET Score
+              </p>
+              <h2 className="text-2xl font-bold font-mono text-emerald-500">
+                {latestReport?.overall_set_rating ? `${latestReport.overall_set_rating}` : "N/A"}
+              </h2>
+              <p className="text-[10px] text-muted-foreground">Student rating average</p>
+            </div>
+            <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+              <Star className="size-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border bg-card shadow-xs">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Latest SEF Score
+              </p>
+              <h2 className="text-2xl font-bold font-mono text-sky-500">
+                {latestReport?.overall_sef_rating ? `${latestReport.overall_sef_rating}` : "N/A"}
+              </h2>
+              <p className="text-[10px] text-muted-foreground">Supervisor rating average</p>
+            </div>
+            <div className="flex size-10 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500">
+              <UserCheck className="size-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border bg-card shadow-xs">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                IFER Report Status
+              </p>
+              <div className="mt-1">
+                {latestReport ? (
+                  <EvaluationReportStatusBadge status={latestReport.status} />
+                ) : (
+                  <span className="text-xs text-muted-foreground">No reports</span>
+                )}
+              </div>
+              <p className="text-[10px] text-muted-foreground">Latest term status</p>
+            </div>
+            <div className="flex size-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
+              <FileText className="size-5" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Teaching Load Subjects Card */}
+      <Card className="rounded-xl border bg-card shadow-xs">
+        <CardHeader className="border-b pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold">Assigned Course Offerings</CardTitle>
+              <CardDescription className="text-xs">
+                Your teaching subjects for the active academic session
+              </CardDescription>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => navigate("/faculty/classes")}
+              className="h-8 gap-1 text-xs cursor-pointer"
+            >
+              <span>View All Classes</span>
+              <ArrowRight className="size-3.5" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 space-y-3">
+          {isLoadingOfferings ? (
+            <div className="p-6 text-center text-xs text-muted-foreground">
+              Loading assigned classes...
+            </div>
+          ) : myOfferings.length === 0 ? (
+            <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
+              No teaching course offerings assigned to your account.
+            </div>
+          ) : (
+            myOfferings.map((offering) => (
+              <div
+                key={offering.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg border bg-muted/20 hover:border-primary/30 transition-all"
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-primary">
+                      {offering.course_initialism}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground">
+                      {offering.course_name}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Year Level: Year {offering.year_level} • Term: {offering.semester_term} Semester
+                  </p>
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate("/faculty/classes")}
+                  className="h-8 text-xs shrink-0 cursor-pointer"
+                >
+                  View Class Roster
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default FacultyOverviewPage;
+
+
+---
+faculty/page/FacultyReportsPage.tsx
+---
+import { useState } from "react";
+import { Eye, CheckCircle2, Download, ShieldCheck, Badge } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useFacultySelfReports, useAcknowledgeFacultyReport } from "../api/faculty.service";
+import { EvaluationReportStatusBadge } from "@/features/evaluation-report/components/EvaluationReportStatusBadge";
+import { ReportDetailModal } from "@/features/evaluation-report/components/ReportDetailModal";
+import {
+  downloadIferPdf,
+  downloadFedafPdf,
+} from "@/features/evaluation-report/api/evaluation-report.service";
+
+/**
+ * Faculty Evaluation Reports page providing access to individual IFER reports,
+ * FEDAF development plans, PDF downloads, and formal report acknowledgment.
+ */
+export const FacultyReportsPage = () => {
+  const { data: myReports = [], isLoading } = useFacultySelfReports();
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+  const [acknowledgingId, setAcknowledgingId] = useState<number | null>(null);
+
+  const acknowledgeMutation = useAcknowledgeFacultyReport(acknowledgingId ?? 0);
+
+  const handleAcknowledge = async (reportId: number) => {
+    setAcknowledgingId(reportId);
+    try {
+      await acknowledgeMutation.mutateAsync();
+      toast.success("Evaluation report acknowledged successfully.");
+      setAcknowledgingId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to acknowledge report.");
+      setAcknowledgingId(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-xs text-muted-foreground">
+        Loading evaluation reports...
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              Evaluation Reports & FEDAF Plans
+            </h1>
+            <Badge className="border-indigo-500/30 bg-indigo-500/10 text-indigo-400 gap-1 text-[11px]">
+              <ShieldCheck className="size-3" /> CHED CMO 19 Compliant
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            Review your Individual Faculty Evaluation Reports (IFER), FEDAF development plans, and
+            formally acknowledge report findings.
+          </p>
+        </div>
+
+        {myReports.length === 0 ? (
+          <Card className="rounded-xl border border-dashed p-8 text-center text-xs text-muted-foreground">
+            No evaluation reports generated for your account yet.
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {myReports.map((report) => {
+              const isFinalized = report.status === "FINALIZED";
+
+              return (
+                <Card key={report.id} className="rounded-xl border bg-card p-5 shadow-2xs">
+                  <CardContent className="p-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-mono text-sm font-bold text-foreground">
+                          IFER Report #{report.id}
+                        </span>
+                        <EvaluationReportStatusBadge status={report.status} />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">SET Score (60%): </span>
+                          <span className="font-mono font-bold text-emerald-500">
+                            {report.overall_set_rating ? `${report.overall_set_rating}` : "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">SEF Score (40%): </span>
+                          <span className="font-mono font-bold text-sky-500">
+                            {report.overall_sef_rating ? `${report.overall_sef_rating}` : "N/A"}
+                          </span>
+                        </div>
+                        {report.acknowledged_at && (
+                          <div className="text-muted-foreground italic">
+                            Acknowledged: {new Date(report.acknowledged_at).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0 self-end md:self-center">
+                      {isFinalized && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleAcknowledge(report.id)}
+                          disabled={acknowledgeMutation.isPending && acknowledgingId === report.id}
+                          className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
+                        >
+                          <CheckCircle2 className="size-3.5" />
+                          <span>
+                            {acknowledgeMutation.isPending && acknowledgingId === report.id
+                              ? "Acknowledging..."
+                              : "Acknowledge Report"}
+                          </span>
+                        </Button>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadIferPdf(report.id)}
+                        className="h-8 text-xs gap-1 cursor-pointer"
+                      >
+                        <Download className="size-3.5 text-emerald-500" /> IFER PDF
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadFedafPdf(report.id)}
+                        className="h-8 text-xs gap-1 cursor-pointer"
+                      >
+                        <Download className="size-3.5 text-sky-500" /> FEDAF PDF
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedReportId(report.id)}
+                        className="h-8 gap-1.5 text-xs cursor-pointer"
+                      >
+                        <Eye className="size-3.5" /> View Detail
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <ReportDetailModal reportId={selectedReportId} onClose={() => setSelectedReportId(null)} />
+    </div>
+  );
+};
+
+export default FacultyReportsPage;
+
+
+---
