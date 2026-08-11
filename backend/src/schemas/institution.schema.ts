@@ -253,6 +253,9 @@ export const CourseOfferings = pgTable(
       .on(t.class_id, t.course_curriculum_id, t.semester_id)
       .where(sql`deleted_at IS NULL`),
     index("idx_course_offerings_faculty_id").on(t.faculty_id),
+    index("idx_course_offerings_class_id").on(t.class_id),
+    index("idx_course_offerings_semester_id").on(t.semester_id),
+    index("idx_course_offerings_curriculum_id").on(t.course_curriculum_id),
   ],
 );
 
@@ -299,5 +302,7 @@ export const StudentClasses = pgTable(
     uniqueIndex("uidx_active_student_course_offering")
       .on(t.student_account_id, t.course_offering_id)
       .where(sql`deleted_at IS NULL`),
+    index("idx_student_classes_student_account_id").on(t.student_account_id),
+    index("idx_student_classes_course_offering_id").on(t.course_offering_id),
   ],
 );

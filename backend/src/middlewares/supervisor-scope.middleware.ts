@@ -6,6 +6,22 @@ import { AppError } from "@/utils/error.util.js";
 import type { SupervisorScope } from "@/types/supervisor.type.js";
 import { SYSTEM_ROLES } from "@/types/seeder.type.js";
 
+interface CachedScope {
+  scope: SupervisorScope;
+  timestamp: number;
+}
+
+const supervisorScopeCache = new Map<number, CachedScope>();
+const SCOPE_TTL_MS = 60 * 1000; // 60 seconds TTL
+
+export const clearSupervisorScopeCache = (userId?: number) => {
+  if (userId) {
+    supervisorScopeCache.delete(userId);
+  } else {
+    supervisorScopeCache.clear();
+  }
+};
+
 export const resolveSupervisorScope = async (
   req: Request,
   _res: Response,
@@ -28,6 +44,13 @@ export const resolveSupervisorScope = async (
       return next();
     }
 
+    const now = Date.now();
+    const cached = supervisorScopeCache.get(userId);
+    if (cached && now - cached.timestamp < SCOPE_TTL_MS) {
+      req.supervisorScope = cached.scope;
+      return next();
+    }
+
     const [deanships, chairships] = await Promise.all([
       GetRecords<"CollegeDeans", { college_id: number }>("CollegeDeans", {
         select: (t) => ({ college_id: t.college_id }),
@@ -44,6 +67,7 @@ export const resolveSupervisorScope = async (
       programIds: chairships.map((c) => c.program_id),
     };
 
+    supervisorScopeCache.set(userId, { scope, timestamp: now });
     req.supervisorScope = scope;
     next();
   } catch (error) {

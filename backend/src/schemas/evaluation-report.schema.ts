@@ -54,6 +54,7 @@ export const IndividualFacultyEvaluationReports = pgTable(
   (t) => [
     index("idx_ifer_semester_id").on(t.semester_id),
     index("idx_ifer_faculty_id").on(t.faculty_id),
+    index("idx_ifer_status").on(t.status),
     uniqueIndex("uidx_active_ifer_faculty_semester")
       .on(t.semester_id, t.faculty_id)
       .where(sql`deleted_at IS NULL`),

@@ -1,6 +1,6 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { isNull } from "drizzle-orm";
 import db from "@/configs/db.config.js";
-import { GetRecord } from "./db.service.js";
+import { GetRecords } from "./db.service.js";
 import UserService, { type IUserService } from "./user.service.js";
 import { AppError } from "@/utils/error.util.js";
 import { Colleges, Programs, Classes, Courses } from "@/schemas/institution.schema.js";
@@ -57,68 +57,81 @@ export class bulkImportService implements IBulkImportService {
   }
 
   private async importColleges(rows: unknown[], result: BulkImportResult) {
-    for (let i = 0; i < rows.length; i++) {
-      const rowNum = i + 1;
-      const validation = await CollegeCsvRowSchema.safeParseAsync(rows[i]);
-      if (!validation.success) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: validation.error.issues.map((j) => j.message).join(", "),
-        });
-        continue;
-      }
+    await db.transaction(async (tx) => {
+      const existingColleges = await GetRecords("Colleges", {
+        where: (c) => isNull(c.deleted_at),
+        tx,
+      });
+      const existingSet = new Set(existingColleges.map((c) => c.initialism.toUpperCase()));
 
-      try {
-        await db.transaction(async (tx) => {
-          const existing = await GetRecord("Colleges", {
-            where: (c) => and(eq(c.initialism, validation.data.initialism), isNull(c.deleted_at)),
-            tx,
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 1;
+        const validation = await CollegeCsvRowSchema.safeParseAsync(rows[i]);
+        if (!validation.success) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: validation.error.issues.map((j) => j.message).join(", "),
           });
-          if (existing) throw new AppError(409, `College ${validation.data.initialism} exists.`);
+          continue;
+        }
 
-          await tx.insert(Colleges).values(validation.data);
+        const data = validation.data;
+        if (existingSet.has(data.initialism.toUpperCase())) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: `College ${data.initialism} already exists.`,
+          });
+          continue;
+        }
+
+        try {
+          await tx.insert(Colleges).values(data);
+          existingSet.add(data.initialism.toUpperCase());
           result.successCount++;
-        });
-      } catch (err) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: err instanceof Error ? err.message : "Failed to import college row.",
-        });
+        } catch (err) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: err instanceof Error ? err.message : "Failed to import college row.",
+          });
+        }
       }
-    }
+    });
   }
 
   private async importPrograms(rows: unknown[], result: BulkImportResult) {
-    for (let i = 0; i < rows.length; i++) {
-      const rowNum = i + 1;
-      const validation = await ProgramCsvRowSchema.safeParseAsync(rows[i]);
-      if (!validation.success) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: validation.error.issues.map((j) => j.message).join(", "),
-        });
-        continue;
-      }
+    await db.transaction(async (tx) => {
+      const existingColleges = await GetRecords("Colleges", {
+        where: (c) => isNull(c.deleted_at),
+        tx,
+      });
+      const collegeMap = new Map(existingColleges.map((c) => [c.initialism.toUpperCase(), c.id]));
 
-      try {
-        await db.transaction(async (tx) => {
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 1;
+        const validation = await ProgramCsvRowSchema.safeParseAsync(rows[i]);
+        if (!validation.success) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: validation.error.issues.map((j) => j.message).join(", "),
+          });
+          continue;
+        }
+
+        try {
           let collegeId = validation.data.college_id;
 
           if (!collegeId && validation.data.college_initialism) {
-            const college = await GetRecord("Colleges", {
-              where: (c) =>
-                and(eq(c.initialism, validation.data.college_initialism!), isNull(c.deleted_at)),
-              tx,
-            });
-            if (!college)
+            collegeId = collegeMap.get(validation.data.college_initialism.toUpperCase());
+            if (!collegeId) {
               throw new AppError(
                 404,
                 `Parent College '${validation.data.college_initialism}' not found.`,
               );
-            collegeId = college.id;
+            }
           }
 
           if (!collegeId) throw new AppError(400, "Could not resolve parent College ID.");
@@ -129,43 +142,45 @@ export class bulkImportService implements IBulkImportService {
             initialism: validation.data.initialism,
           });
           result.successCount++;
-        });
-      } catch (err) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: err instanceof Error ? err.message : "Failed to import program row.",
-        });
+        } catch (err) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: err instanceof Error ? err.message : "Failed to import program row.",
+          });
+        }
       }
-    }
+    });
   }
 
   private async importClasses(rows: unknown[], result: BulkImportResult) {
-    for (let i = 0; i < rows.length; i++) {
-      const rowNum = i + 1;
-      const validation = await ClassCsvRowSchema.safeParseAsync(rows[i]);
-      if (!validation.success) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: validation.error.issues.map((j) => j.message).join(", "),
-        });
-        continue;
-      }
+    await db.transaction(async (tx) => {
+      const existingPrograms = await GetRecords("Programs", {
+        where: (p) => isNull(p.deleted_at),
+        tx,
+      });
+      const programMap = new Map(existingPrograms.map((p) => [p.initialism.toUpperCase(), p.id]));
 
-      try {
-        await db.transaction(async (tx) => {
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 1;
+        const validation = await ClassCsvRowSchema.safeParseAsync(rows[i]);
+        if (!validation.success) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: validation.error.issues.map((j) => j.message).join(", "),
+          });
+          continue;
+        }
+
+        try {
           let programId = validation.data.program_id;
 
           if (!programId && validation.data.program_initialism) {
-            const program = await GetRecord("Programs", {
-              where: (p) =>
-                and(eq(p.initialism, validation.data.program_initialism!), isNull(p.deleted_at)),
-              tx,
-            });
-            if (!program)
+            programId = programMap.get(validation.data.program_initialism.toUpperCase());
+            if (!programId) {
               throw new AppError(404, `Program '${validation.data.program_initialism}' not found.`);
-            programId = program.id;
+            }
           }
 
           if (!programId) throw new AppError(400, "Could not resolve parent Program ID.");
@@ -176,43 +191,45 @@ export class bulkImportService implements IBulkImportService {
             section: validation.data.section,
           });
           result.successCount++;
-        });
-      } catch (err) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: err instanceof Error ? err.message : "Failed to import class row.",
-        });
+        } catch (err) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: err instanceof Error ? err.message : "Failed to import class row.",
+          });
+        }
       }
-    }
+    });
   }
 
   private async importCourses(rows: unknown[], result: BulkImportResult) {
-    for (let i = 0; i < rows.length; i++) {
-      const rowNum = i + 1;
-      const validation = await CourseCsvRowSchema.safeParseAsync(rows[i]);
-      if (!validation.success) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: validation.error.issues.map((j) => j.message).join(", "),
-        });
-        continue;
-      }
+    await db.transaction(async (tx) => {
+      const existingPrograms = await GetRecords("Programs", {
+        where: (p) => isNull(p.deleted_at),
+        tx,
+      });
+      const programMap = new Map(existingPrograms.map((p) => [p.initialism.toUpperCase(), p.id]));
 
-      try {
-        await db.transaction(async (tx) => {
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 1;
+        const validation = await CourseCsvRowSchema.safeParseAsync(rows[i]);
+        if (!validation.success) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: validation.error.issues.map((j) => j.message).join(", "),
+          });
+          continue;
+        }
+
+        try {
           let programId = validation.data.program_id;
 
           if (!programId && validation.data.program_initialism) {
-            const program = await GetRecord("Programs", {
-              where: (p) =>
-                and(eq(p.initialism, validation.data.program_initialism!), isNull(p.deleted_at)),
-              tx,
-            });
-            if (!program)
+            programId = programMap.get(validation.data.program_initialism.toUpperCase());
+            if (!programId) {
               throw new AppError(404, `Program '${validation.data.program_initialism}' not found.`);
-            programId = program.id;
+            }
           }
 
           if (!programId) throw new AppError(400, "Could not resolve parent Program ID.");
@@ -223,35 +240,35 @@ export class bulkImportService implements IBulkImportService {
             name: validation.data.name,
           });
           result.successCount++;
-        });
-      } catch (err) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: err instanceof Error ? err.message : "Failed to import course row.",
-        });
+        } catch (err) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: err instanceof Error ? err.message : "Failed to import course row.",
+          });
+        }
       }
-    }
+    });
   }
 
   private async importUsers(rows: unknown[], result: BulkImportResult) {
-    for (let i = 0; i < rows.length; i++) {
-      const rowNum = i + 1;
-      const validation = await UserCsvRowSchema.safeParseAsync(rows[i]);
-      if (!validation.success) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: validation.error.issues.map((j) => j.message).join(", "),
-        });
-        continue;
-      }
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 1;
+        const validation = await UserCsvRowSchema.safeParseAsync(rows[i]);
+        if (!validation.success) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: validation.error.issues.map((j) => j.message).join(", "),
+          });
+          continue;
+        }
 
-      const { email, institutional_id, first_name, last_name, middle_name, suffix, role } =
-        validation.data;
+        const { email, institutional_id, first_name, last_name, middle_name, suffix, role } =
+          validation.data;
 
-      try {
-        await db.transaction(async (tx) => {
+        try {
           await this.userService.createUserRecordViaExistingTx(
             {
               credentials: { email },
@@ -267,15 +284,15 @@ export class bulkImportService implements IBulkImportService {
             tx,
           );
           result.successCount++;
-        });
-      } catch (err) {
-        result.failedCount++;
-        result.errors.push({
-          row: rowNum,
-          message: err instanceof Error ? err.message : "Failed to import user account row.",
-        });
+        } catch (err) {
+          result.failedCount++;
+          result.errors.push({
+            row: rowNum,
+            message: err instanceof Error ? err.message : "Failed to import user account row.",
+          });
+        }
       }
-    }
+    });
   }
 }
 

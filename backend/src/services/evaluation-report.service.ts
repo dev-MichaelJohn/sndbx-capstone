@@ -333,53 +333,6 @@ export class evaluationReportService implements IEvaluationReportService {
     };
   }
 
-  private async aggregateSupervisorRatings(
-    semesterId: number,
-    minRating: number,
-    maxRating: number,
-    scaleMode: ScaleMode,
-  ) {
-    const supervisorEval = await GetRecords<
-      "SupervisorEvaluations",
-      {
-        avg_sef_rating: number;
-        avg_supervisor_sentiment: number;
-        count: number;
-      }
-    >("SupervisorEvaluations", {
-      select: () => ({
-        avg_sef_rating: sql<number>`coalesce(avg(${SupervisorEvaluations.set_rating}), 0)::float`,
-        avg_supervisor_sentiment: sql<number>`coalesce(avg(${SupervisorEvaluations.comment_score}), 0)::float`,
-        count: sql<number>`count(${SupervisorEvaluations.id})::int`,
-      }),
-      where: () =>
-        and(
-          eq(SupervisorEvaluationSchedules.semester_id, semesterId),
-          sql`${SupervisorEvaluations.submitted_at} IS NOT NULL`,
-        ),
-      join: (q) =>
-        q.innerJoin(
-          SupervisorEvaluationSchedules,
-          eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
-        ),
-    });
-
-    const rawSef =
-      supervisorEval[0] && supervisorEval[0].count > 0 ? supervisorEval[0].avg_sef_rating : null;
-
-    const overallSefRating =
-      rawSef !== null
-        ? this.formatRating(this.transformScore(rawSef, minRating, maxRating, scaleMode))
-        : null;
-
-    const avgSupervisorSentiment =
-      supervisorEval[0] && supervisorEval[0].count > 0
-        ? this.formatRating(supervisorEval[0].avg_supervisor_sentiment)
-        : null;
-
-    return { overallSefRating, avgSupervisorSentiment };
-  }
-
   private async saveIferTransaction(
     semesterId: number,
     facultyId: number,
@@ -533,6 +486,58 @@ export class evaluationReportService implements IEvaluationReportService {
     await this.validateNoActiveSchedules(semester_id, now);
     await this.validateHasSubmittedEvaluations(semester_id);
 
+    // 1. Bulk fetch SEF ratings grouped by faculty_id
+    const supervisorEvalsByFaculty = await GetRecords<
+      "SupervisorEvaluations",
+      {
+        faculty_id: number;
+        avg_sef_rating: number;
+        avg_supervisor_sentiment: number;
+        count: number;
+      }
+    >("SupervisorEvaluations", {
+      select: () => ({
+        faculty_id: CourseOfferings.faculty_id,
+        avg_sef_rating: sql<number>`coalesce(avg(${SupervisorEvaluations.set_rating}), 0)::float`,
+        avg_supervisor_sentiment: sql<number>`coalesce(avg(${SupervisorEvaluations.comment_score}), 0)::float`,
+        count: sql<number>`count(${SupervisorEvaluations.id})::int`,
+      }),
+      where: () =>
+        and(
+          eq(SupervisorEvaluationSchedules.semester_id, semester_id),
+          isNull(SupervisorEvaluationSchedules.deleted_at),
+          sql`${SupervisorEvaluations.submitted_at} IS NOT NULL`,
+        ),
+      join: (q) =>
+        q
+          .innerJoin(
+            SupervisorEvaluationSchedules,
+            eq(SupervisorEvaluations.schedule_id, SupervisorEvaluationSchedules.id),
+          )
+          .innerJoin(
+            CourseOfferings,
+            eq(SupervisorEvaluations.course_offering_id, CourseOfferings.id),
+          )
+          .groupBy(CourseOfferings.faculty_id),
+    });
+
+    const sefMap = new Map(
+      supervisorEvalsByFaculty.map((item) => [
+        item.faculty_id,
+        {
+          overallSefRating:
+            item.count > 0
+              ? this.formatRating(
+                  this.transformScore(item.avg_sef_rating, min_rating, max_rating, scale_mode),
+                )
+              : null,
+          avgSupervisorSentiment:
+            item.count > 0 ? this.formatRating(item.avg_supervisor_sentiment) : null,
+        },
+      ]),
+    );
+
+    // 2. Fetch distinct faculty members with course offerings in this semester
     const facultyOfferings = await GetRecords<"CourseOfferings", { faculty_id: number }>(
       "CourseOfferings",
       {
@@ -547,7 +552,6 @@ export class evaluationReportService implements IEvaluationReportService {
     for (const { faculty_id } of facultyOfferings) {
       if (!faculty_id) continue;
 
-      // Steps 1–3: Aggregate SET Scores & Class Summaries
       const { activeClassSummariesWithScores, overallSetRating, avgStudentSentiment } =
         await this.aggregateClassSummaries(
           semester_id,
@@ -557,20 +561,15 @@ export class evaluationReportService implements IEvaluationReportService {
           scale_mode,
         );
 
-      // Step 4: Aggregate SEF Score
-      const { overallSefRating, avgSupervisorSentiment } = await this.aggregateSupervisorRatings(
-        semester_id,
-        min_rating,
-        max_rating,
-        scale_mode,
-      );
+      const sefInfo = sefMap.get(faculty_id);
+      const overallSefRating = sefInfo?.overallSefRating ?? null;
+      const avgSupervisorSentiment = sefInfo?.avgSupervisorSentiment ?? null;
 
       // Require BOTH SET and SEF scores to be present before generating report
       if (!overallSetRating || !overallSefRating) {
         continue;
       }
 
-      // Save IFER + Annex C Table
       await this.saveIferTransaction(
         semester_id,
         faculty_id,
