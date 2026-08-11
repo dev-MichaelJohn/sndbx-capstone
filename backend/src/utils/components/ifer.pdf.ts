@@ -87,7 +87,7 @@ export function generateIferPdfBuffer(data: UnifiedFacultyReportDetail): Promise
     const infoRows: [string, string][] = [
       ["Name of Faculty Evaluated", data.faculty.name],
       ["Department/College", data.faculty.department],
-      ["Current Faculty Rank", data.faculty.rank ?? "N/A"],
+      ["Current Faculty Rank", data.faculty.rank ?? ""],
       ["Semester/Term & Academic Year", `${data.semester.term} / ${data.semester.academic_year}`],
     ];
     const labelX = PAGE_MARGIN;

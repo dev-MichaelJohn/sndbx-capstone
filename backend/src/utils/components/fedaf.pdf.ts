@@ -63,7 +63,7 @@ export function generateFedafPdfBuffer(data: UnifiedFacultyReportDetail): Promis
     const infoRows: [string, string][] = [
       ["Name of Faculty", fac.name],
       ["Department/College", fac.department],
-      ["Current Faculty Rank", fac.rank ?? "N/A"],
+      ["Current Faculty Rank", fac.rank ?? ""],
       ["Semester/Term & Academic Year", `${sem.term} / ${sem.academic_year}`],
     ];
 
