@@ -71,14 +71,23 @@ export function generateFedafPdfBuffer(data: UnifiedFacultyReportDetail): Promis
     const colonX = PAGE_MARGIN + CONTENT_W * 0.43;
     const valueX = colonX + 10;
 
+    const MIN_ROW_H = 14; // minimum row height so empty values don't collapse
     doc.font("Helvetica").fontSize(9);
     for (const [label, value] of infoRows) {
       const y = doc.y;
-      doc.text(label, labelX, y, { continued: false });
-      doc.text(":", colonX, y, { continued: false });
-      doc.font("Helvetica-Bold").text(value, valueX, y, { continued: false });
-      doc.font("Helvetica");
-      doc.y += 2;
+      const valueW = PAGE_MARGIN + CONTENT_W - valueX; // remaining width for value
+
+      doc.text(label, labelX, y, { continued: false, lineBreak: false });
+      doc.text(":", colonX, y, { continued: false, lineBreak: false });
+
+      let bottomY = y + MIN_ROW_H;
+      if (value) {
+        doc.font("Helvetica-Bold").text(value, valueX, y, { width: valueW, continued: false });
+        bottomY = Math.max(bottomY, doc.y + 2);
+        doc.font("Helvetica");
+      }
+
+      doc.y = bottomY;
     }
     doc.moveDown(1);
 
