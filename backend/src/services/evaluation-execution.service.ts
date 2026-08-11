@@ -28,6 +28,7 @@ import {
   type SupervisorEvalSelect,
 } from "@/types/evaluation-execution.type.js";
 import type { AnonymousSubmissionEvent } from "@/types/socket.type.js";
+import { clearAnalyticsCache } from "./evaluation-analytics.service.js";
 
 export interface IEvaluationExecutionService {
   submitStudentEvaluation(
@@ -221,6 +222,7 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
     });
 
     if (!is_draft) {
+      clearAnalyticsCache();
       this.emitAnonymousStudentSubmission(student_class_id);
     }
 

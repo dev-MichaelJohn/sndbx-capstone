@@ -90,6 +90,13 @@ const NGRAM_LEXICON: Record<string, number> = {
   "usik sa oras": -4,
 };
 
+// Pre-compile Regex pattern for all NGRAM phrases once at module load time
+const NGRAM_PATTERNS = Object.keys(NGRAM_LEXICON)
+  .sort((a, b) => b.length - a.length)
+  .map((phrase) => phrase.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"));
+
+const NGRAM_REGEX = new RegExp(NGRAM_PATTERNS.join("|"), "gi");
+
 /** Unigram Multilingual Dictionary */
 const UNIGRAM_LEXICON: Record<string, number> = {
   // English Positive
@@ -355,10 +362,6 @@ const ASPECT_KEYWORDS: Record<string, string[]> = {
   ],
 };
 
-// ============================================================================
-// 2. CORE SENTIMENT ENGINE
-// ============================================================================
-
 export interface AspectBreakdown {
   aspect: string;
   score: number;
@@ -378,8 +381,7 @@ export interface ComprehensiveSentimentResult {
 
 /**
  * Deep Multilingual & Context-Aware Sentiment Analyzer.
- * Supports N-Gram Idiom Matching, Contrastive Clauses, Modifier Multipliers,
- * Negation Scope, Aspect Category Breakdown, and MIXED classification.
+ * Uses a pre-compiled Regex engine for $O(N)$ multi-word phrase matching.
  */
 export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSentimentResult => {
   if (!text || !text.trim()) {
@@ -401,17 +403,18 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
   const detectedIdioms: string[] = [];
   let nGramBonusScore = 0;
 
-  // Step 1: Detect and Extract Multi-Word Expressions (Idioms / Phrases)
-  for (const [phrase, score] of Object.entries(NGRAM_LEXICON)) {
-    if (textToAnalyze.includes(phrase)) {
+  // Single-pass Regex match for all N-Gram expressions
+  textToAnalyze = textToAnalyze.replace(NGRAM_REGEX, (match) => {
+    const phrase = match.toLowerCase();
+    const score = NGRAM_LEXICON[phrase];
+    if (score !== undefined) {
       detectedIdioms.push(phrase);
       nGramBonusScore += score;
-      // Mask phrase out to prevent double-counting unigrams
-      textToAnalyze = textToAnalyze.replaceAll(phrase, " ");
     }
-  }
+    return " "; // Mask phrase to avoid double-counting unigrams
+  });
 
-  // Step 2: Clause Segmentation by Contrastive Conjunctions ("but", "pero", "apan")
+  // Clause Segmentation by Contrastive Conjunctions
   const contrastPattern = /\b(but|however|although|though|yet|pero|kaso|subalit|bagamat|apan)\b/gi;
   const clauses = textToAnalyze.split(contrastPattern);
 
@@ -426,11 +429,8 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
 
   for (let cIdx = 0; cIdx < clauses.length; cIdx++) {
     const clause = clauses[cIdx]!.trim();
-    if (!clause) continue;
+    if (!clause || CONTRASTIVE_CONJUNCTIONS.has(clause)) continue;
 
-    if (CONTRASTIVE_CONJUNCTIONS.has(clause)) continue;
-
-    // Post-contrastive clauses carry 1.6x weight (shifts evaluation intent)
     const isPostContrastClause =
       cIdx > 0 && CONTRASTIVE_CONJUNCTIONS.has(clauses[cIdx - 1]?.trim() || "");
     const clauseWeight = isPostContrastClause ? 1.6 : 1.0;
@@ -442,7 +442,6 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
     let clauseScore = baseAnalysis.score;
     const tokens = clause.replace(/[^\w\s-]/g, "").split(/\s+/);
 
-    // Aspect Tagging for this clause
     const matchedAspects = new Set<string>();
     for (const [aspect, keywords] of Object.entries(ASPECT_KEYWORDS)) {
       if (keywords.some((kw) => clause.includes(kw))) {
@@ -450,32 +449,27 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
       }
     }
 
-    // Contextual Token Processing (Modifiers & Negations)
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i]!;
 
-      // Pre-Intensifiers (e.g., "very helpful", "pwerteng maayo")
       if (PRE_INTENSIFIERS.has(token) && i + 1 < tokens.length) {
         const nextWord = tokens[i + 1]!;
         const wordScore = UNIGRAM_LEXICON[nextWord] || 0;
         if (wordScore !== 0) clauseScore += wordScore * 0.5;
       }
 
-      // Post-Intensifiers for Bisaya syntax (e.g., "maayo kaayo")
       if (POST_INTENSIFIERS.has(token) && i - 1 >= 0) {
         const prevWord = tokens[i - 1]!;
         const wordScore = UNIGRAM_LEXICON[prevWord] || 0;
         if (wordScore !== 0) clauseScore += wordScore * 0.5;
       }
 
-      // Diminishers (e.g., "medyo lisud")
       if (DIMINISHERS.has(token) && i + 1 < tokens.length) {
         const nextWord = tokens[i + 1]!;
         const wordScore = UNIGRAM_LEXICON[nextWord] || 0;
         if (wordScore !== 0) clauseScore -= wordScore * 0.5;
       }
 
-      // Negation Scope Flipping (e.g., "dili tapulan", "not bad")
       if (NEGATIONS.has(token) && i + 1 < tokens.length) {
         const nextWord = tokens[i + 1]!;
         const wordScore = UNIGRAM_LEXICON[nextWord] || 0;
@@ -486,13 +480,11 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
     const weightedClauseScore = clauseScore * clauseWeight;
     cumulativeScore += weightedClauseScore;
 
-    // Distribute clause score to matched aspects
     matchedAspects.forEach((aspect) => {
       aspectScores[aspect] = (aspectScores[aspect] || 0) + weightedClauseScore;
     });
   }
 
-  // Step 3: Global AFINN Word Extraction
   const globalAnalysis = analyzer.analyze(cleanText.toLowerCase(), {
     extras: UNIGRAM_LEXICON,
   });
@@ -501,7 +493,6 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
   const wordCount = cleanText.split(/\s+/).length || 1;
   const comparative = Number((finalScore / wordCount).toFixed(2));
 
-  // Step 4: Aspect Breakdown Formulation
   const primaryAspects: AspectBreakdown[] = Object.entries(aspectScores)
     .filter(([_, score]) => Math.abs(score) > 0.1)
     .map(([aspect, score]) => ({
@@ -510,7 +501,6 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
       classification: score > 0.5 ? "POSITIVE" : score < -0.5 ? "NEGATIVE" : "NEUTRAL",
     }));
 
-  // Step 5: Overall Classification (Handles MIXED feedback)
   const hasStrongPositiveAspect = primaryAspects.some((a) => a.score > 1.5);
   const hasStrongNegativeAspect = primaryAspects.some((a) => a.score < -1.5);
 
@@ -524,7 +514,6 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
     classification = "NEGATIVE";
   }
 
-  // Step 6: Readable Summary Generation
   let summary = `Overall ${classification.toLowerCase()} sentiment (${finalScore}).`;
   if (primaryAspects.length > 0) {
     const aspectSummary = primaryAspects
@@ -545,10 +534,6 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
   };
 };
 
-/**
- * Returns the computed compound sentiment score for a comment string.
- * Maintained for 100% backward compatibility across execution and report services.
- */
 export const calculateAfinnScore = (text?: string | null): number => {
   return analyzeComplexSentiment(text).score;
 };

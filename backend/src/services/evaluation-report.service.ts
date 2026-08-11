@@ -37,6 +37,7 @@ import {
 } from "@/types/evaluation-report.type.js";
 import type { SupervisorScope } from "@/types/supervisor.type.js";
 import { buildScopeFilter } from "@/utils/scope.util.js";
+import { clearAnalyticsCache } from "./evaluation-analytics.service.js";
 
 export interface IEvaluationReportService {
   getAllReports(
@@ -589,6 +590,8 @@ export class evaluationReportService implements IEvaluationReportService {
         "No reports generated. Faculty members must have BOTH completed Student (SET) and Supervisor (SEF) evaluations.",
       );
     }
+
+    clearAnalyticsCache();
 
     return { generated_count: generatedCount };
   }
