@@ -8,7 +8,6 @@ import type {
 import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-// Fetch paginated courses for a specific program
 export const getCourses = async (params: CourseSearch) => {
   try {
     const { program_id, ...queryParams } = params;
@@ -41,11 +40,11 @@ export const useCourses = (
   return useQuery({
     queryKey: ["getCourses", fullParams],
     queryFn: () => getCourses(fullParams),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache TTL
     ...options,
   });
 };
 
-// Inspects query cache to read current program course count without triggering a re-fetch
 export const useProgramCourseCount = (programId: number) => {
   const { data, isLoading } = useCourses(
     { program_id: programId, page: 1 },
@@ -58,7 +57,6 @@ export const useProgramCourseCount = (programId: number) => {
   };
 };
 
-// Fetch single course by ID
 export const getCourse = async (id: number) => {
   try {
     const response = await apiClient.get<APIResponse<CourseSelect>>(`/protected/courses/${id}`);
@@ -73,10 +71,10 @@ export const useCourse = (id: number) => {
     queryKey: ["getCourse", id],
     queryFn: () => getCourse(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 5,
   });
 };
 
-// Create course record
 const createCourseRecord = async (payload: CourseInsert) => {
   try {
     const response = await apiClient.post<APIResponse<CourseSelect>>("/protected/courses", payload);
@@ -97,7 +95,6 @@ export const useCreateCourse = () => {
   });
 };
 
-// Update course record
 const updateCourseRecord = async ({
   course_id,
   ...payload
@@ -124,7 +121,6 @@ export const useUpdateCourse = () => {
   });
 };
 
-// Delete course record
 const deleteCourseRecord = async (courseId: number) => {
   try {
     const response = await apiClient.delete<APIResponse>(`/protected/courses/${courseId}`);

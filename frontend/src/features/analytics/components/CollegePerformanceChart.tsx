@@ -1,3 +1,4 @@
+import React from "react";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
@@ -34,59 +35,63 @@ const EmptyState = () => (
   </div>
 );
 
-export const CollegePerformanceChart = ({ collegePerformance }: CollegePerformanceChartProps) => {
-  return (
-    <Card className="rounded-xl shadow-xs">
-      <CardHeader className="border-b">
-        <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-chart-1/10 mt-0.5">
-            <BarChart3 className="h-4 w-4 text-chart-1" />
+export const CollegePerformanceChart = React.memo(
+  ({ collegePerformance }: CollegePerformanceChartProps) => {
+    return (
+      <Card className="rounded-xl shadow-xs">
+        <CardHeader className="border-b">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-chart-1/10 mt-0.5">
+              <BarChart3 className="h-4 w-4 text-chart-1" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">College Performance</CardTitle>
+              <CardDescription className="mt-0.5">
+                SET vs SEF rating comparisons across academic colleges
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-base font-semibold">College Performance</CardTitle>
-            <CardDescription className="mt-0.5">
-              SET vs SEF rating comparisons across academic colleges
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-6">
-        {collegePerformance.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <ChartContainer config={collegeChartConfig} className="h-72 w-full">
-            <BarChart
-              data={collegePerformance}
-              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-              barCategoryGap="30%"
-              barGap={4}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="college"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={11}
-                domain={[1, 5]}
-                tickLine={false}
-                axisLine={false}
-              />
-              <ChartTooltip
-                cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
-                content={<ChartTooltipContent />}
-              />
-              <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="avg_set" fill="var(--color-avg_set)" radius={[5, 5, 0, 0]} />
-              <Bar dataKey="avg_sef" fill="var(--color-avg_sef)" radius={[5, 5, 0, 0]} />
-            </BarChart>
-          </ChartContainer>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+        </CardHeader>
+        <CardContent className="p-6">
+          {collegePerformance.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <ChartContainer config={collegeChartConfig} className="h-72 w-full">
+              <BarChart
+                data={collegePerformance}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                barCategoryGap="30%"
+                barGap={4}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="college"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={11}
+                  domain={[1, 5]}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                  content={<ChartTooltipContent />}
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="avg_set" fill="var(--color-avg_set)" radius={[5, 5, 0, 0]} />
+                <Bar dataKey="avg_sef" fill="var(--color-avg_sef)" radius={[5, 5, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
+    );
+  },
+);
+
+CollegePerformanceChart.displayName = "CollegePerformanceChart";

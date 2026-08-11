@@ -8,7 +8,6 @@ import type {
 import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-// Fetch paginated semesters
 export const getSemesters = async (params: SemesterSearch) => {
   try {
     const response = await apiClient.get<APIResponse<PaginatedData<SemesterSelect[]>>>(
@@ -25,10 +24,10 @@ export const useSemesters = (params: SemesterSearch) => {
   return useQuery({
     queryKey: ["getSemesters", params],
     queryFn: () => getSemesters(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache TTL
   });
 };
 
-// Fetch single semester by ID
 export const getSemester = async (id: number) => {
   try {
     const response = await apiClient.get<APIResponse<SemesterSelect>>(`/protected/semesters/${id}`);
@@ -43,10 +42,10 @@ export const useSemester = (id: number) => {
     queryKey: ["getSemester", id],
     queryFn: () => getSemester(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 5,
   });
 };
 
-// Create semester record
 const createSemesterRecord = async (payload: SemesterInsert) => {
   try {
     const response = await apiClient.post<APIResponse<SemesterSelect>>(
@@ -70,7 +69,6 @@ export const useCreateSemester = () => {
   });
 };
 
-// Update semester record
 const updateSemesterRecord = async ({
   semester_id,
   ...payload
@@ -97,7 +95,6 @@ export const useUpdateSemester = () => {
   });
 };
 
-// Delete semester record
 const deleteSemesterRecord = async (semesterId: number) => {
   try {
     const response = await apiClient.delete<APIResponse>(`/protected/semesters/${semesterId}`);

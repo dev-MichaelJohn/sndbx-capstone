@@ -1,37 +1,25 @@
+import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, UserCheck } from "lucide-react";
+import { parseISO, formatDistanceToNow } from "date-fns";
 import type { AnonymousSubmissionEvent } from "backend/types/socket.type";
 
 const formatTimeAgo = (isoString: string) => {
   if (!isoString) return "Just now";
-
-  // Normalize string: replace space with 'T' and append 'Z' if missing timezone offset
-  const normalizedStr = isoString.includes("T")
-    ? isoString.endsWith("Z") || isoString.includes("+")
-      ? isoString
-      : `${isoString}Z`
-    : `${isoString.replace(" ", "T")}Z`;
-
-  const submittedTime = new Date(normalizedStr).getTime();
-  const seconds = Math.floor((Date.now() - submittedTime) / 1000);
-
-  // If clock skew causes negative seconds, fallback to "Just now"
-  if (seconds < 10) return "Just now";
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  try {
+    const date = parseISO(isoString);
+    if (isNaN(date.getTime())) return "Just now";
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch {
+    return "Just now";
+  }
 };
 
 interface SubmissionFeedItemProps {
   item: AnonymousSubmissionEvent;
 }
 
-export const SubmissionFeedItem = ({ item }: SubmissionFeedItemProps) => {
+export const SubmissionFeedItem = React.memo(({ item }: SubmissionFeedItemProps) => {
   const isStudent = item.evaluator_type === "STUDENT";
 
   return (
@@ -72,4 +60,6 @@ export const SubmissionFeedItem = ({ item }: SubmissionFeedItemProps) => {
       </span>
     </div>
   );
-};
+});
+
+SubmissionFeedItem.displayName = "SubmissionFeedItem";
