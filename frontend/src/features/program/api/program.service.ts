@@ -46,7 +46,7 @@ export const useProgram = (programId: number) => {
   return useQuery({
     queryKey: ["program", programId],
     queryFn: () => getProgramById(programId),
-    enabled: !!programId && !isNaN(programId),
+    enabled: !isNaN(programId) && programId > 0,
   });
 };
 
@@ -54,10 +54,7 @@ const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
   try {
     const response = await apiClient.post<APIResponse<ProgramWithChairType>>(
       "/protected/programs/",
-      {
-        program,
-        chair,
-      },
+      { program, chair },
     );
     return response.data.data;
   } catch (error) {
@@ -65,10 +62,6 @@ const createProgramRecord = async ({ program, chair }: CreateProgramType) => {
   }
 };
 
-/**
- * Mutation hook for creating a program record and optional Chair assignment.
- * Invalidates program queries, user list, and current user cache (role sync).
- */
 export const useCreateProgram = () => {
   const queryClient = useQueryClient();
 
@@ -87,10 +80,7 @@ const updateProgramRecord = async ({ program_id, program, chair }: UpdateProgram
   try {
     const response = await apiClient.put<APIResponse<ProgramWithChairType>>(
       `/protected/programs/${program_id}`,
-      {
-        program,
-        chair,
-      },
+      { program, chair },
     );
     return response.data.data;
   } catch (error) {
@@ -98,10 +88,6 @@ const updateProgramRecord = async ({ program_id, program, chair }: UpdateProgram
   }
 };
 
-/**
- * Mutation hook for updating a program or reassigning a Chair.
- * Invalidates program queries, user list, and current user cache (role sync).
- */
 export const useUpdateProgram = () => {
   const queryClient = useQueryClient();
 
@@ -125,10 +111,6 @@ const deleteProgramRecord = async (programId: number) => {
   }
 };
 
-/**
- * Mutation hook for soft-deleting a program record.
- * Invalidates program queries, user list, and current user cache (role sync).
- */
 export const useDeleteProgram = () => {
   const queryClient = useQueryClient();
 
@@ -182,55 +164,3 @@ export function useChairSelection(initial: ChairCandidateType | null) {
 
   return { search, setSearch, candidates, isSearching, selected, setSelected, reset };
 }
-
-export const fetchProgramStudentCount = async (programId: number): Promise<number> => {
-  try {
-    // 1. Get classes for this program
-    const classesRes = await apiClient.get("/protected/classes", {
-      params: { program_id: programId, page: 1 },
-    });
-    const classes = classesRes.data.data.data ?? [];
-
-    if (classes.length === 0) return 0;
-
-    let totalStudents = 0;
-
-    // 2. Loop through classes to find course offerings
-    for (const cls of classes) {
-      const offeringsRes = await apiClient.get("/protected/course-offerings", {
-        params: { class_id: cls.id, page: 1 },
-      });
-      const offerings = offeringsRes.data.data.data ?? [];
-
-      // 3. For each offering, get the student count using pagination total items
-      for (const offering of offerings) {
-        const studentsRes = await apiClient.get(
-          `/protected/course-offerings/${offering.id}/student-classes`,
-          {
-            params: { page: 1, limit: 1 }, // Just request page 1 to read the total pagination count
-          },
-        );
-
-        // If your backend returns pagination metadata with total count:
-        const totalInOffering =
-          studentsRes.data.data.pagination?.totalItems ?? studentsRes.data.data.data?.length ?? 0;
-        totalStudents += totalInOffering;
-      }
-    }
-
-    return totalStudents;
-  } catch (error) {
-    console.error("Failed to calculate program student count:", error);
-    return 0;
-  }
-};
-
-// React Query Hook for your Program Details page
-export const useProgramStudentCount = (programId: number) => {
-  return useQuery({
-    queryKey: ["programs", programId, "calculated-student-count"],
-    queryFn: () => fetchProgramStudentCount(programId),
-    enabled: !!programId && !isNaN(programId),
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to avoid excessive queries
-  });
-};

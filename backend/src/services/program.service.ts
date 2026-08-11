@@ -255,6 +255,20 @@ class programService implements IProgramService {
         last_name: PersonalDetails.last_name,
         middle_name: PersonalDetails.middle_name,
         suffix: PersonalDetails.suffix,
+        student_count: sql<number>`(
+        SELECT COUNT(DISTINCT student_id)::int FROM (
+          SELECT cs.student_account_id AS student_id
+          FROM class_students cs
+          INNER JOIN classes cl ON cl.id = cs.class_id
+          WHERE cl.program_id = ${Programs.id} AND cs.deleted_at IS NULL AND cl.deleted_at IS NULL
+          UNION
+          SELECT sc.student_account_id AS student_id
+          FROM student_classes sc
+          INNER JOIN course_offerings co ON co.id = sc.course_offering_id
+          INNER JOIN classes cl ON cl.id = co.class_id
+          WHERE cl.program_id = ${Programs.id} AND sc.deleted_at IS NULL AND co.deleted_at IS NULL AND cl.deleted_at IS NULL
+        ) student_union
+      )`.as("student_count"),
       }),
       where: () => and(isNull(Programs.deleted_at), eq(Programs.id, id)),
       join: (query) =>

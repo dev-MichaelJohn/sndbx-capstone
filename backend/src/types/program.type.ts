@@ -46,7 +46,10 @@ export const ChairCandidate = z
   );
 export type ChairCandidateType = z.infer<typeof ChairCandidate>;
 
-export type ProgramWithChairType = ProgramSelect & ChairCandidateType;
+export type ProgramWithChairType = ProgramSelect &
+  ChairCandidateType & {
+    student_count?: number;
+  };
 export type ProgramWithChairAndTotalType = ProgramWithChairType & {
   totalItems: number;
 };
