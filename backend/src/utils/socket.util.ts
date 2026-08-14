@@ -6,13 +6,14 @@ import type {
   AnonymousSubmissionEvent,
 } from "@/types/socket.type.js";
 import { logger } from "@/utils/logger.util.js";
+import env from "@/configs/env.config.js";
 
 let io: Server<ClientToServerEvents, ServerToClientEvents> | null = null;
 
 export const initSocket = (httpServer: HTTPServer) => {
   io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: env.CLIENT_URL || "http://localhost:5173",
       credentials: true,
     },
   });
