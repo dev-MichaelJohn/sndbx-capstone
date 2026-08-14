@@ -19,7 +19,7 @@ import db, { type PgTransaction } from "@/configs/db.config.js";
 type RefreshCookieOptions = {
   httpOnly: boolean;
   secure: boolean;
-  sameSite: "strict";
+  sameSite: "strict" | "lax" | "none";
   maxAge?: number;
 };
 
