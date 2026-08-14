@@ -115,7 +115,7 @@ class tokenService implements ITokenService {
     return {
       httpOnly: true,
       secure: env.NODE_ENV !== "development",
-      sameSite: "strict" as const,
+      sameSite: "none" as const,
       ...(rememberMe
         ? {
             maxAge: 7 * ONE_DAY,
