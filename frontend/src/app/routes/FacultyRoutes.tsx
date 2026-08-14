@@ -8,6 +8,7 @@ import FacultyClassesPage from "@/features/faculty/page/FacultyClassesPage";
 import FacultyReportsPage from "@/features/faculty/page/FacultyReportsPage";
 import EvaluationReportDetailPage from "@/features/evaluation-report/page/EvaluationReportDetailPage";
 import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
+import EmailVerificationDialog from "@/features/auth/components/EmailVerificationDialog";
 
 /**
  * Faculty Portal Route Tree protected by role-based access control.
@@ -15,7 +16,15 @@ import AccountSettingsPage from "@/features/account-settings/page/AccountSetting
  */
 export const FacultyRoutes = () => (
   <Route element={<RequireRole allowed={["FACULTY"]} />}>
-    <Route path="faculty" element={<FacultyDashboard />}>
+    <Route
+      path="faculty"
+      element={
+        <>
+          <EmailVerificationDialog />
+          <FacultyDashboard />
+        </>
+      }
+    >
       {/* Default index redirect */}
       <Route index element={<Navigate to="dashboard" replace />} />
 
