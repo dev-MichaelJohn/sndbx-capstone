@@ -10,7 +10,10 @@
   "scripts": {
     "start:backend": "cd backend && pnpm dev",
     "start:frontend": "cd frontend && pnpm dev",
-    "start": "concurrently \"pnpm start:backend\" \"pnpm:start:frontend\"",
+    "start:dev": "concurrently \"pnpm start:backend\" \"pnpm:start:frontend\"",
+    "build:backend": "tsc",
+    "build:frontend": "vite build",
+    "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
