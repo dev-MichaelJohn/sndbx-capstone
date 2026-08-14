@@ -31,5 +31,5 @@ export const LazyAnalyticsPage = lazyLoad(
 export const LazyReportDetailPage = lazyLoad(
   () => import("@/features/evaluation-report/page/EvaluationReportDetailPage"),
 );
-export const LazySystemLogsPage = lazyLoad(() => import("@/features/logs/page/SystemLogsPage"));
+export const LazySystemLogsPage = lazyLoad(() => import("@/features/logging/page/SystemLogsPage"));
 export const LazyPublicLandingPage = lazyLoad(() => import("@/components/PublicLandingPage"));

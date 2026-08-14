@@ -9,7 +9,7 @@ import { EvaluationRoutes } from "./EvaluationRoutes";
 import EmailVerificationDialog from "@/features/auth/components/EmailVerificationDialog";
 import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
 import SystemAdminOverviewPage from "@/features/overview/page/SystemAdminOverviewPage";
-import SystemLogsPage from "@/features/logs/page/SystemLogsPage";
+import SystemLogsPage from "@/features/logging/page/SystemLogsPage";
 
 interface SysRoutesProps {
   basePath?: string;

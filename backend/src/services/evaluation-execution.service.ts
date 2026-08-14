@@ -393,7 +393,7 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
           faculty_name: sql<string>`CONCAT(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
           course_initialism: Courses.initialism,
           course_name: Courses.name,
-          submitted_at: sql<string>`${StudentEvaluations.submitted_at}::text`,
+          submitted_at: sql<string>`to_char(${StudentEvaluations.submitted_at}, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
         }),
         join: (q) =>
           q
@@ -422,7 +422,7 @@ export class evaluationExecutionService implements IEvaluationExecutionService {
         faculty_name: sql<string>`CONCAT(${PersonalDetails.first_name}, ' ', ${PersonalDetails.last_name})`,
         course_initialism: Courses.initialism,
         course_name: Courses.name,
-        submitted_at: sql<string>`${SupervisorEvaluations.submitted_at}::text`,
+        submitted_at: sql<string>`to_char(${SupervisorEvaluations.submitted_at}, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
       }),
       join: (q) =>
         q
