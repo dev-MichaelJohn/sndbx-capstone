@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import compression from "compression";
 import "@/configs/passport.config.js";
+import env from "@/configs/env.config.js";
 
 /**
  * Builds and configures the Express application with response compression,
@@ -20,7 +21,7 @@ export const createApp = (): Express => {
   app.use(cookieParser());
   app.use(
     cors({
-      origin: "http://localhost:5173",
+      origin: env.CLIENT_URL || "http://localhost:5173",
       credentials: true,
       exposedHeaders: ["x-access-token", "Content-Disposition"],
     }),

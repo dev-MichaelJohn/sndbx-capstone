@@ -6,6 +6,7 @@ const postgresRegex =
   /^postgresql?:\/\/(?:([^:]+)(?::([^@]+))?@)?([^:\/\s]+)(?::(\d+))?(?:\/([^\?\s]+))?(?:\?(.*))?$/;
 
 const EnvSchema = z.object({
+  CLIENT_URL: z.url().default("http://localhost:5173"),
   NODE_ENV: z
     .enum(["development", "production", "test"], "NODE_ENV is invalid.")
     .default("development"),
