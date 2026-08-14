@@ -11,7 +11,7 @@
     "start:backend": "cd backend && pnpm dev",
     "start:frontend": "cd frontend && pnpm dev",
     "start:dev": "concurrently \"pnpm start:backend\" \"pnpm:start:frontend\"",
-    "build:backend": "tsc -p backend/tsconfig.json",
+    "build:backend": "tsc -p backend/tsconfig.json && tsc-alias -p backend/tsconfig.json",
     "build:frontend": "vite build",
     "start": "node backend/dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,6 +20,7 @@
     "concurrently": "^10.0.3"
   },
   "devDependencies": {
+    "tsc-alias": "^1.9.1",
     "typescript": "^7.0.2"
   },
   "packageManager": "pnpm@11.17.0"
