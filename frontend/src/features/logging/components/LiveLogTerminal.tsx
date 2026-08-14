@@ -11,7 +11,11 @@ export const LiveLogTerminal = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const eventSource = new EventSource(`${BACKEND_BASE_API}/protected/logs/live`, {
+    const rawToken = localStorage.getItem("access_token") ?? "";
+    const cleanToken = rawToken.replace(/^bearer\s+/i, "").trim();
+    const streamUrl = `${BACKEND_BASE_API}/protected/logs/live${cleanToken ? `?token=${encodeURIComponent(cleanToken)}` : ""}`;
+
+    const eventSource = new EventSource(streamUrl, {
       withCredentials: true,
     });
 

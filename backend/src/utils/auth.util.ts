@@ -67,7 +67,10 @@ export const OTPAuthStrategy = new OTPStrategy(
  */
 export const JWTAuthStrategy = new JWTStrategy(
   {
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    jwtFromRequest: ExtractJwt.fromExtractors([
+      ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ExtractJwt.fromUrlQueryParameter("token"),
+    ]),
     secretOrKey: env.JWT_SECRET,
   },
   async (
