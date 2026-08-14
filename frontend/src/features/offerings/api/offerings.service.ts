@@ -9,7 +9,6 @@ import type {
 import { apiClient, getErrorMessage } from "@/lib/api.lib";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-// Fetch course offerings filtered by class_id, semester_id, or faculty_id
 export const getCourseOfferings = async (params: CourseOfferingSearch) => {
   try {
     const response = await apiClient.get<APIResponse<PaginatedData<CourseOfferingWithDetails[]>>>(
@@ -37,6 +36,27 @@ export const useCourseOfferings = (params: Partial<CourseOfferingSearch>) => {
   });
 };
 
+export const getCourseOffering = async (id: number) => {
+  try {
+    const response = await apiClient.get<APIResponse<CourseOfferingWithDetails>>(
+      `/protected/course-offerings/${id}`,
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to fetch course offering details."), {
+      cause: error,
+    });
+  }
+};
+
+export const useCourseOffering = (id: number) => {
+  return useQuery({
+    queryKey: ["getCourseOffering", id],
+    queryFn: () => getCourseOffering(id),
+    enabled: !!id && !isNaN(id),
+  });
+};
+
 export const useClassOfferingCount = (classId: number) => {
   const { data, isLoading } = useCourseOfferings({
     class_id: classId,
@@ -49,7 +69,6 @@ export const useClassOfferingCount = (classId: number) => {
   };
 };
 
-// Create new course offering
 const createCourseOffering = async (payload: CreateCourseOfferingParams) => {
   try {
     const response = await apiClient.post<APIResponse<{ courseOffering: CourseOfferingSelect }>>(
@@ -73,7 +92,6 @@ export const useCreateCourseOffering = () => {
   });
 };
 
-// Update course offering
 const updateCourseOffering = async (payload: UpdateCourseOfferingParams) => {
   try {
     const response = await apiClient.put<APIResponse<{ courseOffering: CourseOfferingSelect }>>(
@@ -93,11 +111,11 @@ export const useUpdateCourseOffering = () => {
     mutationFn: updateCourseOffering,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getCourseOfferings"] });
+      queryClient.invalidateQueries({ queryKey: ["getCourseOffering"] });
     },
   });
 };
 
-// Delete course offering
 const deleteCourseOffering = async (id: number) => {
   try {
     const response = await apiClient.delete<APIResponse>(`/protected/course-offerings/${id}`);

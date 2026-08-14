@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,8 @@ import {
   useDropStudentFromOffering,
 } from "../api/student-class.service";
 import { useClassStudents } from "@/features/class-student/api/class-student.service";
+import { useSemesters } from "@/features/semester/api/semester.service";
+import { useCourseOffering } from "@/features/offerings/api/offerings.service";
 import { getStudentClassColumns } from "../components/StudentClassColumns";
 import { CourseOfferingStudentEnrollDialog } from "../components/StudentClassCreate";
 import { CourseOfferingRosterCards } from "../components/StudentClassCards";
@@ -39,6 +42,22 @@ export const CourseOfferingStudentsPage = () => {
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
   const [droppingStudent, setDroppingStudent] = useState<StudentClassWithDetails | null>(null);
 
+  // Fetch course offering details to get its exact semester_id
+  const { data: offeringData } = useCourseOffering(courseOfferingId);
+
+  // Fetch active semester to verify if this offering belongs to current active term
+  const { data: semesterResponse } = useSemesters({
+    search: undefined,
+    page: 1,
+    orderBy: "id",
+    orderDir: "desc",
+  });
+  const activeSemesterId = semesterResponse?.data?.[0]?.id;
+
+  const isCurrentActiveSemester = Boolean(
+    offeringData?.semester_id && activeSemesterId && offeringData.semester_id === activeSemesterId,
+  );
+
   // Fetch enrolled students for this course offering
   const {
     data: offeringStudentsResponse,
@@ -49,6 +68,8 @@ export const CourseOfferingStudentsPage = () => {
     search: search.trim() || undefined,
     page,
   });
+
+  const enrolledList = offeringStudentsResponse?.data ?? [];
 
   // Fetch official class section roster to cross-reference section members
   const { data: officialClassResponse, isPending: isOfficialClassPending } = useClassStudents(
@@ -78,14 +99,13 @@ export const CourseOfferingStudentsPage = () => {
     () =>
       getStudentClassColumns({
         onDrop: (student) => setDroppingStudent(student),
-        isDropping: dropMutation.isPending,
+        isDropping: dropMutation.isPending || !isCurrentActiveSemester,
         officialStudentAccountIds,
+        isCurrentActiveSemester,
       }),
-    [dropMutation.isPending, officialStudentAccountIds],
+    [dropMutation.isPending, isCurrentActiveSemester, officialStudentAccountIds],
   );
 
-  // Metrics Calculation
-  const enrolledList = offeringStudentsResponse?.data ?? [];
   const totalEnrolled = offeringStudentsResponse?.pagination?.totalItems ?? enrolledList.length;
 
   const regularEnrolled = useMemo(() => {
@@ -151,13 +171,23 @@ export const CourseOfferingStudentsPage = () => {
               />
             </div>
 
-            <Button
-              size="sm"
-              className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
-              onClick={() => setIsEnrollOpen(true)}
-            >
-              <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
-            </Button>
+            {/* Only allow enrolling irregular students in active semester */}
+            {isCurrentActiveSemester ? (
+              <Button
+                size="sm"
+                className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
+                onClick={() => setIsEnrollOpen(true)}
+              >
+                <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
+              </Button>
+            ) : (
+              <Badge
+                variant="outline"
+                className="text-xs italic text-muted-foreground py-1 border-border/60"
+              >
+                Archived Term Roster (Read Only)
+              </Badge>
+            )}
           </div>
 
           <DataTable

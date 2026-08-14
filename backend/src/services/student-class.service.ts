@@ -70,7 +70,8 @@ export class studentClassService implements IStudentClassService {
     const validation = await StudentClassSearchSchema.safeParseAsync(searchQuery);
     if (!validation.success) throw validation.error;
 
-    const { student_account_id, course_offering_id, page, orderBy, orderDir } = validation.data;
+    const { student_account_id, course_offering_id, semester_id, page, orderBy, orderDir } =
+      validation.data;
 
     const PAGE_SIZE = 10;
     const columns = getColumns(StudentClasses);
@@ -133,6 +134,7 @@ export class studentClassService implements IStudentClassService {
           course_offering_id
             ? eq(StudentClasses.course_offering_id, course_offering_id)
             : undefined,
+          semester_id ? eq(CourseOfferings.semester_id, semester_id) : undefined,
           isNull(StudentClasses.deleted_at),
         ),
     });

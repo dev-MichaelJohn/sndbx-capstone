@@ -16,12 +16,14 @@ export interface GetCourseOfferingColumnsProps {
   onEdit: (offering: CourseOfferingWithDetails) => void;
   onViewStudents: (offering: CourseOfferingWithDetails) => void;
   isDeleting?: boolean;
+  isCurrentActiveSemester?: boolean; // Flag to control edit/delete visibility
 }
 
 export const getCourseOfferingColumns = ({
   onEdit,
   onViewStudents,
   isDeleting,
+  isCurrentActiveSemester = true,
 }: GetCourseOfferingColumnsProps): DataTableColumn<CourseOfferingWithDetails>[] => [
   {
     header: "Course",
@@ -109,11 +111,17 @@ export const getCourseOfferingColumns = ({
             >
               <Users className="mr-2 size-3.5 text-muted-foreground" /> View Students
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(row)} className="cursor-pointer text-xs">
-              <Edit className="mr-2 size-3.5 text-muted-foreground" /> Edit Details
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <CourseOfferingDeleteDialog offering={row} />
+
+            {/* Only show Edit and Delete options if this is the active semester */}
+            {isCurrentActiveSemester && (
+              <>
+                <DropdownMenuItem onClick={() => onEdit(row)} className="cursor-pointer text-xs">
+                  <Edit className="mr-2 size-3.5 text-muted-foreground" /> Edit Details
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <CourseOfferingDeleteDialog offering={row} />
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -4,6 +4,7 @@ import {
   StudentClasses,
   CourseOfferings,
   Programs,
+  Semesters,
 } from "@/schemas/institution.schema.js";
 import { Accounts, AccountRoles, Roles, PersonalDetails } from "@/schemas/auth.schema.js";
 import {
@@ -72,7 +73,7 @@ export class classStudentService implements IClassStudentService {
     const validation = await ClassStudentSearchSchema.safeParseAsync(searchQuery);
     if (!validation.success) throw validation.error;
 
-    const { class_id, student_account_id, page, orderBy, orderDir } = validation.data;
+    const { class_id, semester_id, student_account_id, page, orderBy, orderDir } = validation.data;
 
     const PAGE_SIZE = 10;
     const columns = getColumns(ClassStudents);
@@ -107,6 +108,7 @@ export class classStudentService implements IClassStudentService {
       where: () =>
         and(
           class_id ? eq(ClassStudents.class_id, class_id) : undefined,
+          semester_id ? eq(ClassStudents.semester_id, semester_id) : undefined,
           student_account_id ? eq(ClassStudents.student_account_id, student_account_id) : undefined,
           isNull(ClassStudents.deleted_at),
         ),
@@ -165,7 +167,27 @@ export class classStudentService implements IClassStudentService {
       await this.validateStudent(parsedData.student_account_id, tx);
       await this.validateClass(parsedData.class_id, tx);
 
-      const classStudent = await CreateRecord<"ClassStudents">("ClassStudents", parsedData, tx);
+      let semesterId = parsedData.semester_id;
+
+      // Auto-resolve current active semester if semester_id is not passed
+      if (!semesterId) {
+        const activeSemester = await GetRecord("Semesters", {
+          where: (s) => isNull(s.deleted_at),
+          join: (q) => q.orderBy(desc(Semesters.id)),
+          tx,
+        });
+
+        if (!activeSemester) {
+          throw new AppError(404, "No active semester record found for enrollment.");
+        }
+        semesterId = activeSemester.id;
+      }
+
+      const classStudent = await CreateRecord<"ClassStudents">(
+        "ClassStudents",
+        { ...parsedData, semester_id: semesterId },
+        tx,
+      );
       if (!classStudent) throw new AppError(500, "Failed to enroll student in class.");
 
       // Bulk-insert StudentClasses for all active offerings under this class
@@ -174,6 +196,7 @@ export class classStudentService implements IClassStudentService {
         where: () =>
           and(
             eq(CourseOfferings.class_id, parsedData.class_id),
+            eq(CourseOfferings.semester_id, semesterId),
             isNull(CourseOfferings.deleted_at),
           ),
       });

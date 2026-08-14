@@ -6,12 +6,12 @@ import { UserMinus } from "lucide-react";
 interface GetClassStudentColumnsProps {
   onDrop: (id: number, studentName: string) => void;
   isDropping: boolean;
+  isCurrentActiveSemester?: boolean;
 }
 
 const getInitials = (name: string) => {
   if (!name) return "ST";
 
-  // Handles "LastName, FirstName" format (e.g. "Dela Cruz, Juan" -> "JD")
   if (name.includes(",")) {
     const [lastName, firstName] = name.split(",").map((s) => s.trim());
     const firstInitial = firstName ? firstName[0] : "";
@@ -19,7 +19,6 @@ const getInitials = (name: string) => {
     return `${firstInitial}${lastInitial}`.toUpperCase() || "ST";
   }
 
-  // Fallback for "FirstName LastName" format (e.g. "Juan Dela Cruz" -> "JD")
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) {
     const firstInitial = parts[0][0];
@@ -33,6 +32,7 @@ const getInitials = (name: string) => {
 export const getClassStudentColumns = ({
   onDrop,
   isDropping,
+  isCurrentActiveSemester = true,
 }: GetClassStudentColumnsProps): DataTableColumn<ClassStudentWithDetails>[] => [
   {
     header: "Institutional ID",
@@ -78,19 +78,23 @@ export const getClassStudentColumns = ({
   {
     header: "Actions",
     className: "text-right",
-    cell: (student) => (
-      <div className="text-right">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 cursor-pointer rounded-lg px-2.5 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
-          disabled={isDropping}
-          onClick={() => onDrop(student.id, student.student_name)}
-        >
-          <UserMinus className="mr-1.5 size-3.5" />
-          Drop
-        </Button>
-      </div>
-    ),
+    cell: (student) => {
+      if (!isCurrentActiveSemester) return null;
+
+      return (
+        <div className="text-right">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 cursor-pointer rounded-lg px-2.5 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
+            disabled={isDropping}
+            onClick={() => onDrop(student.id, student.student_name)}
+          >
+            <UserMinus className="mr-1.5 size-3.5" />
+            Drop
+          </Button>
+        </div>
+      );
+    },
   },
 ];

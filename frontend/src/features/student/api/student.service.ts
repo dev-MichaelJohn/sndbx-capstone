@@ -4,14 +4,19 @@ import type { APIResponse, PaginatedData } from "backend/utils/response.util";
 import type { StudentClassWithDetails } from "backend/types/student-class.type";
 import type { ScheduleSelect } from "backend/types/evaluation-schedule.type";
 
-/**
- * Fetches all enrolled course offerings for the current student.
- */
-export const getMyEnrolledClasses = async (studentAccountId: number) => {
+export const getMyEnrolledClasses = async (studentAccountId: number, semesterId?: number) => {
   try {
+    const params: Record<string, any> = {
+      student_account_id: studentAccountId,
+    };
+
+    if (semesterId !== undefined && !isNaN(semesterId)) {
+      params.semester_id = semesterId;
+    }
+
     const response = await apiClient.get<APIResponse<PaginatedData<StudentClassWithDetails[]>>>(
       "/protected/student-classes",
-      { params: { student_account_id: studentAccountId } },
+      { params },
     );
     return response.data.data;
   } catch (error) {
@@ -19,17 +24,18 @@ export const getMyEnrolledClasses = async (studentAccountId: number) => {
   }
 };
 
-export const useMyEnrolledClasses = (studentAccountId?: number) => {
+export const useMyEnrolledClasses = (
+  studentAccountId?: number,
+  semesterId?: number,
+  options?: { enabled?: boolean },
+) => {
   return useQuery({
-    queryKey: ["myEnrolledClasses", studentAccountId],
-    queryFn: () => getMyEnrolledClasses(studentAccountId!),
-    enabled: !!studentAccountId && !isNaN(studentAccountId),
+    queryKey: ["myEnrolledClasses", studentAccountId, semesterId],
+    queryFn: () => getMyEnrolledClasses(studentAccountId!, semesterId),
+    enabled: !!studentAccountId && !isNaN(studentAccountId) && (options?.enabled ?? true),
   });
 };
 
-/**
- * Fetches active SET evaluation schedules.
- */
 export const getActiveStudentSchedule = async (semesterId?: number) => {
   try {
     const queryParam = semesterId ? `?semester_id=${semesterId}` : "";

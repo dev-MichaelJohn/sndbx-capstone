@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 
 import { Button } from "@/components/ui/button";
@@ -8,22 +8,32 @@ import { DataTable } from "@/components/main-data-table";
 
 import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 import { useCourseOfferings } from "../api/offerings.service";
+import { useSemesters } from "@/features/semester/api/semester.service";
 import { getCourseOfferingColumns } from "./OfferingColumns";
-import { OfferingCreateDialog } from "./OfferingCreate";
 import { OfferingEditDialog } from "./OfferingEdit";
 
 interface CourseOfferingsTabProps {
   classId: number;
   programId?: number;
+  semesterId?: number;
 }
 
-export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabProps) => {
+export const CourseOfferingsTab = ({ classId, programId, semesterId }: CourseOfferingsTabProps) => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingOffering, setEditingOffering] = useState<CourseOfferingWithDetails | null>(null);
+
+  // Determine active semester
+  const { data: semesterResponse } = useSemesters({
+    search: undefined,
+    page: 1,
+    orderBy: "id",
+    orderDir: "desc",
+  });
+  const activeSemesterId = semesterResponse?.data?.[0]?.id;
+  const isCurrentActiveSemester = !semesterId || semesterId === activeSemesterId;
 
   const {
     data: offeringsResponse,
@@ -32,6 +42,7 @@ export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabPro
     error: offeringsError,
   } = useCourseOfferings({
     class_id: classId,
+    semester_id: semesterId,
     search: search.trim() || undefined,
     page,
   });
@@ -39,6 +50,7 @@ export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabPro
   const columns = getCourseOfferingColumns({
     onEdit: (offering) => setEditingOffering(offering),
     onViewStudents: (offering) => navigate(`course-offerings/${offering.id}/students`),
+    isCurrentActiveSemester,
   });
 
   return (
@@ -59,13 +71,11 @@ export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabPro
             />
           </div>
 
-          <Button
-            size="sm"
-            className="h-8 rounded-lg px-3 text-xs font-medium cursor-pointer"
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            <Plus className="mr-1.5 size-3.5" /> Add Offering
-          </Button>
+          {!isCurrentActiveSemester && (
+            <span className="text-xs text-muted-foreground italic bg-muted/50 px-2.5 py-1 rounded-md border border-border/50">
+              Archived Semester Offerings (Read Only)
+            </span>
+          )}
         </div>
 
         {/* Data Table */}
@@ -111,13 +121,6 @@ export const CourseOfferingsTab = ({ classId, programId }: CourseOfferingsTabPro
           </div>
         </div>
       </div>
-
-      <OfferingCreateDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        classId={classId}
-        programId={programId}
-      />
 
       <OfferingEditDialog
         open={!!editingOffering}

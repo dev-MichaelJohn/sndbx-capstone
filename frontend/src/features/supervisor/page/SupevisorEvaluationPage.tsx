@@ -30,7 +30,7 @@ export const SupervisorEvaluationPage = () => {
 
   const { data: schedules = [] } = useSupervisorSchedules();
 
-  // Find active schedule or fallback to latest
+  // Find active open schedule
   const activeSchedule = useMemo(() => {
     if (!schedules || schedules.length === 0) return null;
     const now = Date.now();
@@ -43,19 +43,20 @@ export const SupervisorEvaluationPage = () => {
     );
   }, [schedules]);
 
-  // Fetch all course offerings under supervisor scope (unrestricted by term mismatch)
+  // Query course offerings strictly for the active schedule's semester
   const { data: offeringsRes, isLoading: isLoadingOfferings } = useSupervisorOfferings({
+    semester_id: activeSchedule?.semester_id,
     page: 1,
   });
 
-  // Fetch submission status map for active schedule
+  const offerings = offeringsRes?.data ?? [];
+
+  // Fetch submission status summary for active schedule
   const { data: summaryList = [] } = useSupervisorEvaluationsSummary(activeSchedule?.id, {
     enabled: Boolean(activeSchedule),
   });
 
   const submitEval = useSubmitSupervisorEvaluation();
-
-  const offerings = offeringsRes?.data ?? [];
 
   const statusMap = useMemo(() => {
     const map: Record<number, { isSubmitted: boolean; hasDraft: boolean }> = {};
@@ -84,7 +85,6 @@ export const SupervisorEvaluationPage = () => {
   const existingEval = existingEvalData?.evaluation;
   const existingRatings = existingEvalData?.ratings ?? [];
 
-  // Map existing ratings
   const initialRatingsMap: Record<number, number> = {};
   if (Array.isArray(existingRatings)) {
     existingRatings.forEach((item: any) => {
@@ -151,7 +151,8 @@ export const SupervisorEvaluationPage = () => {
             )}
           </div>
           <p className="text-xs text-muted-foreground sm:text-sm">
-            Evaluate instructional performance for faculty members under your supervisor scope.
+            Evaluate instructional performance for faculty members under your supervisor scope in
+            the active semester.
           </p>
         </div>
 
@@ -160,42 +161,40 @@ export const SupervisorEvaluationPage = () => {
           <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-600 dark:text-amber-400">
             <AlertTriangle className="size-4 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-semibold">No SEF Evaluation Schedule Found</p>
+              <p className="font-semibold">No SEF Evaluation Schedule Active</p>
               <p>
-                There is currently no schedule configured for <strong>Supervisor (SEF)</strong>{" "}
-                evaluations. An Administrator must publish a Supervisor schedule in System &gt;
-                Evaluation Schedules.
+                There is currently no active evaluation window for <strong>Supervisor (SEF)</strong>
+                . No faculty targets are available for rating at this time.
               </p>
             </div>
           </div>
         )}
 
         {/* Target List Card */}
-        <Card className="rounded-xl border bg-card shadow-xs">
-          <CardHeader className="border-b">
-            <div className="flex items-center gap-2">
-              <UserCheck className="size-4 text-primary" />
-              <CardTitle className="text-base font-semibold">Faculty Evaluation Targets</CardTitle>
-            </div>
-            <CardDescription className="text-xs">
-              Select a faculty course offering to complete the SEF evaluation instrument.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4">
-            <SupervisorTargetList
-              offerings={offerings}
-              statusMap={statusMap}
-              isLoading={isLoadingOfferings}
-              onSelectOffering={(offering) => {
-                if (!activeSchedule) {
-                  toast.error("Cannot evaluate: No active SEF schedule.");
-                  return;
-                }
-                setSelectedOffering(offering);
-              }}
-            />
-          </CardContent>
-        </Card>
+        {activeSchedule && (
+          <Card className="rounded-xl border bg-card shadow-xs">
+            <CardHeader className="border-b">
+              <div className="flex items-center gap-2">
+                <UserCheck className="size-4 text-primary" />
+                <CardTitle className="text-base font-semibold">
+                  Active Faculty Evaluation Targets
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs">
+                Select an active faculty course offering below to complete your SEF evaluation for
+                this term.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4">
+              <SupervisorTargetList
+                offerings={offerings}
+                statusMap={statusMap}
+                isLoading={isLoadingOfferings}
+                onSelectOffering={(offering) => setSelectedOffering(offering)}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* SEF Execution Modal */}
@@ -228,7 +227,7 @@ export const SupervisorEvaluationPage = () => {
               variant="outline"
               size="sm"
               onClick={() => setSelectedOffering(null)}
-              className="h-8 text-xs gap-1"
+              className="h-8 text-xs gap-1 cursor-pointer"
             >
               <ArrowLeft className="size-3.5" /> Back to list
             </Button>

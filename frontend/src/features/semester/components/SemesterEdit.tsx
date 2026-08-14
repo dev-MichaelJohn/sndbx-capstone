@@ -47,6 +47,82 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface SemesterDateRangePickerProps {
+  startDateStr?: string;
+  endDateStr?: string;
+  disabled?: boolean;
+  onChange: (startDate: string, endDate: string) => void;
+}
+
+export function SemesterDateRangePicker({
+  startDateStr,
+  endDateStr,
+  disabled,
+  onChange,
+}: SemesterDateRangePickerProps) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
+  const dateRange: DateRange | undefined = {
+    from: startDateStr ? parseISO(startDateStr) : undefined,
+    to: endDateStr ? parseISO(endDateStr) : undefined,
+  };
+
+  const handleSelect = (range: DateRange | undefined) => {
+    const fromStr = range?.from ? format(range.from, "yyyy-MM-dd") : "";
+    const toStr = range?.to ? format(range.to, "yyyy-MM-dd") : "";
+    onChange(fromStr, toStr);
+
+    if (range?.from && range?.to) {
+      setPopoverOpen(false);
+    }
+  };
+
+  return (
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen} modal={true}>
+      <PopoverTrigger asChild>
+        <Button
+          id="date-range-picker"
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          className={cn(
+            "w-full justify-start text-left font-normal h-9 text-xs",
+            !dateRange.from && "text-muted-foreground",
+          )}
+        >
+          <CalendarIcon className="mr-2 size-4 shrink-0" />
+          {dateRange.from ? (
+            dateRange.to ? (
+              <>
+                {format(dateRange.from, "LLL dd, yyyy")} – {format(dateRange.to, "LLL dd, yyyy")}
+              </>
+            ) : (
+              format(dateRange.from, "LLL dd, yyyy")
+            )
+          ) : (
+            <span>Pick duration dates</span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto p-0 z-100"
+        align="start"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <Calendar
+          autoFocus
+          mode="range"
+          defaultMonth={dateRange.from}
+          selected={dateRange}
+          onSelect={handleSelect}
+          numberOfMonths={2}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 interface SemesterEditDialogProps {
   semester: SemesterSelect;
   icon?: LucideIcon;
@@ -137,7 +213,7 @@ export const SemesterEditDialog = ({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <div className="flex w-full items-center gap-2 px-2 py-1.5 text-xs">
+          <div className="flex w-full items-center gap-2 px-2 py-1.5 text-xs cursor-pointer">
             <Icon className="size-3.5" />
             <span>{triggerText}</span>
           </div>
@@ -209,66 +285,23 @@ export const SemesterEditDialog = ({
               />
             </div>
 
-            {/* Date Range Picker using date-fns */}
+            {/* Date Range Picker using Isolated Sub-Component */}
             <form.Subscribe
               selector={(state) => [state.values.start_date, state.values.end_date] as const}
-              children={([startDateStr, endDateStr]) => {
-                const dateRange: DateRange | undefined = {
-                  from: startDateStr ? parseISO(startDateStr) : undefined,
-                  to: endDateStr ? parseISO(endDateStr) : undefined,
-                };
-
-                const handleRangeSelect = (range: DateRange | undefined) => {
-                  form.setFieldValue(
-                    "start_date",
-                    range?.from ? format(range.from, "yyyy-MM-dd") : "",
-                  );
-                  form.setFieldValue("end_date", range?.to ? format(range.to, "yyyy-MM-dd") : "");
-                };
-
-                return (
-                  <Field>
-                    <FieldLabel>Semester Duration</FieldLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          id="date-range"
-                          variant="outline"
-                          disabled={updateSemesterMutation.isPending}
-                          className={cn(
-                            "w-full justify-start text-left font-normal h-9",
-                            !dateRange.from && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 size-4" />
-                          {dateRange.from ? (
-                            dateRange.to ? (
-                              <>
-                                {format(dateRange.from, "LLL dd, yyyy")} –{" "}
-                                {format(dateRange.to, "LLL dd, yyyy")}
-                              </>
-                            ) : (
-                              format(dateRange.from, "LLL dd, yyyy")
-                            )
-                          ) : (
-                            <span>Pick duration dates</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          autoFocus
-                          mode="range"
-                          defaultMonth={dateRange.from}
-                          selected={dateRange}
-                          onSelect={handleRangeSelect}
-                          numberOfMonths={2}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </Field>
-                );
-              }}
+              children={([startDateStr, endDateStr]) => (
+                <Field>
+                  <FieldLabel>Semester Duration</FieldLabel>
+                  <SemesterDateRangePicker
+                    startDateStr={startDateStr}
+                    endDateStr={endDateStr}
+                    disabled={updateSemesterMutation.isPending}
+                    onChange={(start, end) => {
+                      form.setFieldValue("start_date", start);
+                      form.setFieldValue("end_date", end);
+                    }}
+                  />
+                </Field>
+              )}
             />
           </FieldGroup>
 

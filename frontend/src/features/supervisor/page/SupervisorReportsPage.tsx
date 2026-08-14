@@ -6,7 +6,6 @@ import { FileText, Shield, User } from "lucide-react";
 
 import { useSupervisorReports } from "../api/supervisor.service";
 import { getEvaluationReportColumns } from "@/features/evaluation-report/components/EvaluationReportColumns";
-import { BatchGenerateReportDialog } from "@/features/evaluation-report/components/BatchGenerateReportDialog";
 import { FacultySelfReportTab } from "@/features/evaluation-report/components/FacultySelfReportTab";
 import { ReportDetailModal } from "@/features/evaluation-report/components/ReportDetailModal";
 
@@ -30,10 +29,6 @@ export const SupervisorReportsPage = () => {
             <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
               Manage faculty evaluation results, FEDAF action plans, and view personal IFER.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <BatchGenerateReportDialog />
           </div>
         </div>
 

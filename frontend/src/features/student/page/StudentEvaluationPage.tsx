@@ -23,9 +23,6 @@ import { useEvaluationFormTree } from "@/features/evaluation-management/api/eval
 import { EvaluationFormContainer } from "@/features/evaluation-execution/components/EvaluationFormContainer";
 import type { StudentClassWithDetails } from "backend/types/student-class.type";
 
-/**
- * Individual course card displaying evaluation status badge (Submitted, Draft, Pending)
- */
 const StudentCourseItem = ({
   item,
   activeScheduleId,
@@ -95,21 +92,15 @@ const StudentCourseItem = ({
   );
 };
 
-/**
- * Student Evaluation Portal page enabling students to select their enrolled subjects,
- * fill out SET evaluation rating criteria, and submit teacher evaluations.
- */
 export const StudentEvaluationPage = () => {
   const { user } = useUser();
   const [selectedStudentClass, setSelectedStudentClass] = useState<StudentClassWithDetails | null>(
     null,
   );
 
-  const { data: classesRes, isLoading: isLoadingClasses } = useMyEnrolledClasses(user?.id);
-  const enrolledClasses = classesRes?.data ?? [];
-
   const { data: schedules = [] } = useActiveStudentSchedule();
 
+  // Find current active schedule
   const activeSchedule = useMemo(() => {
     if (!schedules || schedules.length === 0) return null;
     const now = Date.now();
@@ -121,6 +112,14 @@ export const StudentEvaluationPage = () => {
       }) ?? null
     );
   }, [schedules]);
+
+  // Query enrolled subjects strictly for the active schedule's semester
+  const { data: classesRes, isLoading: isLoadingClasses } = useMyEnrolledClasses(
+    user?.id,
+    activeSchedule?.semester_id,
+    { enabled: Boolean(user?.id && activeSchedule?.semester_id) },
+  );
+  const enrolledClasses = classesRes?.data ?? [];
 
   const submitEval = useSubmitStudentEvaluation();
 
@@ -207,8 +206,8 @@ export const StudentEvaluationPage = () => {
             )}
           </div>
           <p className="text-xs text-muted-foreground sm:text-sm">
-            Rate instructional quality, course delivery, and professional teaching standards for
-            your enrolled instructors.
+            Rate instructional quality and teaching standards for your enrolled instructors in the
+            active semester.
           </p>
         </div>
 
@@ -219,44 +218,46 @@ export const StudentEvaluationPage = () => {
             <div className="space-y-1">
               <p className="font-semibold">Student Evaluation Window Closed</p>
               <p>
-                Student Evaluation of Teachers (SET) is currently closed. Evaluation windows are
-                scheduled by the Academic Administration.
+                Student Evaluation of Teachers (SET) is currently closed. No subjects are available
+                for rating at this time.
               </p>
             </div>
           </div>
         )}
 
         {/* Enrolled Courses Evaluation List */}
-        <Card className="rounded-xl border bg-card shadow-xs">
-          <CardHeader className="border-b pb-3">
-            <CardTitle className="text-base font-semibold">
-              Enrolled Instructors to Evaluate
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Select an enrolled subject below to complete your SET rating.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 space-y-3">
-            {isLoadingClasses ? (
-              <div className="p-6 text-center text-xs text-muted-foreground">
-                Loading enrolled subjects...
-              </div>
-            ) : enrolledClasses.length === 0 ? (
-              <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
-                No enrolled subjects found for evaluation.
-              </div>
-            ) : (
-              enrolledClasses.map((item) => (
-                <StudentCourseItem
-                  key={item.id}
-                  item={item}
-                  activeScheduleId={activeSchedule?.id}
-                  onSelect={setSelectedStudentClass}
-                />
-              ))
-            )}
-          </CardContent>
-        </Card>
+        {activeSchedule && (
+          <Card className="rounded-xl border bg-card shadow-xs">
+            <CardHeader className="border-b pb-3">
+              <CardTitle className="text-base font-semibold">
+                Active Enrolled Instructors to Evaluate
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Select an enrolled subject below to complete your SET rating for this term.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {isLoadingClasses ? (
+                <div className="p-6 text-center text-xs text-muted-foreground">
+                  Loading active subjects...
+                </div>
+              ) : enrolledClasses.length === 0 ? (
+                <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
+                  No enrolled subjects found for evaluation in this active term.
+                </div>
+              ) : (
+                enrolledClasses.map((item) => (
+                  <StudentCourseItem
+                    key={item.id}
+                    item={item}
+                    activeScheduleId={activeSchedule.id}
+                    onSelect={setSelectedStudentClass}
+                  />
+                ))
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* SET Form Execution Modal */}

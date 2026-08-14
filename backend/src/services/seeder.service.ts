@@ -13,6 +13,7 @@ import { AppError } from "@/utils/error.util.js";
 import { logger } from "@/utils/logger.util.js";
 import { CreateRecord, GetRecord, GetRecords } from "./db.service.js";
 import UserService, { type IUserService } from "./user.service.js";
+import { invalidateRolePermissionsCache } from "@/middlewares/rbac.middleware.js";
 
 export const SuperAdminSchema = CreateUserReqSchema.omit({
   role: true,
@@ -103,6 +104,8 @@ class seederService implements ISeederService {
           }
         }
       });
+
+      invalidateRolePermissionsCache();
 
       return { message: "Roles, permissions, and matrix synced successfully!" };
     } catch (error) {

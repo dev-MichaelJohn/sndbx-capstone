@@ -58,6 +58,7 @@ export const SemesterCreateDialog = ({
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
   const [pendingValue, setPendingValue] = useState<SemesterInsert | null>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false); // Controlled Popover state
 
   const createSemesterMutation = useCreateSemester();
 
@@ -85,6 +86,7 @@ export const SemesterCreateDialog = ({
     setPendingValue(null);
     setConfirmSaveOpen(false);
     setConfirmDiscardOpen(false);
+    setPopoverOpen(false);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -219,12 +221,15 @@ export const SemesterCreateDialog = ({
                     range?.from ? format(range.from, "yyyy-MM-dd") : "",
                   );
                   form.setFieldValue("end_date", range?.to ? format(range.to, "yyyy-MM-dd") : "");
+                  if (range?.from && range?.to) {
+                    setPopoverOpen(false);
+                  }
                 };
 
                 return (
                   <Field>
                     <FieldLabel>Semester Duration</FieldLabel>
-                    <Popover>
+                    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           id="date-range"
@@ -250,7 +255,13 @@ export const SemesterCreateDialog = ({
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent
+                        className="w-auto p-0 z-50"
+                        align="start"
+                        onInteractOutside={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
                         <Calendar
                           autoFocus
                           mode="range"

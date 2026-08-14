@@ -18,6 +18,7 @@ export type StudentClassInsert = z.infer<typeof StudentClassSchema.insert>;
 export const StudentClassSearchSchema = createSearchSchema("StudentClasses").extend({
   student_account_id: z.coerce.number().int().positive().optional(),
   course_offering_id: z.coerce.number().int().positive().optional(),
+  semester_id: z.coerce.number().int().positive().optional(),
 });
 
 export type StudentClassSearch = z.infer<typeof StudentClassSearchSchema>;

@@ -41,6 +41,7 @@ export interface ICourseOfferingService {
     searchQuery: CourseOfferingSearch,
     scope?: SupervisorScope | null,
   ): Promise<PaginatedData<CourseOfferingWithDetails[]>>;
+  initializeSemesterOfferings(classId: number, semesterId: number): Promise<void>;
   getCourseOffering(id: number, tx?: PgTransaction): Promise<CourseOfferingWithDetails>;
   createCourseOffering(
     params: CreateCourseOfferingParams,
@@ -132,6 +133,63 @@ export class courseOfferingService implements ICourseOfferingService {
     return { curriculum, classInfo, semester };
   }
 
+  async initializeSemesterOfferings(
+    classId: number,
+    semesterId: number,
+    tx?: PgTransaction,
+  ): Promise<void> {
+    const [classInfo, semesterInfo] = await Promise.all([
+      GetRecord("Classes", {
+        where: () => and(eq(Classes.id, classId), isNull(Classes.deleted_at)),
+        ...(tx && { tx }),
+      }),
+      GetRecord("Semesters", {
+        where: (Semester) => and(eq(Semester.id, semesterId), isNull(Semester.deleted_at)),
+        ...(tx && { tx }),
+      }),
+    ]);
+
+    if (!classInfo || !semesterInfo) return;
+
+    // Find all curriculum subjects matching program, year level, and semester term
+    const curriculumSubjects = await GetRecords("CourseCurriculums", {
+      where: () =>
+        and(
+          eq(CourseCurriculums.program_id, classInfo.program_id),
+          eq(CourseCurriculums.year_level, classInfo.year_level),
+          eq(CourseCurriculums.semester_term, semesterInfo.semester_term),
+          isNull(CourseCurriculums.deleted_at),
+        ),
+      ...(tx && { tx }),
+    });
+
+    for (const curr of curriculumSubjects) {
+      const existing = await GetRecord("CourseOfferings", {
+        where: () =>
+          and(
+            eq(CourseOfferings.class_id, classId),
+            eq(CourseOfferings.course_curriculum_id, curr.id),
+            eq(CourseOfferings.semester_id, semesterId),
+            isNull(CourseOfferings.deleted_at),
+          ),
+        ...(tx && { tx }),
+      });
+
+      if (!existing) {
+        await CreateRecord(
+          "CourseOfferings",
+          {
+            class_id: classId,
+            course_curriculum_id: curr.id,
+            semester_id: semesterId,
+            faculty_id: null,
+          },
+          tx,
+        );
+      }
+    }
+  }
+
   async getCourseOfferings(searchQuery: CourseOfferingSearch, scope?: SupervisorScope | null) {
     searchQuery.orderBy = searchQuery.orderBy ?? "id";
     searchQuery.orderDir = searchQuery.orderDir ?? "asc";
@@ -140,6 +198,11 @@ export class courseOfferingService implements ICourseOfferingService {
     if (!validation.success) throw validation.error;
 
     const { class_id, semester_id, faculty_id, page, orderBy, orderDir } = validation.data;
+
+    // If viewing a class and semester is supplied, auto-initialize any missing curriculum offerings
+    if (class_id && semester_id) {
+      await this.initializeSemesterOfferings(class_id, semester_id);
+    }
 
     const PAGE_SIZE = 10;
     const columns = getColumns(CourseOfferings);
@@ -259,7 +322,7 @@ export class courseOfferingService implements ICourseOfferingService {
         tx,
       );
 
-      let facultyId: number | undefined;
+      let facultyId: number | null = offering.faculty_id ?? null;
 
       if (facultyInfo) {
         if (facultyInfo.type === "existing") {

@@ -25,7 +25,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { FormTextField } from "@/components/form-text-field";
 import { ExistingFacultySearch, type FacultyUser } from "./ExistingFacultySearch";
-import { useSemesters } from "@/features/semester/api/semester.service";
 import { useCurriculums } from "@/features/curriculum/api/curriculum.service";
 import { useFacultyList } from "@/features/user/api/user.service";
 import { useUpdateCourseOffering } from "../api/offerings.service";
@@ -103,13 +102,6 @@ const OfferingEditFormModal = ({ offering, programId, onClose }: OfferingEditFor
 
   const { mutateAsync, isPending } = useUpdateCourseOffering();
 
-  const { data: semestersData, isLoading: isSemestersLoading } = useSemesters({
-    page: 1,
-    search: undefined,
-    orderBy: "id",
-    orderDir: "desc",
-  });
-
   const { data: curriculumData, isLoading: isCurriculumLoading } = useCurriculums({
     program_id: programId,
     page: 1,
@@ -119,11 +111,10 @@ const OfferingEditFormModal = ({ offering, programId, onClose }: OfferingEditFor
     search: facultySearch.trim().length >= 2 ? facultySearch : undefined,
   });
 
-  const semesters = semestersData?.data ?? [];
   const curriculumCourses = curriculumData?.data ?? [];
   const facultyList = (facultyData?.data ?? []) as FacultyUser[];
 
-  // Sync initial faculty selection once when list loads, unless user clicked "Change"
+  // Sync initial faculty selection once when list loads
   useEffect(() => {
     if (!hasClearedFaculty && offering.faculty_id && facultyList.length && !selectedFaculty) {
       const match = facultyList.find((user) => user.id === offering.faculty_id);
@@ -135,7 +126,7 @@ const OfferingEditFormModal = ({ offering, programId, onClose }: OfferingEditFor
     course_offering_id: offering.id,
     offering: {
       course_curriculum_id: offering.course_curriculum_id,
-      semester_id: offering.semester_id,
+      semester_id: offering.semester_id, // Preserved internally without rendering a dropdown
     },
     faculty: offering.faculty_id
       ? { type: "existing", id: offering.faculty_id }
@@ -213,7 +204,8 @@ const OfferingEditFormModal = ({ offering, programId, onClose }: OfferingEditFor
           <DialogHeader>
             <DialogTitle>Edit Course Offering</DialogTitle>
             <DialogDescription>
-              Update curriculum course, academic semester, or reassign an instructor.
+              Update curriculum course assignment or reassign an instructor for this subject
+              offering.
             </DialogDescription>
           </DialogHeader>
 
@@ -241,37 +233,6 @@ const OfferingEditFormModal = ({ offering, programId, onClose }: OfferingEditFor
                         <SelectItem key={item.id} value={String(item.id)} className="text-xs">
                           {item.initialism} — {item.name} (Yr {item.year_level},{" "}
                           {item.semester_term})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            />
-
-            {/* Academic Semester Select */}
-            <form.Field
-              name="offering.semester_id"
-              children={(field) => (
-                <div className="space-y-1.5">
-                  <Label htmlFor={field.name}>Academic Semester</Label>
-                  <Select
-                    value={field.state.value ? String(field.state.value) : ""}
-                    onValueChange={(val) => field.handleChange(Number(val))}
-                    disabled={isSemestersLoading || isPending}
-                  >
-                    <SelectTrigger id={field.name} className="w-full text-xs">
-                      <SelectValue
-                        placeholder={
-                          isSemestersLoading ? "Loading semesters..." : "Select active semester"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {semesters.map((sem) => (
-                        <SelectItem key={sem.id} value={String(sem.id)} className="text-xs">
-                          A.Y. {sem.school_year_start}–{sem.school_year_end} ({sem.semester_term}{" "}
-                          Term)
                         </SelectItem>
                       ))}
                     </SelectContent>

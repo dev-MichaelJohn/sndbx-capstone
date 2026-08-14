@@ -238,9 +238,7 @@ export const CourseOfferings = pgTable(
     semester_id: integer("semester_id")
       .notNull()
       .references(() => Semesters.id),
-    faculty_id: integer("faculty_id")
-      .notNull()
-      .references(() => Accounts.id),
+    faculty_id: integer("faculty_id").references(() => Accounts.id),
     created_at: timestamp("created_at").notNull().defaultNow(),
     updated_at: timestamp("updated_at")
       .notNull()
@@ -266,6 +264,9 @@ export const ClassStudents = pgTable(
     class_id: integer("class_id")
       .notNull()
       .references(() => Classes.id),
+    semester_id: integer("semester_id")
+      .notNull()
+      .references(() => Semesters.id),
     student_account_id: integer("student_account_id")
       .notNull()
       .references(() => Accounts.id),
@@ -273,10 +274,10 @@ export const ClassStudents = pgTable(
     deleted_at: timestamp("deleted_at"),
   },
   (t) => [
-    uniqueIndex("uidx_active_class_student")
-      .on(t.class_id, t.student_account_id)
+    uniqueIndex("uidx_active_semester_class_student")
+      .on(t.class_id, t.semester_id, t.student_account_id)
       .where(sql`deleted_at IS NULL`),
-    index("idx_class_students_class_id").on(t.class_id),
+    index("idx_class_students_class_semester").on(t.class_id, t.semester_id),
     index("idx_class_students_student_account_id").on(t.student_account_id),
   ],
 );

@@ -7,6 +7,7 @@ export interface GetStudentClassColumnsProps {
   onDrop: (record: StudentClassWithDetails) => void;
   isDropping?: boolean;
   officialStudentAccountIds?: Set<number>;
+  isCurrentActiveSemester?: boolean;
 }
 
 const getInitials = (name: string) => {
@@ -33,6 +34,7 @@ export const getStudentClassColumns = ({
   onDrop,
   isDropping,
   officialStudentAccountIds,
+  isCurrentActiveSemester = true,
 }: GetStudentClassColumnsProps): DataTableColumn<StudentClassWithDetails>[] => [
   {
     header: "Institutional ID",
@@ -90,19 +92,23 @@ export const getStudentClassColumns = ({
   {
     header: "Actions",
     className: "text-right",
-    cell: (row) => (
-      <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={isDropping}
-          onClick={() => onDrop(row)}
-          className="h-7 cursor-pointer rounded-lg px-2.5 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
-        >
-          <UserMinus className="mr-1.5 size-3.5" />
-          Drop
-        </Button>
-      </div>
-    ),
+    cell: (row) => {
+      if (!isCurrentActiveSemester) return null;
+
+      return (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isDropping}
+            onClick={() => onDrop(row)}
+            className="h-7 cursor-pointer rounded-lg px-2.5 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
+          >
+            <UserMinus className="mr-1.5 size-3.5" />
+            Drop
+          </Button>
+        </div>
+      );
+    },
   },
 ];

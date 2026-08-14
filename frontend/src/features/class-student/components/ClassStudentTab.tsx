@@ -16,12 +16,14 @@ import {
 import { DataTable } from "@/components/main-data-table";
 
 import { useClassStudents, useDropStudent } from "../api/class-student.service";
+import { useSemesters } from "@/features/semester/api/semester.service";
 import { getClassStudentColumns } from "./ClassStudentColumns";
 import { ClassStudentEnrollDialog } from "./EnrollStudent";
 import toast from "react-hot-toast";
 
 interface ClassStudentsTabProps {
   classId: number;
+  semesterId?: number;
 }
 
 interface DropTarget {
@@ -29,12 +31,24 @@ interface DropTarget {
   studentName: string;
 }
 
-export const ClassStudentsTab = ({ classId }: ClassStudentsTabProps) => {
+export const ClassStudentsTab = ({ classId, semesterId }: ClassStudentsTabProps) => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+
+  // Check if viewed semester matches the active/current semester
+  const { data: semesterResponse } = useSemesters({
+    search: undefined,
+    page: 1,
+    orderBy: "id",
+    orderDir: "desc",
+  });
+  const semesters = semesterResponse?.data ?? [];
+  const activeSemesterId = semesters[0]?.id;
+
+  const isCurrentActiveSemester = !semesterId || semesterId === activeSemesterId;
 
   const {
     data: studentsResponse,
@@ -43,6 +57,7 @@ export const ClassStudentsTab = ({ classId }: ClassStudentsTabProps) => {
     error: studentsError,
   } = useClassStudents({
     class_id: classId,
+    semester_id: semesterId,
     search: search.trim() || undefined,
     page,
   });
@@ -62,7 +77,7 @@ export const ClassStudentsTab = ({ classId }: ClassStudentsTabProps) => {
 
   const columns = getClassStudentColumns({
     onDrop: (id, studentName) => setDropTarget({ id, studentName }),
-    isDropping: dropMutation.isPending,
+    isDropping: dropMutation.isPending || !isCurrentActiveSemester,
   });
 
   return (
@@ -83,13 +98,20 @@ export const ClassStudentsTab = ({ classId }: ClassStudentsTabProps) => {
             />
           </div>
 
-          <Button
-            size="sm"
-            className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
-            onClick={() => setEnrollDialogOpen(true)}
-          >
-            <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
-          </Button>
+          {/* Only allow enrollment in the active semester */}
+          {isCurrentActiveSemester ? (
+            <Button
+              size="sm"
+              className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
+              onClick={() => setEnrollDialogOpen(true)}
+            >
+              <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
+            </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground italic bg-muted/50 px-2.5 py-1 rounded-md border border-border/50">
+              Archived Semester Roster (Read Only)
+            </span>
+          )}
         </div>
 
         {/* Data Table */}

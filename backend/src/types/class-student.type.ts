@@ -8,6 +8,11 @@ export const ClassStudentSchema = GenerateZodSchemas(ClassStudents, {
     schema.int("Class ID must be an integer").positive("Please select a valid class."),
   student_account_id: (schema) =>
     schema.int("Student ID must be an integer").positive("Please select a valid student."),
+  semester_id: (schema) =>
+    schema
+      .int("Semester ID must be an integer")
+      .positive("Please select a valid semester.")
+      .optional(),
 });
 
 export type ClassStudentSelect = z.infer<typeof ClassStudentSchema.select>;
@@ -15,6 +20,7 @@ export type ClassStudentInsert = z.infer<typeof ClassStudentSchema.insert>;
 
 export const ClassStudentSearchSchema = createSearchSchema("ClassStudents").extend({
   class_id: z.coerce.number().int().positive().optional(),
+  semester_id: z.coerce.number().int().positive().optional(),
   student_account_id: z.coerce.number().int().positive().optional(),
 });
 
