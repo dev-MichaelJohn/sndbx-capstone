@@ -299,12 +299,12 @@ export const HardDeleteRecord = async <
 
   let result;
   if (tx) {
-    [result] = await tx.delete(table).where(eq(column, id)).returning();
+    [result] = (await tx.delete(table).where(eq(column, id)).returning()) as any[];
 
     return result as TSelection;
   } else {
     return await db.transaction(async (tx) => {
-      const [nestedResult] = await tx.delete(table).where(eq(column, id)).returning();
+      const [nestedResult] = (await tx.delete(table).where(eq(column, id)).returning()) as any[];
 
       return nestedResult as TSelection;
     });

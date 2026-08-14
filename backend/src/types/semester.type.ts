@@ -14,7 +14,7 @@ const SemesterSchema = GenerateZodSchemas(Semesters, {
 });
 
 export const SemesterInsertSchema = SemesterSchema.insert.refine(
-  (data) => new Date(data.start_date) < new Date(data.end_date),
+  (data: any) => new Date(data.start_date) < new Date(data.end_date),
   {
     message: "Start date must be before end date.",
     path: ["end_date"],
@@ -22,7 +22,7 @@ export const SemesterInsertSchema = SemesterSchema.insert.refine(
 );
 
 export const SemesterUpdateSchema = SemesterSchema.update.refine(
-  (data) => {
+  (data: any) => {
     // Partial update — only enforce ordering when both dates are actually
     // present in this particular payload.
     if (!data.start_date || !data.end_date) return true;

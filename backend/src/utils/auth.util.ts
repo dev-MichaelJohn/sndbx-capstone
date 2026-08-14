@@ -29,7 +29,7 @@ export const LocalAuthStrategy = new LocalStrategy(
   async (email, password, done) => {
     try {
       const result = await AuthService.authenticateUserCredentials({ email, password });
-      return done(null, result.user);
+      return done(null, result.user as any);
     } catch (error) {
       return done(error);
     }
@@ -52,7 +52,7 @@ export const OTPAuthStrategy = new OTPStrategy(
       if (!validation.success) throw validation.error;
 
       const result = await AuthService.authenticateOTP(req.body);
-      return done(null, result.user);
+      return done(null, result.user as any);
     } catch (error) {
       return done(error);
     }
@@ -91,7 +91,7 @@ export const JWTAuthStrategy = new JWTStrategy(
           message: result.message || "Token expired.",
         });
 
-      return done(null, result.user);
+      return done(null, result.user as any);
     } catch (error) {
       return done(error);
     }
