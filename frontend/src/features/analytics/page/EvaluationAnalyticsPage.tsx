@@ -11,7 +11,7 @@ import { FacultyRankingsChart } from "../components/FacultyRankingsChart";
 import { Button } from "@/components/ui/button";
 
 export const EvaluationAnalyticsPage = () => {
-  const [selectedSemesterId] = useState<number | undefined>(undefined);
+  const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined);
 
   const {
     data: analytics,
@@ -47,8 +47,11 @@ export const EvaluationAnalyticsPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        {/* 1. Header Section */}
-        <AnalyticsHeader />
+        {/* 1. Header Section with Semester Selector */}
+        <AnalyticsHeader
+          selectedSemesterId={selectedSemesterId}
+          onSemesterChange={setSelectedSemesterId}
+        />
 
         {/* 2. KPI Summary Metrics Overview */}
         <KpiMetricsOverview kpis={analytics.kpis} />

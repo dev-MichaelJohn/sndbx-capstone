@@ -17,8 +17,8 @@ interface CollegePerformanceChartProps {
 }
 
 const collegeChartConfig = {
-  avg_set: { label: "Avg SET", color: "hsl(var(--chart-1))" },
-  avg_sef: { label: "Avg SEF", color: "hsl(var(--chart-2))" },
+  avg_set: { label: "Avg SET", color: "#10b981" }, // Emerald-500
+  avg_sef: { label: "Avg SEF", color: "#3b82f6" }, // Blue-500
 } satisfies ChartConfig;
 
 const EmptyState = () => (
@@ -41,8 +41,8 @@ export const CollegePerformanceChart = React.memo(
       <Card className="rounded-xl shadow-xs">
         <CardHeader className="border-b">
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-chart-1/10 mt-0.5">
-              <BarChart3 className="h-4 w-4 text-chart-1" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 mt-0.5">
+              <BarChart3 className="h-4 w-4 text-emerald-500" />
             </div>
             <div>
               <CardTitle className="text-base font-semibold">College Performance</CardTitle>
@@ -74,7 +74,7 @@ export const CollegePerformanceChart = React.memo(
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
                   fontSize={11}
-                  domain={[1, 5]}
+                  domain={[0, 100]}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -83,8 +83,8 @@ export const CollegePerformanceChart = React.memo(
                   content={<ChartTooltipContent />}
                 />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Bar dataKey="avg_set" fill="var(--color-avg_set)" radius={[5, 5, 0, 0]} />
-                <Bar dataKey="avg_sef" fill="var(--color-avg_sef)" radius={[5, 5, 0, 0]} />
+                <Bar dataKey="avg_set" fill="#10b981" radius={[5, 5, 0, 0]} />
+                <Bar dataKey="avg_sef" fill="#3b82f6" radius={[5, 5, 0, 0]} />
               </BarChart>
             </ChartContainer>
           )}
