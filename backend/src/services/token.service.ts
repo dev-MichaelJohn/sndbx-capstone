@@ -112,10 +112,12 @@ class tokenService implements ITokenService {
    * @returns an options object for `res.cookie(...)`
    */
   generateCookieOptions(rememberMe: boolean = false): RefreshCookieOptions {
+    const isProduction = env.NODE_ENV === "production";
+
     return {
       httpOnly: true,
-      secure: env.NODE_ENV !== "development",
-      sameSite: "lax" as const,
+      secure: isProduction ? true : env.NODE_ENV !== "development",
+      sameSite: isProduction ? "none" : "lax",
       ...(rememberMe
         ? {
             maxAge: 7 * ONE_DAY,
