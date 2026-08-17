@@ -25,8 +25,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     >
       <div className="space-y-1">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{title}</h1>
           {badge}
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{title}</h1>
         </div>
         {description && (
           <p className="text-xs text-muted-foreground sm:text-sm max-w-2xl leading-relaxed">
