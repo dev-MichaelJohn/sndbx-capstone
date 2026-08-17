@@ -5,11 +5,13 @@ import {
 } from "@/features/evaluation-report/api/evaluation-report.service";
 
 /**
- * Fetches assigned teaching course offerings for a specific faculty member.
+ * Fetches assigned teaching course offerings for a specific faculty member,
+ * filtered by an optional semesterId.
  */
-export const useFacultyOfferings = (facultyId?: number) => {
+export const useFacultyOfferings = (facultyId?: number, semesterId?: number) => {
   return useCourseOfferings({
     faculty_id: facultyId,
+    semester_id: semesterId,
     page: 1,
   });
 };
