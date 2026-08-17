@@ -17,6 +17,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DataTable } from "@/components/main-data-table";
+import { ViewSwitcher, type ViewMode } from "@/components/ui/view-switcher";
+import { PageHeader } from "@/components/ui/page-header";
 
 import type { StudentClassWithDetails } from "backend/types/student-class.type";
 import {
@@ -27,6 +29,7 @@ import { useClassStudents } from "@/features/class-student/api/class-student.ser
 import { useSemesters } from "@/features/semester/api/semester.service";
 import { useCourseOffering } from "@/features/offerings/api/offerings.service";
 import { getStudentClassColumns } from "../components/StudentClassColumns";
+import { StudentRosterCard } from "../components/StudentRosterCard";
 import { CourseOfferingStudentEnrollDialog } from "../components/StudentClassCreate";
 import { CourseOfferingRosterCards } from "../components/StudentClassCards";
 
@@ -38,14 +41,13 @@ export const CourseOfferingStudentsPage = () => {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
   const [droppingStudent, setDroppingStudent] = useState<StudentClassWithDetails | null>(null);
 
-  // Fetch course offering details to get its exact semester_id
   const { data: offeringData } = useCourseOffering(courseOfferingId);
 
-  // Fetch active semester to verify if this offering belongs to current active term
   const { data: semesterResponse } = useSemesters({
     search: undefined,
     page: 1,
@@ -58,7 +60,6 @@ export const CourseOfferingStudentsPage = () => {
     offeringData?.semester_id && activeSemesterId && offeringData.semester_id === activeSemesterId,
   );
 
-  // Fetch enrolled students for this course offering
   const {
     data: offeringStudentsResponse,
     isPending: isOfferingStudentsPending,
@@ -71,7 +72,6 @@ export const CourseOfferingStudentsPage = () => {
 
   const enrolledList = offeringStudentsResponse?.data ?? [];
 
-  // Fetch official class section roster to cross-reference section members
   const { data: officialClassResponse, isPending: isOfficialClassPending } = useClassStudents(
     { class_id: currentClassId },
     { enabled: !!currentClassId },
@@ -125,27 +125,40 @@ export const CourseOfferingStudentsPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        {/* Header Navigation */}
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="size-9 shrink-0 cursor-pointer rounded-lg border-border/60 hover:bg-muted/80 hover:text-foreground"
-            title="Back"
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-              Course Offering Roster
-            </h1>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              Manage course enrollments, drop records, and enroll irregular students.
-            </p>
-          </div>
-        </div>
+        {/* Header */}
+        <PageHeader
+          title="Course Offering Roster"
+          description="Manage course enrollments, drop records, and enroll irregular students."
+          badge={
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="size-8 shrink-0 rounded-lg"
+              title="Back"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+          }
+          actions={
+            isCurrentActiveSemester ? (
+              <Button
+                size="sm"
+                className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium gap-1.5"
+                onClick={() => setIsEnrollOpen(true)}
+              >
+                <UserPlus className="size-3.5" /> Enroll Student
+              </Button>
+            ) : (
+              <Badge
+                variant="outline"
+                className="text-xs italic text-muted-foreground py-1 border-border/60"
+              >
+                Archived Roster (Read Only)
+              </Badge>
+            )
+          }
+        />
 
         {/* Roster KPI Summary Cards */}
         <CourseOfferingRosterCards
@@ -155,11 +168,11 @@ export const CourseOfferingStudentsPage = () => {
           isLoading={isOfferingStudentsPending || isOfficialClassPending}
         />
 
-        {/* Data Table Shell */}
-        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
-          <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Controls Bar & Roster Views */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search students..."
                 value={search}
@@ -167,73 +180,85 @@ export const CourseOfferingStudentsPage = () => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="h-8 rounded-lg pl-8 text-xs"
+                className="h-8 rounded-lg pl-8 text-xs bg-card"
               />
             </div>
 
-            {/* Only allow enrolling irregular students in active semester */}
-            {isCurrentActiveSemester ? (
-              <Button
-                size="sm"
-                className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium"
-                onClick={() => setIsEnrollOpen(true)}
-              >
-                <UserPlus className="mr-1.5 size-3.5" /> Enroll Student
-              </Button>
-            ) : (
-              <Badge
-                variant="outline"
-                className="text-xs italic text-muted-foreground py-1 border-border/60"
-              >
-                Archived Term Roster (Read Only)
-              </Badge>
-            )}
+            <ViewSwitcher mode={viewMode} onChange={setViewMode} />
           </div>
 
-          <DataTable
-            columns={columns}
-            data={enrolledList}
-            getRowId={(row) => row.id}
-            isLoading={isOfferingStudentsPending}
-            isError={isStudentsError}
-            error={studentsError}
-            emptyMessage="No students currently enrolled in this course offering."
-          />
-
-          {/* Footer Pagination */}
-          <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
-            <span>
-              {offeringStudentsResponse?.pagination
-                ? `Page ${offeringStudentsResponse.pagination.currentPage} of ${offeringStudentsResponse.pagination.totalPage}`
-                : "Loading page info..."}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 rounded-lg"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={
-                  !offeringStudentsResponse?.pagination?.hasPrev || isOfferingStudentsPending
-                }
-              >
-                <ChevronLeft className="size-3.5" />
-              </Button>
-              <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
-                {offeringStudentsResponse?.pagination?.currentPage ?? 1}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 rounded-lg"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={
-                  !offeringStudentsResponse?.pagination?.hasNext || isOfferingStudentsPending
-                }
-              >
-                <ChevronRight className="size-3.5" />
-              </Button>
+          {/* Grid View vs Table View */}
+          {viewMode === "grid" ? (
+            isOfferingStudentsPending ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-32 rounded-xl border bg-card animate-pulse" />
+                ))}
+              </div>
+            ) : enrolledList.length === 0 ? (
+              <div className="flex h-40 flex-col items-center justify-center rounded-xl border border-dashed bg-card text-center text-xs text-muted-foreground">
+                No students currently enrolled in this course offering.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {enrolledList.map((student) => (
+                  <StudentRosterCard
+                    key={student.id}
+                    student={student}
+                    isRegular={officialStudentAccountIds.has(student.student_account_id)}
+                    isDropping={dropMutation.isPending}
+                    isCurrentActiveSemester={isCurrentActiveSemester}
+                    onDrop={(s) => setDroppingStudent(s)}
+                  />
+                ))}
+              </div>
+            )
+          ) : (
+            <div className="overflow-hidden rounded-xl border bg-card shadow-2xs">
+              <DataTable
+                columns={columns}
+                data={enrolledList}
+                getRowId={(row) => row.id}
+                isLoading={isOfferingStudentsPending}
+                isError={isStudentsError}
+                error={studentsError}
+                emptyMessage="No students currently enrolled in this course offering."
+              />
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="shrink-0 border-t bg-card px-6 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {offeringStudentsResponse?.pagination
+              ? `Page ${offeringStudentsResponse.pagination.currentPage} of ${offeringStudentsResponse.pagination.totalPage}`
+              : "1 of 1"}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 rounded-lg"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={!offeringStudentsResponse?.pagination?.hasPrev || isOfferingStudentsPending}
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
+              {offeringStudentsResponse?.pagination?.currentPage ?? 1}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 rounded-lg"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!offeringStudentsResponse?.pagination?.hasNext || isOfferingStudentsPending}
+            >
+              <ChevronRight className="size-3.5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -282,3 +307,5 @@ export const CourseOfferingStudentsPage = () => {
     </div>
   );
 };
+
+export default CourseOfferingStudentsPage;

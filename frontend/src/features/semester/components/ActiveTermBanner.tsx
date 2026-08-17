@@ -56,7 +56,7 @@ export const ActiveTermBanner: React.FC<ActiveTermBannerProps> = ({
   const termProgress = Math.min(100, Math.max(0, Math.round((daysElapsed / totalDays) * 100)));
 
   return (
-    <Card className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 shadow-2xs">
+    <Card className="relative overflow-hidden rounded-2xl border border-primary/25 bg-linear-to-r from-primary/10 via-primary/5 to-background p-6 shadow-2xs">
       <CardContent className="p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="space-y-2 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
