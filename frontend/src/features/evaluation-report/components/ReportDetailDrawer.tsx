@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -81,8 +80,9 @@ export const ReportDetailDrawer: React.FC<ReportDetailDrawerProps> = ({ reportId
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl h-[88vh] flex flex-col p-0 rounded-2xl overflow-hidden border border-border/80 bg-card shadow-2xl">
-        <DialogHeader className="p-5 border-b bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+      <DialogContent className="sm:max-w-4xl lg:max-w-5xl w-[92vw] h-[88vh] max-h-[90vh] flex flex-col p-0 rounded-2xl overflow-hidden border border-border/80 bg-card shadow-2xl">
+        {/* Header */}
+        <DialogHeader className="p-5 px-6 border-b bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
           <div>
             <div className="flex items-center gap-2.5">
               <DialogTitle className="text-base font-bold tracking-tight text-foreground">
@@ -91,7 +91,7 @@ export const ReportDetailDrawer: React.FC<ReportDetailDrawerProps> = ({ reportId
               {detail && <EvaluationReportStatusBadge status={detail.report.status} />}
             </div>
             {detail && (
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 wrap-break-words">
                 {detail.faculty.name} • {detail.faculty.department} ({detail.semester.term} Term)
               </DialogDescription>
             )}
@@ -117,13 +117,14 @@ export const ReportDetailDrawer: React.FC<ReportDetailDrawerProps> = ({ reportId
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 p-6">
+        {/* Scrollable Body */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
           {isLoading || !detail ? (
             <div className="p-8 text-center text-xs text-muted-foreground">
               Loading evaluation report detail...
             </div>
           ) : (
-            <div className="space-y-6">
+            <>
               {/* Visual Rating Meters Grid */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <VisualRatingMeter type="set" score={detail.report.overall_set_rating} />
@@ -225,9 +226,9 @@ export const ReportDetailDrawer: React.FC<ReportDetailDrawerProps> = ({ reportId
                   </Button>
                 </div>
               )}
-            </div>
+            </>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

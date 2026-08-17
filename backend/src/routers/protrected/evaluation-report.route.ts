@@ -1,11 +1,12 @@
 import { Router, type IRouter } from "express";
 import EvaluationReportController from "@/controllers/evaluation-report.controller.js";
-import { requirePermission } from "@/middlewares/rbac.middleware.js";
+import { requirePermission, requireAnyPermission } from "@/middlewares/rbac.middleware.js";
 import { PERMISSIONS } from "@/types/seeder.type.js";
 import { resolveSupervisorScope } from "@/middlewares/supervisor-scope.middleware.js";
 
 const EvaluationReportRouter: IRouter = Router({ mergeParams: true });
 
+// Institutional List (Admins / Supervisors)
 EvaluationReportRouter.get(
   "/",
   requirePermission(PERMISSIONS.EVALUATION_REPORT_VIEW_ALL),
@@ -33,20 +34,20 @@ EvaluationReportRouter.get(
   (req, res, next) => EvaluationReportController.getFacultyReports(req, res, next),
 );
 
+// Individual Report Detail (Faculty Self OR Admin/Supervisor View All)
 EvaluationReportRouter.get(
   "/:id",
-  requirePermission(
+  requireAnyPermission(
     PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
     PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
   ),
-  resolveSupervisorScope,
   (req, res, next) => EvaluationReportController.getReportDetail(req, res, next),
 );
 
 // CHED Compliant Document Rendering (PDF Streams)
 EvaluationReportRouter.get(
   "/:id/ifer/pdf",
-  requirePermission(
+  requireAnyPermission(
     PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
     PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
   ),
@@ -55,7 +56,7 @@ EvaluationReportRouter.get(
 
 EvaluationReportRouter.get(
   "/:id/fedaf/pdf",
-  requirePermission(
+  requireAnyPermission(
     PERMISSIONS.EVALUATION_REPORT_VIEW_SELF,
     PERMISSIONS.EVALUATION_REPORT_VIEW_ALL,
   ),

@@ -44,13 +44,17 @@ export interface IEvaluationReportService {
     scope?: SupervisorScope | null,
   ): Promise<Array<IferSelect & { faculty_name: string | null }>>;
   generateBatchReports(payload: GenerateBatchIferReq): Promise<{ generated_count: number }>;
-  getReportDetail(reportId: number, isSelfView?: boolean): Promise<UnifiedFacultyReportDetail>;
+  getReportDetail(
+    reportId: number,
+    isSelfView?: boolean,
+    userId?: number,
+  ): Promise<UnifiedFacultyReportDetail>;
   getFacultyReports(facultyId: number): Promise<IferSelect[]>;
   saveDevelopmentPlan(reportId: number, payload: UpdateDevelopmentPlanReq): Promise<IferSelect>;
   acknowledgeReport(reportId: number, facultyId: number): Promise<IferSelect>;
   updateReportStatus(reportId: number, payload: UpdateIferStatusReq): Promise<IferSelect>;
-  renderIferPdf(reportId: number, isSelfView?: boolean): Promise<Buffer>;
-  renderFedafPdf(reportId: number): Promise<Buffer>;
+  renderIferPdf(reportId: number, isSelfView?: boolean, userId?: number): Promise<Buffer>;
+  renderFedafPdf(reportId: number, isSelfView?: boolean, userId?: number): Promise<Buffer>;
 }
 
 export class evaluationReportService implements IEvaluationReportService {
@@ -596,8 +600,17 @@ export class evaluationReportService implements IEvaluationReportService {
     return { generated_count: generatedCount };
   }
 
-  async getReportDetail(reportId: number, isSelfView = false): Promise<UnifiedFacultyReportDetail> {
+  async getReportDetail(
+    reportId: number,
+    isSelfView = false,
+    userId?: number,
+  ): Promise<UnifiedFacultyReportDetail> {
     const report = await this.findActiveReportById(reportId);
+
+    // Ownership Enforcement: Faculty self-view can ONLY view their own report
+    if (isSelfView && userId && report.faculty_id !== userId) {
+      throw new AppError(403, "Access denied. You can only view your own evaluation reports.");
+    }
 
     const faculty = await GetRecord<
       "Accounts",
@@ -617,7 +630,6 @@ export class evaluationReportService implements IEvaluationReportService {
       where: (s) => eq(s.id, report.semester_id),
     });
 
-    // Dynamically resolve actual College & Program department name for this faculty in this term
     const departmentInfo = await GetRecord<
       "CourseOfferings",
       { college_name: string | null; college_code: string | null; program_name: string | null }
@@ -783,13 +795,13 @@ export class evaluationReportService implements IEvaluationReportService {
     return updated as IferSelect;
   }
 
-  async renderIferPdf(reportId: number, isSelfView = false): Promise<Buffer> {
-    const details = await this.getReportDetail(reportId, isSelfView);
+  async renderIferPdf(reportId: number, isSelfView = false, userId?: number): Promise<Buffer> {
+    const details = await this.getReportDetail(reportId, isSelfView, userId);
     return await generateIferPdfBuffer(details);
   }
 
-  async renderFedafPdf(reportId: number): Promise<Buffer> {
-    const details = await this.getReportDetail(reportId, false);
+  async renderFedafPdf(reportId: number, isSelfView = false, userId?: number): Promise<Buffer> {
+    const details = await this.getReportDetail(reportId, isSelfView, userId);
     return await generateFedafPdfBuffer(details);
   }
 }

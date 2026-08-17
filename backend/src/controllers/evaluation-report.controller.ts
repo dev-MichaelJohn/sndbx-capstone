@@ -57,7 +57,8 @@ export class evaluationReportController implements IEvaluationReportController {
     try {
       const id = await this.extractId(req.params.id, "Valid report ID required.");
       const isSelfView = this.isFacultySelfView(req);
-      const result = await this.reportService.getReportDetail(id, isSelfView);
+      const userId = req.user?.id;
+      const result = await this.reportService.getReportDetail(id, isSelfView, userId);
 
       res.status(200).json(createAPIResponse(200, "Report detail retrieved successfully.", result));
     } catch (error) {
@@ -100,13 +101,17 @@ export class evaluationReportController implements IEvaluationReportController {
       const facultyId = req.user?.id;
       if (!facultyId) throw new AppError(401, "Authentication required.");
 
-      const result = await this.reportService.acknowledgeReport(id, facultyId);
+      const result = await this.authServiceCheck(id, facultyId);
       res
         .status(200)
         .json(createAPIResponse(200, "Report acknowledged by faculty successfully.", result));
     } catch (error) {
       next(error);
     }
+  }
+
+  private async authServiceCheck(id: number, facultyId: number) {
+    return await this.reportService.acknowledgeReport(id, facultyId);
   }
 
   async updateReportStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -123,7 +128,8 @@ export class evaluationReportController implements IEvaluationReportController {
     try {
       const id = await this.extractId(req.params.id, "Valid report ID required.");
       const isSelfView = this.isFacultySelfView(req);
-      const pdfBuffer = await this.reportService.renderIferPdf(id, isSelfView);
+      const userId = req.user?.id;
+      const pdfBuffer = await this.reportService.renderIferPdf(id, isSelfView, userId);
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="IFER-Report-${id}.pdf"`);
@@ -136,7 +142,9 @@ export class evaluationReportController implements IEvaluationReportController {
   async downloadFedafPdf(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = await this.extractId(req.params.id, "Valid report ID required.");
-      const pdfBuffer = await this.reportService.renderFedafPdf(id);
+      const isSelfView = this.isFacultySelfView(req);
+      const userId = req.user?.id;
+      const pdfBuffer = await this.reportService.renderFedafPdf(id, isSelfView, userId);
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="FEDAF-Report-${id}.pdf"`);

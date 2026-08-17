@@ -10,9 +10,12 @@ interface VisualRatingMeterProps {
 }
 
 const classificationLabel = (numericScore: number): { label: string; color: string } => {
-  if (numericScore >= 4.5) return { label: "Outstanding", color: "text-emerald-500" };
-  if (numericScore >= 3.5) return { label: "Very Satisfactory", color: "text-sky-500" };
-  if (numericScore >= 2.5) return { label: "Satisfactory", color: "text-amber-500" };
+  if (numericScore >= 4.5 || numericScore >= 90)
+    return { label: "Outstanding", color: "text-emerald-500" };
+  if (numericScore >= 3.5 || numericScore >= 85)
+    return { label: "Very Satisfactory", color: "text-sky-500" };
+  if (numericScore >= 2.5 || numericScore >= 75)
+    return { label: "Satisfactory", color: "text-amber-500" };
   return { label: "Needs Improvement", color: "text-rose-500" };
 };
 
@@ -22,7 +25,9 @@ export const VisualRatingMeter: React.FC<VisualRatingMeterProps> = ({
   maxScore = 5.0,
 }) => {
   const numScore = score != null ? Number(score) : 0;
-  const percentage = Math.min(100, Math.max(0, (numScore / maxScore) * 100));
+  const isPercentage = numScore > 5.0; // Automatically detect percentage vs 5-point scale
+  const effectiveMax = isPercentage ? 100 : maxScore;
+  const percentage = Math.min(100, Math.max(0, (numScore / effectiveMax) * 100));
   const classification = classificationLabel(numScore);
 
   const meta = {
@@ -31,21 +36,18 @@ export const VisualRatingMeter: React.FC<VisualRatingMeterProps> = ({
       weight: "60% Weight",
       icon: Star,
       iconBg: "bg-amber-500/10 text-amber-500",
-      barColor: "bg-amber-500",
     },
     sef: {
       title: "SEF Score",
       weight: "40% Weight",
       icon: Activity,
       iconBg: "bg-indigo-500/10 text-indigo-500",
-      barColor: "bg-indigo-500",
     },
     combined: {
       title: "Combined Rating",
       weight: "100% Total",
       icon: FileText,
       iconBg: "bg-emerald-500/10 text-emerald-500",
-      barColor: "bg-emerald-500",
     },
   }[type];
 
@@ -66,12 +68,12 @@ export const VisualRatingMeter: React.FC<VisualRatingMeterProps> = ({
       </div>
 
       <div className="flex items-baseline justify-between pt-1">
-        <span className="font-mono text-2xl font-bold tracking-tight text-foreground">
-          {score != null ? Number(score).toFixed(2) : "N/A"}
-          <span className="text-xs text-muted-foreground font-normal">
-            {" "}
-            / {maxScore.toFixed(1)}
-          </span>
+        <span className="font-mono text-xl font-bold tracking-tight text-foreground">
+          {score != null
+            ? isPercentage
+              ? `${numScore.toFixed(2)}%`
+              : `${numScore.toFixed(2)} / ${maxScore.toFixed(1)}`
+            : "N/A"}
         </span>
         {score != null && (
           <span className={`text-xs font-semibold ${classification.color}`}>
