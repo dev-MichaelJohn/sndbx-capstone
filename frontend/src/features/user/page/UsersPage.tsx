@@ -1,17 +1,11 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { Plus, Search, Users, GraduationCap, UserCheck, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader as UiCardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,16 +17,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DataTable } from "@/components/main-data-table";
+import { TablePagination } from "@/components/table-pagination";
+import { StatCard } from "@/components/ui/stat-card";
+import { ViewSwitcher, type ViewMode } from "@/components/ui/view-switcher";
+import { PageHeader } from "@/components/ui/page-header";
 
 import type { UserWithDetails, SystemRole } from "backend/types/user.type";
 import { useUsers, useDeleteUser } from "../api/user.service";
 import { formatFullName } from "@/lib/nameFormatter";
 import { getUserColumns } from "../components/UserColumns";
+import { UserCard } from "../components/UserCard";
+import { UserProfileDrawer } from "../components/UserProfileDrawer";
 import { UserCreateDialog } from "../components/UserCreate";
 import { UserEditDialog } from "../components/UserEdit";
-import { UserStatsCards } from "../components/UserStatsCards";
 import { useUser } from "@/features/auth/context/user.context";
 import { CSVImportDialog } from "@/features/bulk-import/components/CSVImportDialog";
+
+type PersonaTab = "ALL" | "STUDENT" | "FACULTY" | "ADMIN";
 
 export const UsersPage = () => {
   const { user: currentUser } = useUser();
@@ -43,12 +44,16 @@ export const UsersPage = () => {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<Exclude<SystemRole, "SYS_ADMIN"> | "ALL">("ALL");
+  const [personaTab, setPersonaTab] = useState<PersonaTab>("ALL");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  // Dialog state
+  // Inspection & Dialog States
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [inspectUser, setInspectUser] = useState<UserWithDetails | null>(null);
   const [editingUser, setEditingUser] = useState<UserWithDetails | null>(null);
   const [deletingUser, setDeletingUser] = useState<UserWithDetails | null>(null);
+
+  const roleFilter = personaTab === "ALL" ? undefined : (personaTab as SystemRole);
 
   const {
     data: usersResponse,
@@ -59,7 +64,7 @@ export const UsersPage = () => {
   } = useUsers({
     page,
     search: search.trim() || undefined,
-    role: roleFilter === "ALL" ? undefined : roleFilter,
+    role: roleFilter,
   });
 
   const deleteMutation = useDeleteUser();
@@ -81,61 +86,109 @@ export const UsersPage = () => {
     isSysAdmin,
   });
 
-  // Filter out system administrator accounts from display
   const users = useMemo(
     () => (usersResponse?.data ?? []).filter((user) => !user.roles.includes("SYS_ADMIN")),
     [usersResponse?.data],
   );
 
-  // Compute live metrics for the cards
-  const stats = useMemo(() => {
-    const rawList = usersResponse?.data ?? [];
-    return {
+  const rawList = usersResponse?.data ?? [];
+  const stats = useMemo(
+    () => ({
       total: usersResponse?.pagination?.totalItems ?? rawList.length,
       students: rawList.filter((u) => u.roles.includes("STUDENT")).length,
       faculty: rawList.filter((u) => u.roles.includes("FACULTY")).length,
       supervisors: rawList.filter((u) => u.roles.includes("SUPERVISOR")).length,
-    };
-  }, [usersResponse]);
+    }),
+    [usersResponse, rawList],
+  );
 
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        {/* Page Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">User Accounts</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage system accounts, user details, and system role access permissions.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <CSVImportDialog entity="users" title="Import Users" onSuccess={() => refetch()} />
-            <Button
-              size="sm"
-              className="h-8 rounded-lg text-xs font-medium w-full sm:w-auto gap-1.5"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              <Plus className="size-3.5" /> Add User
-            </Button>
-          </div>
-        </div>
-
-        {/* Dedicated Stat Cards Component */}
-        <UserStatsCards
-          total={stats.total}
-          students={stats.students}
-          faculty={stats.faculty}
-          supervisors={stats.supervisors}
+        {/* Header */}
+        <PageHeader
+          title="User Accounts"
+          description="Manage system accounts, user profiles, and role access permissions."
+          actions={
+            <div className="flex items-center gap-2">
+              <CSVImportDialog entity="users" title="Import Users" onSuccess={() => refetch()} />
+              <Button
+                size="sm"
+                className="h-8 rounded-lg text-xs font-medium gap-1.5 cursor-pointer"
+                onClick={() => setIsCreateOpen(true)}
+              >
+                <Plus className="size-3.5" /> Add User
+              </Button>
+            </div>
+          }
         />
 
-        {/* Table Section */}
-        <Card className="overflow-hidden rounded-xl shadow-xs gap-0 pb-0">
-          <CardHeader className="flex items-center justify-between border-b px-6 flex-col gap-2.5 sm:flex-row sm:items-center">
-            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+        {/* Stat Cards */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            title="Total Accounts"
+            value={stats.total}
+            subtitle="Registered users"
+            icon={Users}
+            accent="violet"
+            isLoading={isUsersPending}
+          />
+          <StatCard
+            title="Students"
+            value={stats.students}
+            subtitle="Enrolled student body"
+            icon={GraduationCap}
+            accent="emerald"
+            isLoading={isUsersPending}
+          />
+          <StatCard
+            title="Faculty Members"
+            value={stats.faculty}
+            subtitle="Teaching staff"
+            icon={UserCheck}
+            accent="sky"
+            isLoading={isUsersPending}
+          />
+          <StatCard
+            title="Supervisors"
+            value={stats.supervisors}
+            subtitle="Deans & Chairs"
+            icon={ShieldCheck}
+            accent="indigo"
+            isLoading={isUsersPending}
+          />
+        </div>
+
+        {/* Persona Tabs & Controls */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Tabs
+              value={personaTab}
+              onValueChange={(val) => {
+                setPersonaTab(val as PersonaTab);
+                setPage(1);
+              }}
+              className="w-full sm:w-auto"
+            >
+              <TabsList className="grid h-9 w-full grid-cols-4 rounded-lg bg-muted/60 p-1 sm:w-110">
+                <TabsTrigger value="ALL" className="text-xs font-medium rounded-md">
+                  All Users
+                </TabsTrigger>
+                <TabsTrigger value="STUDENT" className="text-xs font-medium rounded-md">
+                  Students
+                </TabsTrigger>
+                <TabsTrigger value="FACULTY" className="text-xs font-medium rounded-md">
+                  Faculty
+                </TabsTrigger>
+                <TabsTrigger value="ADMIN" className="text-xs font-medium rounded-md">
+                  Admins
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="flex items-center gap-3">
               <div className="relative w-full sm:w-64">
-                <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search name or ID..."
                   value={search}
@@ -143,90 +196,67 @@ export const UsersPage = () => {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-8 h-8 rounded-lg text-xs"
+                  className="h-8 rounded-lg pl-8 text-xs bg-card"
                 />
               </div>
 
-              <Select
-                value={roleFilter}
-                onValueChange={(val) => {
-                  setRoleFilter(val as Exclude<SystemRole, "SYS_ADMIN"> | "ALL");
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-8 w-full sm:w-40 text-xs rounded-lg">
-                  <SelectValue placeholder="Filter by Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL" className="text-xs">
-                    All Roles
-                  </SelectItem>
-                  <SelectItem value="STUDENT" className="text-xs">
-                    Student
-                  </SelectItem>
-                  <SelectItem value="FACULTY" className="text-xs">
-                    Faculty
-                  </SelectItem>
-                  <SelectItem value="SUPERVISOR" className="text-xs">
-                    Supervisor
-                  </SelectItem>
-                  <SelectItem value="ADMIN" className="text-xs">
-                    Admin
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <ViewSwitcher mode={viewMode} onChange={setViewMode} />
             </div>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <DataTable
-              columns={columns}
-              data={users}
-              getRowId={(row) => row.id}
-              isLoading={isUsersPending}
-              isError={isUsersError}
-              error={usersError}
-              emptyMessage="No user accounts found matching the criteria."
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Pagination Footer */}
-      <div className="shrink-0 border-t bg-card px-6 py-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {usersResponse?.pagination
-              ? `Page ${usersResponse.pagination.currentPage} of ${usersResponse.pagination.totalPage}`
-              : "Loading page info..."}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 rounded-lg p-0"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={!usersResponse?.pagination?.hasPrev || isUsersPending}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
-              {usersResponse?.pagination?.currentPage ?? 1}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 rounded-lg p-0"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!usersResponse?.pagination?.hasNext || isUsersPending}
-            >
-              <ChevronRight className="size-3.5" />
-            </Button>
           </div>
+
+          {/* Grid View vs Table View */}
+          {viewMode === "grid" ? (
+            isUsersPending ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-44 rounded-xl border bg-card animate-pulse" />
+                ))}
+              </div>
+            ) : users.length === 0 ? (
+              <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed bg-card text-center text-xs text-muted-foreground">
+                No user accounts found matching criteria.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {users.map((u: UserWithDetails) => (
+                  <UserCard
+                    key={u.id}
+                    user={u}
+                    onViewProfile={(selected) => setInspectUser(selected)}
+                    onEdit={(selected) => setEditingUser(selected)}
+                    onDelete={(selected) => setDeletingUser(selected)}
+                    canManage={isSysAdmin || !u.roles.includes("ADMIN")}
+                  />
+                ))}
+              </div>
+            )
+          ) : (
+            <Card className="overflow-hidden rounded-xl pb-0 shadow-2xs">
+              <UiCardHeader className="hidden" />
+              <CardContent className="p-0">
+                <DataTable
+                  columns={columns}
+                  data={users}
+                  getRowId={(row) => row.id}
+                  isLoading={isUsersPending}
+                  isError={isUsersError}
+                  error={usersError}
+                  emptyMessage="No user accounts found."
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
-      {/* Dialog Modals */}
+      {/* Pagination */}
+      <TablePagination
+        pagination={usersResponse?.pagination}
+        isPending={isUsersPending}
+        onPageChange={setPage}
+      />
+
+      {/* Modals & Inspection Drawers */}
       <UserCreateDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 
       <UserEditDialog
@@ -237,16 +267,26 @@ export const UsersPage = () => {
         }}
       />
 
+      <UserProfileDrawer
+        user={inspectUser}
+        onClose={() => setInspectUser(null)}
+        onEdit={(u) => setEditingUser(u)}
+        onDelete={(u) => setDeletingUser(u)}
+        canManage={isSysAdmin || (inspectUser ? !inspectUser.roles.includes("ADMIN") : false)}
+      />
+
       {/* Delete Confirmation Alert */}
       <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User Account?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-semibold">
+              Delete User Account?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               {deletingUser && (
                 <>
                   Are you sure you want to soft-delete the account for{" "}
-                  <strong>
+                  <strong className="text-foreground">
                     {formatFullName({
                       first_name: deletingUser.first_name,
                       middle_name: deletingUser.middle_name ?? "",
@@ -254,17 +294,22 @@ export const UsersPage = () => {
                       suffix: deletingUser.suffix ?? "",
                     })}
                   </strong>
-                  ? This action will revoke login credentials and system access.
+                  ? This will revoke login access.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={deleteMutation.isPending}
+              className="h-8 rounded-lg text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={deleteMutation.isPending}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="h-8 rounded-lg bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? "Deleting..." : "Yes, delete account"}
             </AlertDialogAction>
