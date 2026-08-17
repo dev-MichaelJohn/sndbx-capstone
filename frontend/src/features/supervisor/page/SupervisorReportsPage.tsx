@@ -15,7 +15,13 @@ export const SupervisorReportsPage = () => {
 
   const { data: reports = [], isPending, isError, error } = useSupervisorReports();
 
-  const columns = useMemo(() => getEvaluationReportColumns(), []);
+  const columns = useMemo(
+    () =>
+      getEvaluationReportColumns({
+        onInspect: (reportId) => setSelectedReportId(reportId),
+      }),
+    [],
+  );
 
   return (
     <div className="flex h-full flex-1 flex-col">

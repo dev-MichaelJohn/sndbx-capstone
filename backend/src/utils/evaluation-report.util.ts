@@ -1,14 +1,11 @@
 export const EVALUATION_WEIGHTS = {
-  SET_DEFAULT: 0.6,
-  SEF_DEFAULT: 0.4,
-  SET_PERCENTAGE: "60%",
-  SEF_PERCENTAGE: "40%",
+  SET_DEFAULT: undefined,
+  SEF_DEFAULT: undefined,
 } as const;
 
 export const RATING_CONFIG = {
   DECIMAL_PLACES: 2,
-  MIN_WEIGHT: 0,
-  MAX_WEIGHT: 1,
+  MAX_SCORE_INSTRUMENT: 75,
 } as const;
 
 export const PDF_LAYOUT = {

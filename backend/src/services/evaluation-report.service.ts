@@ -23,7 +23,7 @@ import {
 import { Accounts, PersonalDetails } from "@/schemas/auth.schema.js";
 import { generateIferPdfBuffer } from "@/utils/components/ifer.pdf.js";
 import { generateFedafPdfBuffer } from "@/utils/components/fedaf.pdf.js";
-import { EVALUATION_WEIGHTS, RATING_CONFIG } from "@/utils/evaluation-report.util.js";
+import { RATING_CONFIG } from "@/utils/evaluation-report.util.js";
 import {
   GenerateBatchIferReqSchema,
   UpdateDevelopmentPlanReqSchema,
@@ -76,8 +76,8 @@ export class evaluationReportService implements IEvaluationReportService {
   private computeCombinedRating(
     setRating: string | number | null,
     sefRating: string | number | null,
-    setWeight = EVALUATION_WEIGHTS.SET_DEFAULT,
-    sefWeight = EVALUATION_WEIGHTS.SEF_DEFAULT,
+    setWeight?: number,
+    sefWeight?: number,
   ): number | null {
     if (setWeight === undefined || sefWeight === undefined) return null;
 

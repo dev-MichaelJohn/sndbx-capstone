@@ -1,5 +1,5 @@
 import React from "react";
-import { Download, CheckCircle2 } from "lucide-react";
+import { Download, CheckCircle2, FileCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   useReportDetail,
   useSaveDevelopmentPlan,
   useAcknowledgeReport,
+  useUpdateReportStatus,
   downloadIferPdf,
   downloadFedafPdf,
 } from "../api/evaluation-report.service";
@@ -42,6 +43,7 @@ export const ReportDetailDrawer: React.FC<ReportDetailDrawerProps> = ({ reportId
   const { data: detail, isLoading } = useReportDetail(reportId ?? 0);
   const savePlan = useSaveDevelopmentPlan(reportId ?? 0);
   const acknowledge = useAcknowledgeReport(reportId ?? 0);
+  const updateStatus = useUpdateReportStatus(reportId ?? 0);
 
   const handleSavePlan = async (payload: {
     areas_for_improvement: string;
@@ -54,6 +56,16 @@ export const ReportDetailDrawer: React.FC<ReportDetailDrawerProps> = ({ reportId
       toast.success("FEDAF development plan updated successfully.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save plan.");
+    }
+  };
+
+  const handleFinalizeReport = async () => {
+    if (!reportId) return;
+    try {
+      await updateStatus.mutateAsync({ status: "FINALIZED" });
+      toast.success("Report finalized successfully and published for faculty review.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to finalize report.");
     }
   };
 
@@ -167,7 +179,31 @@ export const ReportDetailDrawer: React.FC<ReportDetailDrawerProps> = ({ reportId
                 onSave={handleSavePlan}
               />
 
-              {/* Acknowledgment Action Banner */}
+              {/* Finalize Action Banner (DRAFT status) */}
+              {detail.report.status === "DRAFT" && (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-xs">
+                  <div>
+                    <p className="font-semibold text-sky-600 dark:text-sky-400">
+                      Report Status: Draft
+                    </p>
+                    <p className="text-sky-700 dark:text-sky-300 mt-0.5">
+                      Once you finish saving the FEDAF plan above, finalize this report to publish
+                      it for faculty review.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleFinalizeReport}
+                    disabled={updateStatus.isPending}
+                    className="h-8 gap-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs cursor-pointer shrink-0"
+                  >
+                    <FileCheck className="size-3.5" />
+                    <span>{updateStatus.isPending ? "Finalizing..." : "Finalize & Publish"}</span>
+                  </Button>
+                </div>
+              )}
+
+              {/* Acknowledgment Action Banner (FINALIZED status) */}
               {detail.report.status === "FINALIZED" && (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs">
                   <div>

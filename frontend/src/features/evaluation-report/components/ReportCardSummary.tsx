@@ -41,36 +41,41 @@ export const ReportSummaryCard = ({ detail }: ReportSummaryCardProps) => {
       </div>
 
       {/* Ratings Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-        <div className="rounded-lg border p-3 bg-muted/20 space-y-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        {/* Primary 1: SET Rating */}
+        <div className="rounded-xl border p-4 bg-muted/20 space-y-1">
           <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
-            <Star className="size-3.5 text-amber-500" />
-            <span>SET Rating (60%)</span>
+            <Star className="size-4 text-amber-500" />
+            <span>Student Evaluation (SET)</span>
           </div>
-          <p className="text-lg font-bold font-mono text-foreground">
-            {report.overall_set_rating ? `${report.overall_set_rating} / 5.0` : "N/A"}
+          <p className="text-2xl font-bold font-mono text-foreground">
+            {report.overall_set_rating ? `${Number(report.overall_set_rating).toFixed(2)}%` : "N/A"}
           </p>
         </div>
 
-        <div className="rounded-lg border p-3 bg-muted/20 space-y-1">
+        {/* Primary 2: SEF Rating */}
+        <div className="rounded-xl border p-4 bg-muted/20 space-y-1">
           <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
-            <Activity className="size-3.5 text-indigo-500" />
-            <span>SEF Rating (40%)</span>
+            <Activity className="size-4 text-indigo-500" />
+            <span>Supervisor Evaluation (SEF)</span>
           </div>
-          <p className="text-lg font-bold font-mono text-foreground">
-            {report.overall_sef_rating ? `${report.overall_sef_rating} / 5.0` : "N/A"}
+          <p className="text-2xl font-bold font-mono text-foreground">
+            {report.overall_sef_rating ? `${Number(report.overall_sef_rating).toFixed(2)}%` : "N/A"}
           </p>
         </div>
 
-        <div className="rounded-lg border p-3 bg-emerald-500/10 border-emerald-500/20 space-y-1">
-          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-            <FileText className="size-3.5" />
-            <span>Combined Score</span>
+        {/* Optional: Combined Rating (Only shown if custom weights were specified) */}
+        {combined_weighted_rating != null && (
+          <div className="sm:col-span-2 rounded-xl border p-4 bg-emerald-500/10 border-emerald-500/20 space-y-1">
+            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+              <FileText className="size-4" />
+              <span>Optional Combined Score</span>
+            </div>
+            <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+              {combined_weighted_rating.toFixed(2)}%
+            </p>
           </div>
-          <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-            {combined_weighted_rating ? `${combined_weighted_rating.toFixed(2)} / 5.0` : "N/A"}
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );

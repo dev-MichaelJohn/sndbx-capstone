@@ -19,7 +19,13 @@ export const EvaluationReportPage = () => {
 
   const { data: reports = [], isPending, isError, error } = useAllReports();
 
-  const columns = useMemo(() => getEvaluationReportColumns(), []);
+  const columns = useMemo(
+    () =>
+      getEvaluationReportColumns({
+        onInspect: (reportId) => setInspectReportId(reportId),
+      }),
+    [],
+  );
 
   // Compute summary stats
   const stats = useMemo(() => {

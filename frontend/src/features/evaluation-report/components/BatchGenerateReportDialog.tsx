@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Sliders } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import { FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -29,9 +30,14 @@ import type { ScaleMode } from "backend/types/evaluation-report.type";
 export const BatchGenerateReportDialog = () => {
   const [open, setOpen] = useState(false);
   const [semesterId, setSemesterId] = useState<string>("");
-  const [minRating, setMinRating] = useState<number>(1);
-  const [maxRating, setMaxRating] = useState<number>(5);
+  const [minRating, _setMinRating] = useState<number>(1);
+  const [maxRating, _setMaxRating] = useState<number>(5);
   const [scaleMode, setScaleMode] = useState<ScaleMode>("PERCENTAGE_100");
+
+  // Optional Combined Weighting Toggle & States
+  const [enableCombinedScore, setEnableCombinedScore] = useState<boolean>(false);
+  const [setWeightPct, setSetWeightPct] = useState<number>(60); // 60%
+  const [sefWeightPct, setSefWeightPct] = useState<number>(40); // 40%
 
   const { data: semesterData, isLoading: isLoadingSemesters } = useSemesters({
     page: 1,
@@ -49,12 +55,19 @@ export const BatchGenerateReportDialog = () => {
       return;
     }
 
+    if (enableCombinedScore && setWeightPct + sefWeightPct !== 100) {
+      toast.error("SET Weight % and SEF Weight % must sum to 100%.");
+      return;
+    }
+
     try {
       const result = await generateBatch.mutateAsync({
         semester_id: Number(semesterId),
         min_rating: minRating,
         max_rating: maxRating,
         scale_mode: scaleMode,
+        set_weight: enableCombinedScore ? setWeightPct / 100 : undefined,
+        sef_weight: enableCombinedScore ? sefWeightPct / 100 : undefined,
       });
 
       const count = result?.generated_count ?? 0;
@@ -81,14 +94,14 @@ export const BatchGenerateReportDialog = () => {
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">Generate Batch Reports</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Aggregate independent SET and SEF evaluation scores per CHED CMO 19 guidelines.
+            Consolidate SET and SEF evaluation scores per CHED CMO 19 guidelines.
           </DialogDescription>
         </DialogHeader>
 
-        <FieldGroup className="py-2 space-y-3">
+        <FieldGroup className="py-2 space-y-3.5">
           {/* Target Academic Semester */}
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs">Academic Semester</Label>
+            <Label className="text-xs font-medium">Academic Semester</Label>
             <Select value={semesterId} onValueChange={setSemesterId} disabled={isLoadingSemesters}>
               <SelectTrigger className="h-8 rounded-lg text-xs bg-muted/20 border-border/60">
                 <SelectValue
@@ -98,7 +111,7 @@ export const BatchGenerateReportDialog = () => {
               <SelectContent className="rounded-xl">
                 {semesters.map((s) => (
                   <SelectItem key={s.id} value={s.id.toString()} className="text-xs">
-                    AY {s.school_year_start}–{s.school_year_end} ({s.semester_term} Semester)
+                    A.Y. {s.school_year_start}–{s.school_year_end} ({s.semester_term} Semester)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -107,7 +120,7 @@ export const BatchGenerateReportDialog = () => {
 
           {/* Scale Formula Mode */}
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs">Consolidation Scale Mode</Label>
+            <Label className="text-xs font-medium">Consolidation Scale Mode</Label>
             <Select value={scaleMode} onValueChange={(val) => setScaleMode(val as ScaleMode)}>
               <SelectTrigger className="h-8 rounded-lg text-xs">
                 <SelectValue />
@@ -123,26 +136,58 @@ export const BatchGenerateReportDialog = () => {
             </Select>
           </div>
 
-          {/* Score Bounds */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Min Rating Bound</Label>
-              <Input
-                type="number"
-                value={minRating}
-                onChange={(e) => setMinRating(Number(e.target.value))}
-                className="h-8 text-xs font-mono"
-              />
+          {/* Optional Combined Score Weighting Toggle */}
+          <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Sliders className="size-3.5 text-primary" />
+                  Optional Combined Score
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  {enableCombinedScore
+                    ? "Combined score enabled for SUC internal promotion points."
+                    : "Off by default (Pure CMO 19 parallel SET & SEF mode)."}
+                </p>
+              </div>
+              <Switch checked={enableCombinedScore} onCheckedChange={setEnableCombinedScore} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Max Rating Bound</Label>
-              <Input
-                type="number"
-                value={maxRating}
-                onChange={(e) => setMaxRating(Number(e.target.value))}
-                className="h-8 text-xs font-mono"
-              />
-            </div>
+
+            {/* Custom Weights Inputs (Rendered only when toggle is ON) */}
+            {enableCombinedScore && (
+              <div className="grid grid-cols-2 gap-3 pt-1 border-t border-border/40">
+                <div className="space-y-1">
+                  <Label className="text-[11px]">SET Weight %</Label>
+                  <Input
+                    type="number"
+                    value={setWeightPct}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setSetWeightPct(val);
+                      setSefWeightPct(100 - val);
+                    }}
+                    className="h-8 text-xs font-mono"
+                    min={0}
+                    max={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">SEF Weight %</Label>
+                  <Input
+                    type="number"
+                    value={sefWeightPct}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setSefWeightPct(val);
+                      setSetWeightPct(100 - val);
+                    }}
+                    className="h-8 text-xs font-mono"
+                    min={0}
+                    max={100}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </FieldGroup>
 
