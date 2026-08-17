@@ -34,23 +34,48 @@ export const getRecentAnonymousSubmissions = async () => {
   }
 };
 
+/**
+ * Hook to query recent anonymous submissions with a 10s polling fallback.
+ * Guarantees feed updates even if WebSocket connection drops.
+ */
 export const useRecentAnonymousSubmissions = () => {
   return useQuery({
     queryKey: EVALUATION_EXECUTION_KEYS.recentSubmissions,
     queryFn: getRecentAnonymousSubmissions,
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 5, // 5 seconds stale time
+    refetchInterval: 10000, // 10s polling fallback for resilience
   });
 };
 
+/**
+ * Socket listener hook for real-time live submission events.
+ * Dynamically injects authentication token and manages connection state.
+ */
 export const useEvaluationSocket = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!socket) return;
+    const rawToken = localStorage.getItem("access_token") ?? "";
+    const cleanToken = rawToken.replace(/^bearer\s+/i, "").trim();
 
-    socket.emit("sys-admin:join");
+    if (!cleanToken) return;
+
+    // 1. Inject fresh access token into Socket auth object
+    socket.auth = { token: cleanToken };
+
+    // 2. Connect if socket is currently disconnected
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      socket.emit("sys-admin:join");
+    }
+
+    const handleConnect = () => {
+      socket.emit("sys-admin:join");
+    };
 
     const handleLiveSubmission = (event: AnonymousSubmissionEvent) => {
+      // Optimistically prepend the new live submission to React Query cache
       queryClient.setQueryData<AnonymousSubmissionEvent[]>(
         EVALUATION_EXECUTION_KEYS.recentSubmissions,
         (previousData = []) => {
@@ -58,17 +83,17 @@ export const useEvaluationSocket = () => {
           return [event, ...filtered].slice(0, 5);
         },
       );
+      // Invalidate query cache to stay in sync with DB
       queryClient.invalidateQueries({
         queryKey: EVALUATION_EXECUTION_KEYS.recentSubmissions,
       });
     };
 
+    socket.on("connect", handleConnect);
     socket.on("evaluation:submitted", handleLiveSubmission);
-    socket.on("connect", () => {
-      socket.emit("sys-admin:join");
-    });
 
     return () => {
+      socket.off("connect", handleConnect);
       socket.off("evaluation:submitted", handleLiveSubmission);
     };
   }, [queryClient]);

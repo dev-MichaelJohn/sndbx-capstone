@@ -21,14 +21,19 @@ export const initSocket = (httpServer: HTTPServer) => {
   logger.info("🔌 Socket.io server initialized and active");
 
   io.use((socket, next) => {
-    // Authenticate handshake via cookies or auth header token[cite: 5]
-    const token = socket.handshake.auth?.token;
-    if (!token) {
+    // Extract token from auth object, authorization header, or query param
+    const rawToken =
+      socket.handshake.auth?.token ||
+      socket.handshake.headers?.authorization ||
+      socket.handshake.query?.token;
+
+    if (!rawToken) {
       logger.warn(
         `❌ Socket connection rejected: Missing authentication token for client [id: ${socket.id}]`,
       );
       return next(new Error("Authentication required"));
     }
+
     return next();
   });
 
@@ -50,6 +55,6 @@ export const initSocket = (httpServer: HTTPServer) => {
 
 export const emitLiveSubmission = (payload: AnonymousSubmissionEvent) => {
   if (!io) return;
+  // Broadcast once to all connected authenticated clients
   io.emit("evaluation:submitted", payload);
-  io.to("SYS_ADMIN_ROOM").emit("evaluation:submitted", payload);
 };
