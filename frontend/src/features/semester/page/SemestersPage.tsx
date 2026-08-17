@@ -1,34 +1,31 @@
-import { useState } from "react";
-import { isWithinInterval, parseISO, format } from "date-fns";
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  X,
-} from "lucide-react";
+import { useState, useMemo } from "react";
+import { format, parseISO, isWithinInterval } from "date-fns";
+import { Calendar as CalendarIcon, MoreHorizontal, Pencil, Plus, X } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Card, CardContent, CardHeader as UiCardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DataTable } from "@/components/main-data-table";
-import type { DataTableColumn } from "@/components/main-data-table";
+import { DataTable, type DataTableColumn } from "@/components/main-data-table";
+import { TablePagination } from "@/components/table-pagination";
+import { ViewSwitcher, type ViewMode } from "@/components/ui/view-switcher";
+import { PageHeader } from "@/components/ui/page-header";
 
-import type { SemesterSearch, SemesterSelect } from "backend/types/semester.type";
 import { useSemesters } from "../api/semester.service";
 import { SemesterCreateDialog } from "../components/SemesterCreate";
 import { SemesterEditDialog } from "../components/SemesterEdit";
+import { SemesterCard } from "../components/SemesterCard";
+import { ActiveTermBanner } from "../components/ActiveTermBanner";
+import type { SemesterSearch, SemesterSelect } from "backend/types/semester.type";
 
-// Helper function to check active status dynamically on the frontend
+// Helper function to calculate active status for table view
 const getSemesterStatus = (startDateStr: string, endDateStr: string) => {
   const today = new Date();
   try {
@@ -60,7 +57,7 @@ const getSemesterStatus = (startDateStr: string, endDateStr: string) => {
   }
 };
 
-const columns: Array<DataTableColumn<SemesterSelect>> = [
+const getSemesterColumns = (): Array<DataTableColumn<SemesterSelect>> => [
   {
     header: "School Year",
     cell: (row) => (
@@ -140,6 +137,7 @@ const columns: Array<DataTableColumn<SemesterSelect>> = [
 export const SemesterPage = () => {
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const queryParams: SemesterSearch = {
     page,
@@ -157,6 +155,9 @@ export const SemesterPage = () => {
     error: semesterError,
   } = useSemesters(queryParams);
 
+  const semesters = useMemo(() => semesterResponse?.data ?? [], [semesterResponse?.data]);
+  const columns = useMemo(() => getSemesterColumns(), []);
+
   const handleDateSelect = (range: DateRange | undefined) => {
     setDateRange(range);
     setPage(1);
@@ -170,26 +171,26 @@ export const SemesterPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            Academic Semesters
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Manage academic years, terms, and date schedules for evaluation cycles.
-          </p>
-        </div>
+        {/* Header */}
+        <PageHeader
+          title="Academic Semesters"
+          description="Manage academic years, terms, and date schedules for evaluation cycles."
+          actions={<SemesterCreateDialog icon={Plus} triggerText="Add Semester" />}
+        />
 
-        {/* ── Table Shell ─────────────────────────────────────────────────── */}
-        <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
-          <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Date Range Picker Filter */}
+        {/* Active Term Spotlight Banner */}
+        <ActiveTermBanner semesters={semesters} isLoading={isSemestersPending} />
+
+        {/* Controls Bar & View Switcher */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 w-full max-w-xs">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-full justify-start rounded-lg text-left text-xs font-normal border-border/60"
+                    className="h-8 w-full justify-start rounded-lg text-left text-xs font-normal border-border/60 bg-card"
                   >
                     <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
                     {dateRange?.from ? (
@@ -229,52 +230,52 @@ export const SemesterPage = () => {
               )}
             </div>
 
-            <SemesterCreateDialog icon={Plus} triggerText="Add Semester" />
+            <ViewSwitcher mode={viewMode} onChange={setViewMode} />
           </div>
 
-          <DataTable
-            columns={columns}
-            data={semesterResponse?.data ?? []}
-            getRowId={(row) => row.id}
-            isLoading={isSemestersPending}
-            isError={isSemestersError}
-            error={semesterError}
-            emptyMessage="No academic semesters found for the selected date range."
-          />
-
-          {/* ── Pagination Footer ─────────────────────────────────────────── */}
-          <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-muted-foreground">
-            <span>
-              {semesterResponse?.pagination
-                ? `Page ${semesterResponse.pagination.currentPage} of ${semesterResponse.pagination.totalPage}`
-                : "Loading page info..."}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 rounded-lg"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={!semesterResponse?.pagination?.hasPrev || isSemestersPending}
-              >
-                <ChevronLeft className="size-3.5" />
-              </Button>
-              <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
-                {semesterResponse?.pagination?.currentPage ?? 1}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 rounded-lg"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={!semesterResponse?.pagination?.hasNext || isSemestersPending}
-              >
-                <ChevronRight className="size-3.5" />
-              </Button>
-            </div>
-          </div>
+          {/* Grid View vs Table View */}
+          {viewMode === "grid" ? (
+            isSemestersPending ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-36 rounded-xl border bg-card animate-pulse" />
+                ))}
+              </div>
+            ) : semesters.length === 0 ? (
+              <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed bg-card text-center text-xs text-muted-foreground">
+                No academic semesters found for the selected date range.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {semesters.map((sem: SemesterSelect) => (
+                  <SemesterCard key={sem.id} semester={sem} />
+                ))}
+              </div>
+            )
+          ) : (
+            <Card className="overflow-hidden rounded-xl pb-0 shadow-2xs">
+              <UiCardHeader className="hidden" />
+              <CardContent className="p-0">
+                <DataTable
+                  columns={columns}
+                  data={semesters}
+                  getRowId={(row) => row.id}
+                  isLoading={isSemestersPending}
+                  isError={isSemestersError}
+                  error={semesterError}
+                  emptyMessage="No academic semesters found."
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
+
+      <TablePagination
+        pagination={semesterResponse?.pagination}
+        isPending={isSemestersPending}
+        onPageChange={setPage}
+      />
     </div>
   );
 };
