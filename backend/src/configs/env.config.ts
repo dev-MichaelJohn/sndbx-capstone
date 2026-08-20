@@ -43,6 +43,7 @@ const EnvSchema = z.object({
     .trim()
     .nonempty("GMAIL_APP_PASSWORD must not be an empty string.")
     .nonoptional("GMAIL_APP_PASSWORD is required."),
+  BREVO_API_KEY: z.string().trim().optional(),
 });
 
 export type EnvType = z.infer<typeof EnvSchema>;

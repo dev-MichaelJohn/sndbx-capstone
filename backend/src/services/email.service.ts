@@ -23,15 +23,19 @@ export interface IEmailService {
 }
 
 /**
- * High-performance Email Service using Resend HTTP API with automatic
- * Nodemailer Gmail SMTP fallback whenever Resend API fails or returns errors.
+ * Multi-Engine Transactional Email Service:
+ * 1. Brevo HTTPS API (Primary - Free, sends to any recipient without a custom domain)
+ * 2. Resend HTTPS API (Secondary)
+ * 3. Nodemailer Gmail SMTP (Local/Development Fallback)
  */
 class emailService implements IEmailService {
   private resendClient: Resend | null = null;
   private INITIALISM = "PIT-FES";
 
   constructor() {
-    if (env.RESEND_API_KEY) {
+    if (env.BREVO_API_KEY) {
+      logger.info("⚡ Transactional Email Engine: Brevo HTTP API active.");
+    } else if (env.RESEND_API_KEY) {
       this.resendClient = new Resend(env.RESEND_API_KEY);
       logger.info("⚡ Transactional Email Engine: Resend HTTP API initialized.");
     } else {
@@ -39,17 +43,61 @@ class emailService implements IEmailService {
     }
   }
 
-  /**
-   * Sends an email via Resend HTTP API. Automatically falls back to Nodemailer Gmail SMTP
-   * if Resend fails, hits sandbox restrictions, or throws API errors.
-   */
   async sendEmail(info: SendEmailType): Promise<void> {
     const validation = await SendEmailSchema.safeParseAsync(info);
     if (!validation.success) throw validation.error;
 
-    const smtpFromAddress = `"${this.INITIALISM} Notification Services" <${env.GMAIL_APP_USER}>`;
+    const senderName = `${this.INITIALISM} Notification Services`;
+    const senderEmail = env.GMAIL_APP_USER;
 
-    // 1. Resend HTTP API Fast Path (~150ms)
+    // ──────────────────────────────────────────────────────────────────────────
+    // 1. PRIMARY: Brevo HTTP API (Port 443 HTTPS - Sends to ANY recipient)
+    // ──────────────────────────────────────────────────────────────────────────
+    if (env.BREVO_API_KEY) {
+      try {
+        const payload: Record<string, any> = {
+          sender: {
+            name: senderName,
+            email: senderEmail,
+          },
+          to: [{ email: info.to }],
+          subject: info.options.subject,
+        };
+
+        if (info.options.html) {
+          payload.htmlContent = info.options.html;
+        }
+        if (info.options.text) {
+          payload.textContent = info.options.text;
+        }
+
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            "api-key": env.BREVO_API_KEY,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          logger.info(`📧 Transactional email sent to ${info.to} via Brevo HTTP API`);
+          return; // Success!
+        }
+
+        const errorData = await response.json();
+        logger.warn(
+          `Brevo API rejected request: ${errorData.message || response.statusText}. Trying next fallback...`,
+        );
+      } catch (brevoErr: any) {
+        logger.warn(`Brevo HTTP API request failed: ${brevoErr.message}. Trying next fallback...`);
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 2. SECONDARY: Resend HTTP API (Port 443 HTTPS)
+    // ──────────────────────────────────────────────────────────────────────────
     if (this.resendClient) {
       try {
         const resendFromAddress =
@@ -61,39 +109,38 @@ class emailService implements IEmailService {
           subject: info.options.subject,
         };
 
-        if (info.options.html) {
-          payload.html = info.options.html;
-        }
-        if (info.options.text) {
-          payload.text = info.options.text;
-        }
+        if (info.options.html) payload.html = info.options.html;
+        if (info.options.text) payload.text = info.options.text;
 
         const { data, error } = await this.resendClient.emails.send(payload);
 
-        if (error) {
-          logger.warn(
-            `Resend API error [${error.name}]: ${error.message}. Falling back to Nodemailer SMTP...`,
-          );
-          throw new Error(error.message);
+        if (!error && data) {
+          logger.info(`📧 Transactional email sent to ${info.to} via Resend HTTP API`);
+          return; // Success!
         }
 
-        if (data) {
-          return; // Sent successfully via Resend
+        if (error) {
+          logger.warn(`Resend API error: ${error.message}. Trying SMTP fallback...`);
         }
-      } catch (resendError) {
-        logger.warn(
-          "Resend HTTP API failed. Executing Nodemailer Gmail SMTP fallback...",
-          resendError,
-        );
+      } catch (resendError: any) {
+        logger.warn(`Resend API failed: ${resendError.message}. Trying SMTP fallback...`);
       }
     }
 
-    // 2. Nodemailer Gmail SMTP Fallback
-    await transporter.sendMail({
-      from: smtpFromAddress,
-      to: info.to,
-      ...info.options,
-    });
+    // ──────────────────────────────────────────────────────────────────────────
+    // 3. FALLBACK: Nodemailer Gmail SMTP
+    // ──────────────────────────────────────────────────────────────────────────
+    try {
+      await transporter.sendMail({
+        from: `"${senderName}" <${senderEmail}>`,
+        to: info.to,
+        ...info.options,
+      });
+      logger.info(`📧 Transactional email sent to ${info.to} via Nodemailer Gmail SMTP`);
+    } catch (smtpError: any) {
+      logger.error("❌ All email dispatch channels failed:", smtpError);
+      throw new Error(`Failed to send email: ${smtpError.message || "Service unavailable"}`);
+    }
   }
 }
 
