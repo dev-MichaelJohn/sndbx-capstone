@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { FormTextField } from "@/components/form-text-field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { useCreateEvaluationForm } from "../api/evaluation-form.service";
 import {
@@ -52,12 +54,32 @@ export const EvaluationFormCreateDialog = ({
 
   const form = useForm({
     defaultValues: initialFormData,
-    validators: { onSubmit: CreateFormReqSchema },
-    onSubmit: (values) => dialog.handleFormSubmit(values),
+    validators: {
+      onSubmit: ({ value }) => {
+        const result = CreateFormReqSchema.safeParse({
+          ...value,
+          min_rating: Number(value.min_rating),
+          max_rating: Number(value.max_rating),
+        });
+        if (!result.success) {
+          return result.error.issues.map((i) => i.message).join(", ");
+        }
+        return undefined;
+      },
+    },
+    onSubmit: ({ value }) => {
+      const payload: CreateFormReq = {
+        title: value.title.trim(),
+        description: value.description?.trim() || undefined,
+        min_rating: Number(value.min_rating),
+        max_rating: Number(value.max_rating),
+      };
+      dialog.handleFormSubmit({ value: payload });
+    },
   });
 
   const dialog = useEntityDialog<CreateFormReq>({
-    form,
+    form: form as any,
     mutationFn: (payload) => mutateAsync({ type, payload }),
     loadingText: "Creating evaluation instrument...",
     successText: "Evaluation instrument created successfully.",
@@ -75,11 +97,10 @@ export const EvaluationFormCreateDialog = ({
             <span className="leading-none text-xs">{triggerText}</span>
           </Button>
         </DialogTrigger>
-        <DialogContent className="rounded-xl sm:max-w-md">
+
+        <DialogContent className="rounded-2xl sm:max-w-md border border-border/80 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold">
-              Create Evaluation Instrument
-            </DialogTitle>
+            <DialogTitle className="text-base font-bold">Create Evaluation Instrument</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Add a new{" "}
               {type === "student"
@@ -92,6 +113,9 @@ export const EvaluationFormCreateDialog = ({
           <FieldGroup className="py-2 space-y-3">
             <form.Field
               name="title"
+              validators={{
+                onChange: ({ value }) => (!value || !value.trim() ? "Title required" : undefined),
+              }}
               children={(field) => (
                 <FormTextField
                   field={field}
@@ -107,7 +131,7 @@ export const EvaluationFormCreateDialog = ({
               children={(field) => (
                 <FormTextField
                   field={field}
-                  label="Description"
+                  label="Description (Optional)"
                   disabled={isPending}
                   placeholder="e.g. Standard evaluation form for instructional effectiveness"
                 />
@@ -118,31 +142,63 @@ export const EvaluationFormCreateDialog = ({
               <form.Field
                 name="min_rating"
                 children={(field) => (
-                  <FormTextField
-                    field={field}
-                    label="Min Score Bound"
-                    type="number"
-                    disabled={isPending}
-                    placeholder="1"
-                  />
+                  <div className="space-y-1.5">
+                    <Label htmlFor={field.name} className="text-xs font-medium">
+                      Min Score Bound
+                    </Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="number"
+                      min={0}
+                      value={field.state.value}
+                      disabled={isPending}
+                      onChange={(e) => field.handleChange(e.target.valueAsNumber || 0)}
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
                 )}
               />
+
               <form.Field
                 name="max_rating"
+                validators={{
+                  onChangeListenTo: ["min_rating"],
+                  onChange: ({ value, fieldApi }) => {
+                    const min = fieldApi.form.getFieldValue("min_rating");
+                    if (Number(value) <= Number(min)) {
+                      return "Max score must be greater than min score";
+                    }
+                    return undefined;
+                  },
+                }}
                 children={(field) => (
-                  <FormTextField
-                    field={field}
-                    label="Max Score Bound"
-                    type="number"
-                    disabled={isPending}
-                    placeholder="5"
-                  />
+                  <div className="space-y-1.5">
+                    <Label htmlFor={field.name} className="text-xs font-medium">
+                      Max Score Bound
+                    </Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="number"
+                      min={1}
+                      value={field.state.value}
+                      disabled={isPending}
+                      onChange={(e) => field.handleChange(e.target.valueAsNumber || 0)}
+                      className="h-8 text-xs font-mono"
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="text-[11px] font-medium text-destructive">
+                        {field.state.meta.errors.join(", ")}
+                      </p>
+                    )}
+                  </div>
                 )}
               />
             </div>
           </FieldGroup>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
               type="button"
               variant="outline"
@@ -159,7 +215,7 @@ export const EvaluationFormCreateDialog = ({
                   type="button"
                   disabled={!canSubmit || isPending}
                   onClick={() => form.handleSubmit()}
-                  className="h-8 cursor-pointer rounded-lg text-xs font-medium"
+                  className="h-8 cursor-pointer rounded-lg text-xs font-bold bg-primary text-primary-foreground shadow-sm active:scale-[0.96]"
                 >
                   {isPending ? "Creating..." : "Create Form"}
                 </Button>
@@ -169,15 +225,16 @@ export const EvaluationFormCreateDialog = ({
         </DialogContent>
       </Dialog>
 
+      {/* Save Confirmation Modal */}
       <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
-        <AlertDialogContent className="rounded-xl">
+        <AlertDialogContent className="rounded-2xl border border-border/80 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-semibold">
+            <AlertDialogTitle className="text-base font-bold">
               Create new evaluation form?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-muted-foreground">
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
               This will create a new evaluation instrument template with score range{" "}
-              <strong>
+              <strong className="text-foreground font-semibold">
                 {dialog.pendingValue?.min_rating} to {dialog.pendingValue?.max_rating}
               </strong>
               .
@@ -190,7 +247,7 @@ export const EvaluationFormCreateDialog = ({
             <AlertDialogAction
               onClick={dialog.confirmSave}
               disabled={isPending}
-              className="h-8 rounded-lg text-xs font-medium"
+              className="h-8 rounded-lg text-xs font-bold"
             >
               {isPending ? "Creating..." : "Yes, create form"}
             </AlertDialogAction>
@@ -198,14 +255,13 @@ export const EvaluationFormCreateDialog = ({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Discard Confirmation Modal */}
       <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
-        <AlertDialogContent className="rounded-xl">
+        <AlertDialogContent className="rounded-2xl border border-border/80 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-semibold">
-              Discard changes?
-            </AlertDialogTitle>
+            <AlertDialogTitle className="text-base font-bold">Discard changes?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              Closing now will discard your entry.
+              Closing now will discard your entries.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

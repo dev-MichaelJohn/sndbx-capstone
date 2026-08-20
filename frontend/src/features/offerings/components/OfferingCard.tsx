@@ -1,7 +1,16 @@
 import React from "react";
-import { BookOpen, Users, MoreHorizontal, Edit } from "lucide-react";
+import {
+  BookOpen,
+  User,
+  Users,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  ArrowRight,
+  ShieldCheck,
+} from "lucide-react";
 
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,141 +22,162 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatFullName } from "@/lib/nameFormatter";
-import { CourseOfferingDeleteDialog } from "./OfferingDelete";
 import type { CourseOfferingWithDetails } from "backend/types/offerings.type";
 
-interface OfferingCardProps {
+interface CourseOfferingCardProps {
   offering: CourseOfferingWithDetails;
   onEdit: (offering: CourseOfferingWithDetails) => void;
+  onDelete: (offering: CourseOfferingWithDetails) => void;
   onViewStudents: (offering: CourseOfferingWithDetails) => void;
   isCurrentActiveSemester?: boolean;
 }
 
-export const OfferingCard: React.FC<OfferingCardProps> = ({
+export const CourseOfferingCard: React.FC<CourseOfferingCardProps> = ({
   offering,
   onEdit,
+  onDelete,
   onViewStudents,
   isCurrentActiveSemester = true,
 }) => {
-  const hasFaculty = Boolean(offering.first_name && offering.last_name);
-  const fullName = hasFaculty
+  const hasFaculty = offering.first_name && offering.last_name;
+  const facultyName = hasFaculty
     ? formatFullName({
         first_name: offering.first_name!,
         middle_name: offering.middle_name ?? "",
         last_name: offering.last_name!,
         suffix: offering.suffix ?? "",
       })
-    : "Unassigned Instructor";
+    : null;
 
   const initials = hasFaculty
     ? `${offering.first_name![0]}${offering.last_name![0]}`.toUpperCase()
-    : "?";
+    : "U";
 
   return (
-    <Card className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/60 bg-card shadow-2xs transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
-      <div className="h-1 w-full bg-linear-to-r from-sky-500/80 to-sky-500/30" />
-
-      <CardHeader className="p-5 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-500 group-hover:scale-105 transition-transform">
-              <BookOpen className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <Badge
-                variant="outline"
-                className="font-mono text-[10px] font-bold tracking-wider px-2 py-0.5 bg-sky-500/5 text-sky-600 dark:text-sky-400 border-sky-500/20"
-              >
-                {offering.course_initialism}
-              </Badge>
-              <h3 className="mt-1 text-sm font-bold text-foreground tracking-tight truncate leading-snug">
-                {offering.course_name}
-              </h3>
-            </div>
+    <Card className="group relative flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-xs transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-sky-500/40 hover:shadow-lg hover:shadow-sky-500/5">
+      {/* Header Row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 shadow-2xs group-hover:scale-105 transition-transform duration-200">
+            <BookOpen className="size-5.5" />
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 shrink-0 rounded-lg text-muted-foreground hover:bg-muted"
-              >
-                <MoreHorizontal className="size-4" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 rounded-xl p-1">
-              <DropdownMenuItem
-                onClick={() => onViewStudents(offering)}
-                className="cursor-pointer text-xs"
-              >
-                <Users className="mr-2 size-3.5 text-muted-foreground" /> View Students
-              </DropdownMenuItem>
-
-              {isCurrentActiveSemester && (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => onEdit(offering)}
-                    className="cursor-pointer text-xs"
-                  >
-                    <Edit className="mr-2 size-3.5 text-muted-foreground" /> Edit Details
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <CourseOfferingDeleteDialog offering={offering} />
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="min-w-0 space-y-0.5">
+            <Badge
+              variant="outline"
+              className="font-mono text-[10px] font-bold tracking-wider px-2 py-0.5 bg-sky-500/5 text-sky-600 dark:text-sky-400 border-sky-500/20"
+            >
+              {offering.course_initialism}
+            </Badge>
+            <h3 className="text-sm font-bold text-foreground tracking-tight truncate leading-snug">
+              {offering.course_name}
+            </h3>
+          </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="p-5 pt-2">
-        <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Assigned Instructor
-          </p>
+        {/* Action Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7.5 shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.96] cursor-pointer"
+            >
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-44 rounded-xl p-1 shadow-lg border-border/80"
+          >
+            <DropdownMenuItem
+              className="cursor-pointer text-xs gap-2 py-1.5"
+              onClick={() => onViewStudents(offering)}
+            >
+              <Users className="size-3.5 text-muted-foreground" />
+              <span>View Students</span>
+            </DropdownMenuItem>
 
+            {isCurrentActiveSemester && (
+              <>
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs gap-2 py-1.5"
+                  onClick={() => onEdit(offering)}
+                >
+                  <Edit className="size-3.5 text-muted-foreground" />
+                  <span>Edit Details</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs gap-2 py-1.5 text-rose-500 focus:bg-rose-500/10 focus:text-rose-500"
+                  onClick={() => onDelete(offering)}
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>Delete Offering</span>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Middle: Assigned Instructor */}
+      <div className="my-4 rounded-xl border border-border/50 bg-muted/20 p-3">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+          <span>Assigned Instructor</span>
+          {hasFaculty && (
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold lowercase">
+              <ShieldCheck className="size-3" /> assigned
+            </span>
+          )}
+        </div>
+
+        {hasFaculty ? (
           <div className="flex items-center gap-2.5">
-            <Avatar className="size-8 border border-border/60 shrink-0">
-              <AvatarFallback
-                className={`text-xs font-semibold ${
-                  hasFaculty ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground/60"
-                }`}
-              >
+            <Avatar className="size-7.5 rounded-lg border border-border/60 shrink-0">
+              <AvatarFallback className="bg-sky-500/10 text-xs font-bold text-sky-600 dark:text-sky-400">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p
-                className={`text-xs font-semibold truncate ${
-                  hasFaculty ? "text-foreground" : "text-muted-foreground/60 italic"
-                }`}
-              >
-                {fullName}
-              </p>
+              <p className="text-xs font-bold text-foreground truncate">{facultyName}</p>
               <p className="font-mono text-[10px] text-muted-foreground truncate">
-                ID: {offering.institutional_id || "Unassigned"}
+                ID: {offering.institutional_id || "N/A"}
               </p>
             </div>
           </div>
-        </div>
-      </CardContent>
+        ) : (
+          <div className="flex items-center justify-between text-xs text-muted-foreground italic py-0.5">
+            <span className="flex items-center gap-1.5">
+              <User className="size-3.5" /> Instructor unassigned
+            </span>
+            <Badge
+              variant="outline"
+              className="text-[9px] font-semibold border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+            >
+              Needs Instructor
+            </Badge>
+          </div>
+        )}
+      </div>
 
-      <CardFooter className="border-t border-border/40 p-3 px-5 bg-muted/10 flex items-center justify-between">
-        <span className="text-[11px] font-medium text-muted-foreground">
+      {/* Footer: Academic Term + Class Roster CTA */}
+      <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+        <span className="text-[11px] font-mono text-muted-foreground">
           Year {offering.year_level} • {offering.semester_term} Term
         </span>
+
         <Button
           size="sm"
           variant="ghost"
           onClick={() => onViewStudents(offering)}
-          className="h-7 text-xs font-semibold gap-1.5 text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 rounded-lg cursor-pointer"
+          className="h-7 text-xs font-bold gap-1.5 text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 rounded-lg cursor-pointer active:scale-[0.96]"
         >
           <Users className="size-3.5" />
           <span>Class Roster</span>
+          <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
         </Button>
-      </CardFooter>
+      </div>
     </Card>
   );
 };

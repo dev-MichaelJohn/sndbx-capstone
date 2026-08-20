@@ -5,9 +5,10 @@ import { useProgramCourseCount } from "@/features/course/api/course.service";
 import { useProgramClassCount } from "@/features/class/api/class.service";
 import { useProgram } from "../api/program.service";
 
-import { ProgramDetailsHeader } from "../components/ProgramDetailsHeader";
 import { ProgramDetailsMetrics } from "../components/ProgramDetailsMetrics";
 import { ProgramDetailsTabs } from "../components/ProgramDetailsTabs";
+import { PageHeader } from "@/components/ui/page-header";
+import { ArrowLeft } from "lucide-react";
 
 export const ProgramDetailsPage = () => {
   const navigate = useNavigate();
@@ -55,10 +56,20 @@ export const ProgramDetailsPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        <ProgramDetailsHeader
-          name={programData.name ?? "Unknown Program"}
-          code={programData.initialism ?? "N/A"}
-          onBack={handleBack}
+        <PageHeader
+          title={programData.name ?? "Unknown Program"}
+          description="Overview and management of courses, active classes, assigned faculty, and enrolled students"
+          badge={
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8 shrink-0 rounded-lg"
+              onClick={handleBack}
+              title="Back to Colleges"
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+          }
         />
 
         <ProgramDetailsMetrics

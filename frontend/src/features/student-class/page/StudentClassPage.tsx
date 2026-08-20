@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react";
+import { ChevronLeft, Search, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DataTable } from "@/components/main-data-table";
 import { ViewSwitcher, type ViewMode } from "@/components/ui/view-switcher";
-import { PageHeader } from "@/components/ui/page-header";
+import { TablePagination } from "@/components/table-pagination";
 
 import type { StudentClassWithDetails } from "backend/types/student-class.type";
 import {
@@ -29,7 +29,7 @@ import { useClassStudents } from "@/features/class-student/api/class-student.ser
 import { useSemesters } from "@/features/semester/api/semester.service";
 import { useCourseOffering } from "@/features/offerings/api/offerings.service";
 import { getStudentClassColumns } from "../components/StudentClassColumns";
-import { StudentRosterCard } from "../components/StudentRosterCard";
+import { StudentClassCard } from "../components/StudentClassCard";
 import { CourseOfferingStudentEnrollDialog } from "../components/StudentClassCreate";
 import { CourseOfferingRosterCards } from "../components/StudentClassCards";
 
@@ -125,42 +125,29 @@ export const CourseOfferingStudentsPage = () => {
   return (
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
-        {/* Header */}
-        <PageHeader
-          title="Course Offering Roster"
-          description="Manage course enrollments, drop records, and enroll irregular students."
-          badge={
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="size-8 shrink-0 rounded-lg"
-              title="Back"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-          }
-          actions={
-            isCurrentActiveSemester ? (
-              <Button
-                size="sm"
-                className="h-8 cursor-pointer rounded-lg px-3 text-xs font-medium gap-1.5"
-                onClick={() => setIsEnrollOpen(true)}
-              >
-                <UserPlus className="size-3.5" /> Enroll Student
-              </Button>
-            ) : (
-              <Badge
-                variant="outline"
-                className="text-xs italic text-muted-foreground py-1 border-border/60"
-              >
-                Archived Roster (Read Only)
-              </Badge>
-            )
-          }
-        />
+        {/* Header Navigation */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="size-8 shrink-0 cursor-pointer rounded-lg border-border/60 hover:bg-muted text-foreground active:scale-[0.96]"
+            title="Back"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
 
-        {/* Roster KPI Summary Cards */}
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              Course Offering Roster
+            </h1>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              Manage course enrollments, drop records, and enroll irregular students.
+            </p>
+          </div>
+        </div>
+
+        {/* KPI Roster Cards */}
         <CourseOfferingRosterCards
           totalEnrolled={totalEnrolled}
           regularEnrolled={regularEnrolled}
@@ -168,53 +155,76 @@ export const CourseOfferingStudentsPage = () => {
           isLoading={isOfferingStudentsPending || isOfficialClassPending}
         />
 
-        {/* Controls Bar & Roster Views */}
+        {/* Controls Toolbar */}
         <div className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search students..."
+                placeholder="Search enrolled students..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="h-8 rounded-lg pl-8 text-xs bg-card"
+                className="h-8.5 rounded-xl pl-8 text-xs bg-card border-border/70"
               />
             </div>
 
-            <ViewSwitcher mode={viewMode} onChange={setViewMode} />
+            <div className="flex items-center gap-2">
+              {isCurrentActiveSemester ? (
+                <Button
+                  size="sm"
+                  className="h-8.5 cursor-pointer rounded-xl px-3.5 text-xs font-bold gap-1.5 active:scale-[0.96]"
+                  onClick={() => setIsEnrollOpen(true)}
+                >
+                  <UserPlus className="size-3.5" />
+                  <span>Enroll Student</span>
+                </Button>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="text-xs italic text-muted-foreground py-1 border-border/60"
+                >
+                  Archived Term Roster (Read Only)
+                </Badge>
+              )}
+
+              <ViewSwitcher mode={viewMode} onChange={setViewMode} />
+            </div>
           </div>
 
-          {/* Grid View vs Table View */}
+          {/* Grid vs Table View */}
           {viewMode === "grid" ? (
             isOfferingStudentsPending ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-32 rounded-xl border bg-card animate-pulse" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-44 rounded-2xl border border-border/50 bg-card/60 animate-pulse"
+                  />
                 ))}
               </div>
             ) : enrolledList.length === 0 ? (
-              <div className="flex h-40 flex-col items-center justify-center rounded-xl border border-dashed bg-card text-center text-xs text-muted-foreground">
+              <div className="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card p-6 text-center text-xs text-muted-foreground">
                 No students currently enrolled in this course offering.
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {enrolledList.map((student) => (
-                  <StudentRosterCard
+                  <StudentClassCard
                     key={student.id}
                     student={student}
                     isRegular={officialStudentAccountIds.has(student.student_account_id)}
-                    isDropping={dropMutation.isPending}
+                    onDrop={(item) => setDroppingStudent(item)}
                     isCurrentActiveSemester={isCurrentActiveSemester}
-                    onDrop={(s) => setDroppingStudent(s)}
+                    disabled={dropMutation.isPending}
                   />
                 ))}
               </div>
             )
           ) : (
-            <div className="overflow-hidden rounded-xl border bg-card shadow-2xs">
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-2xs">
               <DataTable
                 columns={columns}
                 data={enrolledList}
@@ -230,38 +240,11 @@ export const CourseOfferingStudentsPage = () => {
       </div>
 
       {/* Pagination */}
-      <div className="shrink-0 border-t bg-card px-6 py-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {offeringStudentsResponse?.pagination
-              ? `Page ${offeringStudentsResponse.pagination.currentPage} of ${offeringStudentsResponse.pagination.totalPage}`
-              : "1 of 1"}
-          </span>
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-lg"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={!offeringStudentsResponse?.pagination?.hasPrev || isOfferingStudentsPending}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-medium text-primary">
-              {offeringStudentsResponse?.pagination?.currentPage ?? 1}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-lg"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!offeringStudentsResponse?.pagination?.hasNext || isOfferingStudentsPending}
-            >
-              <ChevronRight className="size-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <TablePagination
+        pagination={offeringStudentsResponse?.pagination}
+        isPending={isOfferingStudentsPending}
+        onPageChange={setPage}
+      />
 
       {/* Enrollment Dialog */}
       <CourseOfferingStudentEnrollDialog
@@ -270,22 +253,22 @@ export const CourseOfferingStudentsPage = () => {
         courseOfferingId={courseOfferingId}
       />
 
-      {/* Drop Confirmation Alert */}
+      {/* Drop Alert Modal */}
       <AlertDialog
         open={!!droppingStudent}
         onOpenChange={(open) => !open && setDroppingStudent(null)}
       >
-        <AlertDialogContent className="rounded-xl">
+        <AlertDialogContent className="rounded-2xl border border-border/80 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-semibold">
+            <AlertDialogTitle className="text-base font-bold">
               Drop Student Enrollment?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-muted-foreground">
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
               {droppingStudent && (
                 <>
                   Are you sure you want to drop{" "}
                   <strong className="text-foreground">{droppingStudent.student_name}</strong> from
-                  this course offering? This will remove their record from the class roster.
+                  this course offering?
                 </>
               )}
             </AlertDialogDescription>
@@ -297,7 +280,7 @@ export const CourseOfferingStudentsPage = () => {
             <AlertDialogAction
               onClick={handleConfirmDrop}
               disabled={dropMutation.isPending}
-              className="h-8 rounded-lg bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
+              className="h-8 rounded-lg bg-destructive text-xs font-bold text-destructive-foreground hover:bg-destructive/90 active:scale-[0.96]"
             >
               {dropMutation.isPending ? "Dropping..." : "Yes, drop student"}
             </AlertDialogAction>
@@ -307,5 +290,3 @@ export const CourseOfferingStudentsPage = () => {
     </div>
   );
 };
-
-export default CourseOfferingStudentsPage;

@@ -1,5 +1,13 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, CheckCircle2, Clock, Lock, User, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Lock,
+  User,
+  AlertTriangle,
+  GraduationCap,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -41,17 +49,19 @@ const StudentCourseItem = ({
   const hasDraft = Boolean(evaluation && !evaluation.submitted_at);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-2xs">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-2xs transition-[border-color,transform] hover:border-primary/40">
       <div className="space-y-1 min-w-0">
         <div className="flex items-center gap-2">
-          <h4 className="text-xs font-semibold text-foreground truncate">{item.course_name}</h4>
+          <h4 className="text-xs font-bold text-foreground sm:text-sm truncate">
+            {item.course_name}
+          </h4>
           <Badge variant="outline" className="font-mono text-[10px]">
             {item.course_initialism}
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <User className="size-3.5 shrink-0" />
-          <span className="font-medium text-foreground">
+          <span className="font-semibold text-foreground">
             {item.faculty_name ?? "Assigned Instructor"}
           </span>
           <span>• Section {item.class_section}</span>
@@ -62,19 +72,19 @@ const StudentCourseItem = ({
         {isSubmitted ? (
           <Badge
             variant="outline"
-            className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[11px]"
+            className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold"
           >
             <CheckCircle2 className="size-3" /> Submitted
           </Badge>
         ) : hasDraft ? (
           <Badge
             variant="outline"
-            className="gap-1 border-amber-500/30 bg-amber-500/10 text-amber-400 text-[11px]"
+            className="gap-1 border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] font-semibold"
           >
             <Clock className="size-3" /> Draft
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-[11px]">
+          <Badge variant="outline" className="text-[11px] font-mono">
             Pending
           </Badge>
         )}
@@ -83,7 +93,7 @@ const StudentCourseItem = ({
           size="sm"
           disabled={!activeScheduleId}
           onClick={() => onSelect(item)}
-          className="h-8 text-xs font-medium cursor-pointer"
+          className="h-8 text-xs font-semibold cursor-pointer rounded-lg active:scale-[0.96]"
         >
           {isSubmitted ? "View Evaluation" : hasDraft ? "Continue Evaluation" : "Evaluate Teacher"}
         </Button>
@@ -100,7 +110,6 @@ export const StudentEvaluationPage = () => {
 
   const { data: schedules = [] } = useActiveStudentSchedule();
 
-  // Find current active schedule
   const activeSchedule = useMemo(() => {
     if (!schedules || schedules.length === 0) return null;
     const now = Date.now();
@@ -113,7 +122,6 @@ export const StudentEvaluationPage = () => {
     );
   }, [schedules]);
 
-  // Query enrolled subjects strictly for the active schedule's semester
   const { data: classesRes, isLoading: isLoadingClasses } = useMyEnrolledClasses(
     user?.id,
     activeSchedule?.semester_id,
@@ -123,13 +131,11 @@ export const StudentEvaluationPage = () => {
 
   const submitEval = useSubmitStudentEvaluation();
 
-  // SET Evaluation Form Tree
   const { data: formTree, isLoading: isLoadingForm } = useEvaluationFormTree(
     "student",
     activeSchedule?.form_id ?? 0,
   );
 
-  // Existing evaluation draft or submission
   const { data: existingEvalData, isLoading: isLoadingEval } = useStudentEvaluation(
     activeSchedule?.id,
     selectedStudentClass?.id,
@@ -186,64 +192,68 @@ export const StudentEvaluationPage = () => {
         {/* Header */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               Teacher Evaluation (SET)
             </h1>
             {activeSchedule ? (
               <Badge
                 variant="outline"
-                className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1 text-[11px]"
+                className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1 text-[11px] font-semibold"
               >
                 <CheckCircle2 className="size-3" /> SET Schedule Active
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="border-amber-500/30 bg-amber-500/10 text-amber-400 gap-1 text-[11px]"
+                className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1 text-[11px] font-semibold"
               >
-                <AlertTriangle className="size-3" /> SET Schedule Inactive
+                <AlertTriangle className="size-3" /> Window Inactive
               </Badge>
             )}
           </div>
           <p className="text-xs text-muted-foreground sm:text-sm">
-            Rate instructional quality and teaching standards for your enrolled instructors in the
-            active semester.
+            Evaluate instructional delivery and classroom performance for your enrolled courses in
+            the active academic term.
           </p>
         </div>
 
-        {/* Schedule Closed Alert */}
+        {/* Inactive Schedule Alert */}
         {!activeSchedule && (
-          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-600 dark:text-amber-400">
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-300">
             <AlertTriangle className="size-4 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="font-semibold">Student Evaluation Window Closed</p>
+            <div className="space-y-1 leading-relaxed">
+              <p className="font-bold">Student Evaluation Window Closed</p>
               <p>
-                Student Evaluation of Teachers (SET) is currently closed. No subjects are available
-                for rating at this time.
+                The Student Evaluation of Teachers (SET) period is currently inactive. You will be
+                able to submit ratings once the administration publishes a schedule.
               </p>
             </div>
           </div>
         )}
 
-        {/* Enrolled Courses Evaluation List */}
+        {/* Evaluation Target List Card */}
         {activeSchedule && (
-          <Card className="rounded-xl border bg-card shadow-xs">
+          <Card className="rounded-2xl border border-border/60 bg-card shadow-xs">
             <CardHeader className="border-b pb-3">
-              <CardTitle className="text-base font-semibold">
-                Active Enrolled Instructors to Evaluate
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <GraduationCap className="size-4 text-primary" />
+                <CardTitle className="text-base font-bold">
+                  Enrolled Subjects for Evaluation
+                </CardTitle>
+              </div>
               <CardDescription className="text-xs">
-                Select an enrolled subject below to complete your SET rating for this term.
+                Select an enrolled subject below to complete your SET ratings for this academic
+                term.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               {isLoadingClasses ? (
-                <div className="p-6 text-center text-xs text-muted-foreground">
-                  Loading active subjects...
+                <div className="p-6 text-center text-xs text-muted-foreground animate-pulse">
+                  Loading registered subjects...
                 </div>
               ) : enrolledClasses.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
-                  No enrolled subjects found for evaluation in this active term.
+                <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-xl">
+                  No enrolled subjects found for evaluation in this term.
                 </div>
               ) : (
                 enrolledClasses.map((item) => (
@@ -260,7 +270,7 @@ export const StudentEvaluationPage = () => {
         )}
       </div>
 
-      {/* SET Form Execution Modal */}
+      {/* SET Form Modal */}
       <Dialog
         open={Boolean(selectedStudentClass)}
         onOpenChange={(open) => !open && setSelectedStudentClass(null)}
@@ -275,7 +285,7 @@ export const StudentEvaluationPage = () => {
                 {isSubmitted && (
                   <Badge
                     variant="outline"
-                    className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] gap-1"
+                    className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] gap-1 font-semibold"
                   >
                     <Lock className="size-3" /> Submitted (Read Only)
                   </Badge>
@@ -290,7 +300,7 @@ export const StudentEvaluationPage = () => {
               variant="outline"
               size="sm"
               onClick={() => setSelectedStudentClass(null)}
-              className="h-8 text-xs gap-1 cursor-pointer"
+              className="h-8 text-xs gap-1 cursor-pointer rounded-lg active:scale-[0.96]"
             >
               <ArrowLeft className="size-3.5" /> Back to list
             </Button>
@@ -298,7 +308,7 @@ export const StudentEvaluationPage = () => {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {isLoadingForm || isLoadingEval || !formTree ? (
-              <div className="p-8 text-center text-xs text-muted-foreground">
+              <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">
                 Loading SET evaluation questions & criteria...
               </div>
             ) : (

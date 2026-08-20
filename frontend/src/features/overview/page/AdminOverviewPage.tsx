@@ -29,48 +29,46 @@ export const AdminOverviewPage = () => {
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-y-auto p-6 gap-6">
-      {/* Admin Welcome Banner */}
-      <div className="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-primary/5 p-6 shadow-xs">
-        <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="gap-1 border-primary/30 bg-primary/10 text-primary text-xs"
-          >
-            <Building2 className="size-3.5" /> Administrative Management Portal
-          </Badge>
-          <span className="font-mono text-xs text-muted-foreground">ID: {institutionalId}</span>
+    <div className="flex h-full flex-1 flex-col overflow-y-auto">
+      <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Badge
+              variant="outline"
+              className="gap-1.5 border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs font-semibold px-2.5 py-1"
+            >
+              <Building2 className="size-3.5" />
+              Administrative Management Portal
+            </Badge>
+            <span className="font-mono text-[11px] text-muted-foreground">ID: {institutionalId}</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl leading-tight">
+            Welcome back, {userName}!
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+            Oversee academic operations, institutional evaluation analytics, evaluation schedules, and
+            faculty performance reports.
+          </p>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Welcome back, {userName}!
-        </h1>
-        <p className="text-xs text-muted-foreground sm:text-sm max-w-2xl">
-          Oversee academic operations, institutional evaluation analytics, evaluation schedules, and
-          faculty performance reports.
-        </p>
-      </div>
 
-      {/* High-level status cards */}
-      <SystemOverviewStats />
+        <SystemOverviewStats />
 
-      {/* Dynamic route-aware quick actions */}
-      <QuickActionsGrid />
+        <QuickActionsGrid />
 
-      {/* Real-time submissions & active term trend */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LiveSubmissionsWidget />
-        {analytics && <SemesterTrendsChart semesterTrends={analytics.semester_trends} />}
-      </div>
-
-      {/* Evaluation KPIs & Department Insights */}
-      {analytics?.kpis && <KpiMetricsOverview kpis={analytics.kpis} />}
-
-      {analytics && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CollegePerformanceChart collegePerformance={analytics.college_performance} />
-          <FacultyRankingsChart facultyRankings={analytics.faculty_rankings} />
+          <LiveSubmissionsWidget />
+          {analytics && <SemesterTrendsChart semesterTrends={analytics.semester_trends} />}
         </div>
-      )}
+
+        {analytics?.kpis && <KpiMetricsOverview kpis={analytics.kpis} />}
+
+        {analytics && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CollegePerformanceChart collegePerformance={analytics.college_performance} />
+            <FacultyRankingsChart facultyRankings={analytics.faculty_rankings} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

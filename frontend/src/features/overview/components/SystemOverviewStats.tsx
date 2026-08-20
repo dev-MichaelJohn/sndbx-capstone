@@ -99,9 +99,9 @@ export function SystemOverviewStats() {
       {cards.map((item) => {
         const Icon = item.icon;
         return (
-          <Card key={item.label} className="rounded-xl border bg-card shadow-xs">
-            <CardContent className="p-4 flex items-center justify-between gap-3">
-              <div className="space-y-1 min-w-0 flex-1">
+          <Card key={item.label} className="rounded-xl border bg-card shadow-sm">
+            <CardContent className="p-5 flex items-center justify-between gap-4">
+              <div className="space-y-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground truncate">
                     {item.label}
@@ -109,17 +109,17 @@ export function SystemOverviewStats() {
                   {item.badge && (
                     <Badge
                       variant="outline"
-                      className="px-1.5 py-0 text-[9px] font-mono border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+                      className="px-1.5 py-0.5 text-[9px] font-mono border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
                     >
                       {item.badge}
                     </Badge>
                   )}
                 </div>
-                <p className="text-2xl font-bold tracking-tight text-foreground">{item.value}</p>
-                <p className="text-xs text-muted-foreground/80 truncate">{item.subtext}</p>
+                <p className="text-2xl font-bold tracking-tight text-foreground leading-none">{item.value}</p>
+                <p className="text-xs text-muted-foreground truncate leading-relaxed">{item.subtext}</p>
               </div>
               <div
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${item.bg}`}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${item.bg}`}
               >
                 <Icon className={`h-5 w-5 ${item.color}`} />
               </div>

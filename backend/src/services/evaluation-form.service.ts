@@ -103,14 +103,17 @@ export class evaluationFormService implements IEvaluationFormService {
       );
   }
 
-  private buildFormTreeStructure(rows: FormTreeJoinRow[]): EvaluationFormTree {
+  private buildFormTreeStructure(rows: any[]): EvaluationFormTree {
     const baseRow = rows[0]!;
+    const formMin = Number(baseRow.form_min_rating ?? baseRow.min_rating ?? 1);
+    const formMax = Number(baseRow.form_max_rating ?? baseRow.max_rating ?? 5);
+
     const formTree: EvaluationFormTree = {
       id: baseRow.id,
       title: baseRow.title,
       description: baseRow.description,
-      min_rating: baseRow.min_rating ?? 1,
-      max_rating: baseRow.max_rating ?? 5,
+      min_rating: formMin,
+      max_rating: formMax,
       created_at: baseRow.created_at,
       updated_at: baseRow.updated_at,
       deleted_at: baseRow.deleted_at,
@@ -145,7 +148,8 @@ export class evaluationFormService implements IEvaluationFormService {
             category_id: row.category_id,
             parent_id: row.question_parent_id,
             question: row.question_text as string,
-            max_rating: row.max_rating as number,
+            // Inherit the form's max bound if the question rating is lower or default
+            max_rating: Number(row.question_max_rating ?? formMax),
             order: row.question_order as number,
             version: row.question_version as number,
             created_at: row.question_created_at as Date,
@@ -191,9 +195,16 @@ export class evaluationFormService implements IEvaluationFormService {
     const catTable = isStudent ? StudentEvaluationCategories : SupervisorEvaluationCategories;
     const qTable = isStudent ? StudentEvaluationQuestions : SupervisorEvaluationQuestions;
 
-    const rows = await GetRecords<TableNames, FormTreeJoinRow>(formTableName, {
-      select: (table) => ({
-        ...getColumns(table),
+    const rows = await GetRecords<TableNames, any>(formTableName, {
+      select: () => ({
+        id: formTable.id,
+        title: formTable.title,
+        description: formTable.description,
+        form_min_rating: formTable.min_rating, // 👈 Explicit alias to prevent overwriting
+        form_max_rating: formTable.max_rating, // 👈 Explicit alias to prevent overwriting
+        created_at: formTable.created_at,
+        updated_at: formTable.updated_at,
+        deleted_at: formTable.deleted_at,
         category_id: catTable.id,
         category_parent_id: catTable.parent_id,
         category_name: catTable.name,
@@ -206,7 +217,7 @@ export class evaluationFormService implements IEvaluationFormService {
         question_id: qTable.id,
         question_parent_id: qTable.parent_id,
         question_text: qTable.question,
-        max_rating: qTable.max_rating,
+        question_max_rating: qTable.max_rating, // 👈 Explicit alias for question rating
         question_order: qTable.order,
         question_version: qTable.version,
         question_created_at: qTable.created_at,
@@ -352,16 +363,38 @@ export class evaluationFormService implements IEvaluationFormService {
     categoryId: number,
     payload: UpsertQuestionReq,
   ): Promise<{ question: QuestionSelect }> {
-    const validation = await UpsertQuestionReqSchema.safeParseAsync(payload);
-    if (!validation.success) throw validation.error;
+    const isStudent = type === "student";
+    const catTableName: TableNames = isStudent
+      ? "StudentEvaluationCategories"
+      : "SupervisorEvaluationCategories";
+    const formTableName: TableNames = isStudent
+      ? "StudentEvaluationForms"
+      : "SupervisorEvaluationForms";
+
+    // Automatically inherit the parent form's max_rating
+    const category = await GetRecord(catTableName, {
+      where: (c: any) => eq(c.id, categoryId),
+    });
+    const form = category
+      ? await GetRecord(formTableName, { where: (f: any) => eq(f.id, category.form_id) })
+      : null;
+
+    const resolvedMaxRating =
+      payload.max_rating && payload.max_rating !== 5
+        ? payload.max_rating
+        : (form?.max_rating ?? payload.max_rating ?? 5);
 
     const tableName: SoftDeletableTables =
       type === "student" ? "StudentEvaluationQuestions" : "SupervisorEvaluationQuestions";
+
     const question = await CreateRecord(tableName, {
       category_id: categoryId,
-      ...validation.data,
+      question: payload.question,
+      max_rating: Number(resolvedMaxRating),
+      order: payload.order,
       version: 1,
     });
+
     return { question: question as QuestionSelect };
   }
 

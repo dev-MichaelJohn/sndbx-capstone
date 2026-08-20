@@ -35,9 +35,9 @@ export const CommandShortcutGrid = () => {
   ];
 
   return (
-    <Card className="rounded-xl border border-border/60 bg-card shadow-2xs">
-      <CardHeader className="pb-3 border-b px-5 py-3">
-        <CardTitle className="text-xs font-semibold text-foreground uppercase tracking-wider">
+    <Card className="rounded-xl border bg-card shadow-sm">
+      <CardHeader className="pb-3.5 border-b px-5 py-4">
+        <CardTitle className="text-sm font-semibold text-foreground">
           Quick Command Shortcuts
         </CardTitle>
       </CardHeader>
@@ -48,22 +48,22 @@ export const CommandShortcutGrid = () => {
             <Link
               key={act.title}
               to={act.href}
-              className="flex items-center justify-between p-3.5 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/60 hover:border-primary/40 transition-all duration-200 group"
+              className="flex items-center justify-between p-3.5 rounded-lg border border-border/60 bg-card hover:bg-accent/50 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 group"
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div
-                  className={`flex size-9 items-center justify-center rounded-lg shrink-0 ${act.accent}`}
+                  className={`flex size-9 items-center justify-center rounded-lg shrink-0 ${act.accent} group-hover:scale-105 transition-transform`}
                 >
                   <Icon className="size-4" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     {act.title}
                   </p>
-                  <p className="text-[10px] text-muted-foreground truncate">{act.desc}</p>
+                  <p className="text-[10px] text-muted-foreground truncate leading-relaxed">{act.desc}</p>
                 </div>
               </div>
-              <ArrowRight className="size-3.5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+              <ArrowRight className="size-3.5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
             </Link>
           );
         })}

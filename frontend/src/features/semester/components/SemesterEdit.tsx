@@ -2,9 +2,8 @@ import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import toast from "react-hot-toast";
 import type { LucideIcon } from "lucide-react";
-import { CalendarIcon, Pencil } from "lucide-react";
-import { format, parseISO } from "date-fns";
-import type { DateRange } from "react-day-picker";
+import { Calendar as CalendarIcon, Pencil } from "lucide-react";
+import { format, parseISO, addDays, isValid } from "date-fns";
 
 import {
   SemesterUpdateSchema,
@@ -37,7 +36,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FieldGroup } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
 import { FormTextField } from "@/components/form-text-field";
 import {
   Select,
@@ -47,81 +47,76 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface SemesterDateRangePickerProps {
-  startDateStr?: string;
-  endDateStr?: string;
+interface SingleDatePickerFieldProps {
+  label: string;
+  value?: string;
   disabled?: boolean;
-  onChange: (startDate: string, endDate: string) => void;
+  hasError?: boolean;
+  minDate?: Date;
+  onChange: (val: string) => void;
 }
 
-export function SemesterDateRangePicker({
-  startDateStr,
-  endDateStr,
+const SingleDatePickerField = ({
+  label,
+  value,
   disabled,
+  hasError,
+  minDate,
   onChange,
-}: SemesterDateRangePickerProps) {
-  const [popoverOpen, setPopoverOpen] = useState(false);
+}: SingleDatePickerFieldProps) => {
+  const [open, setOpen] = useState(false);
+  const parsedDate = value ? parseISO(value) : undefined;
+  const isDateValid = parsedDate && isValid(parsedDate);
 
-  const dateRange: DateRange | undefined = {
-    from: startDateStr ? parseISO(startDateStr) : undefined,
-    to: endDateStr ? parseISO(endDateStr) : undefined,
-  };
-
-  const handleSelect = (range: DateRange | undefined) => {
-    const fromStr = range?.from ? format(range.from, "yyyy-MM-dd") : "";
-    const toStr = range?.to ? format(range.to, "yyyy-MM-dd") : "";
-    onChange(fromStr, toStr);
-
-    if (range?.from && range?.to) {
-      setPopoverOpen(false);
+  const handleSelect = (date: Date | undefined) => {
+    if (date) {
+      onChange(format(date, "yyyy-MM-dd"));
+      setOpen(false);
     }
   };
 
   return (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen} modal={true}>
-      <PopoverTrigger asChild>
-        <Button
-          id="date-range-picker"
-          type="button"
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            "w-full justify-start text-left font-normal h-9 text-xs",
-            !dateRange.from && "text-muted-foreground",
-          )}
-        >
-          <CalendarIcon className="mr-2 size-4 shrink-0" />
-          {dateRange.from ? (
-            dateRange.to ? (
-              <>
-                {format(dateRange.from, "LLL dd, yyyy")} – {format(dateRange.to, "LLL dd, yyyy")}
-              </>
+    <div className="space-y-1.5">
+      <Label className={cn("text-xs font-semibold", hasError && "text-destructive")}>{label}</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            className={cn(
+              "w-full h-8.5 justify-start text-left text-xs font-normal rounded-xl border-border/70 bg-card px-3 active:scale-[0.96]",
+              !isDateValid && "text-muted-foreground",
+              hasError && "border-destructive text-destructive focus:ring-destructive",
+            )}
+          >
+            <CalendarIcon className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
+            {isDateValid ? (
+              <span className="font-medium text-foreground">
+                {format(parsedDate, "MMM dd, yyyy")}
+              </span>
             ) : (
-              format(dateRange.from, "LLL dd, yyyy")
-            )
-          ) : (
-            <span>Pick duration dates</span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0 z-100"
-        align="start"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
-        <Calendar
-          autoFocus
-          mode="range"
-          defaultMonth={dateRange.from}
-          selected={dateRange}
-          onSelect={handleSelect}
-          numberOfMonths={2}
-        />
-      </PopoverContent>
-    </Popover>
+              <span>Pick a date</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto p-0 z-50 rounded-2xl border border-border/80 shadow-2xl"
+          align="start"
+        >
+          <Calendar
+            mode="single"
+            selected={parsedDate}
+            onSelect={handleSelect}
+            defaultMonth={parsedDate ?? minDate ?? new Date()}
+            disabled={minDate ? (date) => date < minDate : undefined}
+            autoFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
   );
-}
+};
 
 interface SemesterEditDialogProps {
   semester: SemesterSelect;
@@ -132,7 +127,7 @@ interface SemesterEditDialogProps {
 export const SemesterEditDialog = ({
   semester,
   icon: Icon = Pencil,
-  triggerText = "Edit",
+  triggerText = "Edit Term",
 }: SemesterEditDialogProps) => {
   const [open, setOpen] = useState(false);
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
@@ -150,9 +145,23 @@ export const SemesterEditDialog = ({
 
   const form = useForm({
     defaultValues: initialFormData,
-    validators: { onSubmit: SemesterUpdateSchema },
+    validators: {
+      onSubmit: ({ value }) => {
+        const result = SemesterUpdateSchema.safeParse({
+          ...value,
+          school_year_start: value.school_year_start ? Number(value.school_year_start) : undefined,
+        });
+        if (!result.success) {
+          return result.error.issues.map((i) => i.message).join(", ");
+        }
+        return undefined;
+      },
+    },
     onSubmit: async ({ value }) => {
-      setPendingValue(value);
+      setPendingValue({
+        ...value,
+        school_year_start: value.school_year_start ? Number(value.school_year_start) : undefined,
+      });
       setConfirmSaveOpen(true);
     },
   });
@@ -213,42 +222,57 @@ export const SemesterEditDialog = ({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <div className="flex w-full items-center gap-2 px-2 py-1.5 text-xs cursor-pointer">
-            <Icon className="size-3.5" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full h-8 justify-start px-2.5 py-1.5 text-xs font-normal cursor-pointer rounded-lg text-foreground hover:bg-muted active:scale-[0.96]"
+          >
+            <Icon className="mr-2 size-3.5 text-muted-foreground" />
             <span>{triggerText}</span>
-          </div>
+          </Button>
         </DialogTrigger>
 
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-2xl border border-border/80 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Academic Semester</DialogTitle>
-            <DialogDescription>
-              Modify school year bounds, term details, and schedule limits.
+            <DialogTitle className="text-base font-bold">Edit Academic Semester</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Modify school year bounds, term details, and operational schedule dates.
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup>
-            {/* Semester Term */}
+          <FieldGroup className="space-y-3.5 py-1">
+            {/* Semester Term Selector */}
             <form.Field
               name="semester_term"
               children={(field) => (
-                <Field>
-                  <FieldLabel htmlFor={field.name}>Semester Term</FieldLabel>
+                <div className="space-y-1.5">
+                  <Label htmlFor={field.name} className="text-xs font-semibold">
+                    Semester Term
+                  </Label>
                   <Select
                     value={field.state.value}
                     onValueChange={(val) => field.handleChange(val as "1st" | "2nd" | "Summer")}
                     disabled={updateSemesterMutation.isPending}
                   >
-                    <SelectTrigger id={field.name} className="h-9">
+                    <SelectTrigger
+                      id={field.name}
+                      className="h-8.5 text-xs rounded-xl bg-card border-border/70"
+                    >
                       <SelectValue placeholder="Select Term" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1st">1st Semester</SelectItem>
-                      <SelectItem value="2nd">2nd Semester</SelectItem>
-                      <SelectItem value="Summer">Summer / Midyear</SelectItem>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="1st" className="text-xs">
+                        1st Semester
+                      </SelectItem>
+                      <SelectItem value="2nd" className="text-xs">
+                        2nd Semester
+                      </SelectItem>
+                      <SelectItem value="Summer" className="text-xs">
+                        Summer / Midyear
+                      </SelectItem>
                     </SelectContent>
                   </Select>
-                </Field>
+                </div>
               )}
             />
 
@@ -272,59 +296,95 @@ export const SemesterEditDialog = ({
               <form.Subscribe
                 selector={(state) => state.values.school_year_start}
                 children={(startYear) => (
-                  <Field>
-                    <FieldLabel>SY End Year</FieldLabel>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-muted-foreground">
+                      SY End Year
+                    </Label>
                     <Input
                       type="number"
                       value={startYear ? Number(startYear) + 1 : ""}
                       disabled
-                      className="h-9 bg-muted text-muted-foreground"
+                      className="h-8.5 rounded-xl bg-muted/40 text-muted-foreground font-mono text-xs cursor-not-allowed"
                     />
-                  </Field>
+                  </div>
                 )}
               />
             </div>
 
-            {/* Date Range Picker using Isolated Sub-Component */}
-            <form.Subscribe
-              selector={(state) => [state.values.start_date, state.values.end_date] as const}
-              children={([startDateStr, endDateStr]) => (
-                <Field>
-                  <FieldLabel>Semester Duration</FieldLabel>
-                  <SemesterDateRangePicker
-                    startDateStr={startDateStr}
-                    endDateStr={endDateStr}
+            {/* Distinct Separate Start Date & End Date Fields */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Start Date */}
+              <form.Field
+                name="start_date"
+                validators={{
+                  onChange: ({ value }) => (!value ? "Start date is required" : undefined),
+                }}
+                children={(field) => (
+                  <SingleDatePickerField
+                    label="Start Date"
+                    value={field.state.value}
                     disabled={updateSemesterMutation.isPending}
-                    onChange={(start, end) => {
-                      form.setFieldValue("start_date", start);
-                      form.setFieldValue("end_date", end);
-                    }}
+                    hasError={field.state.meta.errors.length > 0}
+                    onChange={(val) => field.handleChange(val)}
                   />
-                </Field>
-              )}
-            />
+                )}
+              />
+
+              {/* End Date */}
+              <form.Field
+                name="end_date"
+                validators={{
+                  onChangeListenTo: ["start_date"],
+                  onChange: ({ value, fieldApi }) => {
+                    if (!value) return "End date is required";
+                    const start = fieldApi.form.getFieldValue("start_date");
+                    if (start && new Date(value) <= new Date(start)) {
+                      return "End date must be after start date";
+                    }
+                    return undefined;
+                  },
+                }}
+                children={(field) => {
+                  const startDateStr = form.getFieldValue("start_date");
+                  const minDate = startDateStr ? addDays(parseISO(startDateStr), 1) : undefined;
+
+                  return (
+                    <SingleDatePickerField
+                      label="End Date"
+                      value={field.state.value}
+                      disabled={updateSemesterMutation.isPending}
+                      hasError={field.state.meta.errors.length > 0}
+                      minDate={minDate}
+                      onChange={(val) => field.handleChange(val)}
+                    />
+                  );
+                }}
+              />
+            </div>
           </FieldGroup>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="pt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={attemptClose}
               disabled={updateSemesterMutation.isPending}
+              className="h-8.5 rounded-lg text-xs"
             >
               Cancel
             </Button>
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isDirty] as const}
-              children={([canSubmit, isDirty]) => (
+              selector={(state) => [state.canSubmit] as const}
+              children={([canSubmit]) => (
                 <Button
                   type="button"
                   size="sm"
-                  disabled={!canSubmit || !isDirty || updateSemesterMutation.isPending}
+                  disabled={!canSubmit || updateSemesterMutation.isPending}
                   onClick={() => form.handleSubmit()}
+                  className="h-8.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground shadow-sm active:scale-[0.96]"
                 >
-                  {updateSemesterMutation.isPending ? "Saving..." : "Update Semester"}
+                  {updateSemesterMutation.isPending ? "Updating..." : "Update Semester"}
                 </Button>
               )}
             />
@@ -332,39 +392,50 @@ export const SemesterEditDialog = ({
         </DialogContent>
       </Dialog>
 
-      {/* Save Confirmation Alert */}
+      {/* Save Confirmation Modal */}
       <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl border border-border/80 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Update Semester Record?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-bold">
+              Update Semester Record?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
               {pendingValue &&
-                `This will update SY ${pendingValue.school_year_start}–${Number(pendingValue.school_year_start) + 1} (${pendingValue.semester_term} Semester) duration to run from ${pendingValue.start_date} to ${pendingValue.end_date}.`}
+                `This will update SY ${pendingValue.school_year_start}–${Number(pendingValue.school_year_start) + 1} (${pendingValue.semester_term} Semester) running from ${pendingValue.start_date} to ${pendingValue.end_date}.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={updateSemesterMutation.isPending}>
+            <AlertDialogCancel
+              disabled={updateSemesterMutation.isPending}
+              className="h-8 rounded-lg text-xs"
+            >
               Keep Editing
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSave} disabled={updateSemesterMutation.isPending}>
+            <AlertDialogAction
+              onClick={confirmSave}
+              disabled={updateSemesterMutation.isPending}
+              className="h-8 rounded-lg text-xs font-bold"
+            >
               {updateSemesterMutation.isPending ? "Updating..." : "Yes, Update"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Discard Confirmation Alert */}
+      {/* Discard Confirmation Modal */}
       <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl border border-border/80 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-bold">Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
               You have unsaved changes in this form. Closing now will lose all modifications.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDiscard}>Discard</AlertDialogAction>
+            <AlertDialogCancel className="h-8 rounded-lg text-xs">Keep Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscard} className="h-8 rounded-lg text-xs">
+              Discard
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

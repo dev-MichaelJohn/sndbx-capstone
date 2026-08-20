@@ -37,6 +37,7 @@ interface QuestionDialogProps {
   formId: number;
   categoryId: number;
   initialData?: QuestionSelect;
+  defaultMaxRating?: number;
   nextOrder?: number;
   triggerText?: string;
   triggerIcon?: LucideIcon;
@@ -50,6 +51,7 @@ export const QuestionDialog = ({
   formId,
   categoryId,
   initialData,
+  defaultMaxRating = 5,
   nextOrder = 1,
   triggerText,
   triggerIcon: Icon,
@@ -66,7 +68,7 @@ export const QuestionDialog = ({
 
   const defaultValues: UpsertQuestionReq = {
     question: initialData?.question ?? "",
-    max_rating: initialData?.max_rating ?? 5,
+    max_rating: initialData?.max_rating ?? defaultMaxRating,
     order: initialData?.order ?? nextOrder,
   };
 
@@ -76,15 +78,23 @@ export const QuestionDialog = ({
       onSubmit: ({ value }) => {
         const result = UpsertQuestionReqSchema.safeParse(value);
         if (!result.success) {
-          return result.error.issues.map((issue) => issue.message).join(", ");
+          return result.error.issues.map((i) => i.message).join(", ");
         }
+        return undefined;
       },
     },
-    onSubmit: (values) => dialog.handleFormSubmit(values),
+    onSubmit: ({ value }) => {
+      dialog.handleFormSubmit({
+        value: {
+          ...value,
+          max_rating: Number(value.max_rating ?? defaultMaxRating),
+        },
+      });
+    },
   });
 
   const dialog = useEntityDialog<UpsertQuestionReq>({
-    form,
+    form: form as any,
     mutationFn: (payload) => {
       if (isEdit && initialData) {
         return updateQuestion.mutateAsync({
@@ -95,8 +105,8 @@ export const QuestionDialog = ({
       }
       return addQuestion.mutateAsync({ categoryId, payload });
     },
-    loadingText: isEdit ? "Updating question statement..." : "Adding question statement...",
-    successText: isEdit ? "Question statement updated." : "Question statement added.",
+    loadingText: isEdit ? "Updating question..." : "Adding question...",
+    successText: isEdit ? "Question updated." : "Question added.",
   });
 
   return (
@@ -107,39 +117,47 @@ export const QuestionDialog = ({
             type="button"
             variant={variant}
             size={size}
-            className={className ?? "h-7 cursor-pointer gap-1 rounded-lg text-xs font-medium"}
+            className={
+              className ??
+              "h-7 cursor-pointer gap-1 rounded-lg text-xs font-medium active:scale-[0.96]"
+            }
           >
             {Icon && <Icon className="size-3.5" />}
             {triggerText && <span>{triggerText}</span>}
           </Button>
         </DialogTrigger>
-        <DialogContent className="rounded-xl sm:max-w-md">
+
+        <DialogContent className="rounded-2xl sm:max-w-md border border-border/80 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold">
-              {isEdit ? "Edit Question Item" : "Add Question Item"}
+            <DialogTitle className="text-base font-bold">
+              {isEdit ? "Edit Question Statement" : "Add Question Statement"}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               {isEdit
-                ? "Modify question text or evaluation criteria."
-                : "Add an evaluation statement or rating criterion."}
+                ? "Modify statement criteria or evaluation indicators."
+                : "Add a rating statement to this evaluation criteria section."}
             </DialogDescription>
           </DialogHeader>
 
           <FieldGroup className="py-2">
             <form.Field
               name="question"
+              validators={{
+                onChange: ({ value }) =>
+                  !value || !value.trim() ? "Question statement is required" : undefined,
+              }}
               children={(field) => (
                 <FormTextField
                   field={field}
-                  label="Question Statement"
+                  label="Question Statement / Indicator"
                   disabled={isPending}
-                  placeholder="e.g. Starts and ends classes on time."
+                  placeholder="e.g. Explains lesson objectives clearly at the start of class."
                 />
               )}
             />
           </FieldGroup>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
               type="button"
               variant="outline"
@@ -156,9 +174,9 @@ export const QuestionDialog = ({
                   type="button"
                   disabled={!canSubmit || isPending}
                   onClick={() => form.handleSubmit()}
-                  className="h-8 cursor-pointer rounded-lg text-xs font-medium"
+                  className="h-8 cursor-pointer rounded-lg text-xs font-bold bg-primary text-primary-foreground shadow-sm active:scale-[0.96]"
                 >
-                  {isPending ? "Saving..." : isEdit ? "Update Question" : "Add Question"}
+                  {isPending ? "Saving..." : isEdit ? "Update Statement" : "Add Statement"}
                 </Button>
               )}
             />
@@ -166,14 +184,19 @@ export const QuestionDialog = ({
         </DialogContent>
       </Dialog>
 
+      {/* Save Confirmation Modal */}
       <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
-        <AlertDialogContent className="rounded-xl">
+        <AlertDialogContent className="rounded-2xl border border-border/80 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-semibold">
+            <AlertDialogTitle className="text-base font-bold">
               {isEdit ? "Update question statement?" : "Add question statement?"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-muted-foreground">
-              This item will be saved under this category.
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              This statement will be evaluated on a scale up to{" "}
+              <strong className="text-foreground">
+                {dialog.pendingValue?.max_rating ?? defaultMaxRating}
+              </strong>
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -183,7 +206,7 @@ export const QuestionDialog = ({
             <AlertDialogAction
               onClick={dialog.confirmSave}
               disabled={isPending}
-              className="h-8 rounded-lg text-xs font-medium"
+              className="h-8 rounded-lg text-xs font-bold"
             >
               {isPending ? "Saving..." : "Yes, confirm"}
             </AlertDialogAction>
@@ -191,14 +214,13 @@ export const QuestionDialog = ({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Discard Confirmation Modal */}
       <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
-        <AlertDialogContent className="rounded-xl">
+        <AlertDialogContent className="rounded-2xl border border-border/80 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-semibold">
-              Discard unsaved changes?
-            </AlertDialogTitle>
+            <AlertDialogTitle className="text-base font-bold">Discard changes?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              Closing now will discard your entry.
+              Closing now will discard your question entry.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

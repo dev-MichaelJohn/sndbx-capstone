@@ -9,6 +9,8 @@ import { ClassDetailsHeader } from "./ClassDetailsHeader";
 import { ClassDetailsMetrics } from "./ClassDetailsMetrics";
 import { ClassDetailsTabs } from "./ClassDetailsTab";
 import { useClassStudentCount } from "@/features/class-student/api/class-student.service";
+import { PageHeader } from "@/components/ui/page-header";
+import { ArrowLeft } from "lucide-react";
 
 const YEAR_LEVEL_MAP: Record<string, number> = {
   I: 1,
@@ -92,12 +94,20 @@ export const ClassDetailsPage = () => {
     <div className="flex h-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
         {/* Header Section */}
-        <ClassDetailsHeader
-          name={className}
-          programCode={programCode}
-          yearLevel={String(numericYear)}
-          section={classData.section}
-          onBack={handleBack}
+        <PageHeader
+          title={className}
+          description="Overview and management of course offerings and enrolled student rosters"
+          badge={
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8 shrink-0 rounded-lg"
+              onClick={handleBack}
+              title="Back to Colleges"
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+          }
         />
 
         {/* KPI Summary Cards */}

@@ -1,8 +1,17 @@
 import React from "react";
 import { Link } from "react-router";
-import { GraduationCap, User, ArrowRight, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  GraduationCap,
+  User,
+  ArrowRight,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -35,110 +44,117 @@ export const ProgramCard: React.FC<ProgramCardProps> = ({ program }) => {
   const initials = `${program.first_name?.[0] ?? ""}${program.last_name?.[0] ?? ""}`.toUpperCase();
 
   return (
-    <Card className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/60 bg-card shadow-2xs transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
-      <div className="h-1 w-full bg-linear-to-r from-violet-500/80 to-violet-500/30" />
-
-      <CardHeader className="p-5 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-500 group-hover:scale-105 transition-transform">
-              <GraduationCap className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <Badge
-                variant="outline"
-                className="font-mono text-[10px] font-bold tracking-wider px-2 py-0.5 bg-violet-500/5 text-violet-600 dark:text-violet-400 border-violet-500/20"
-              >
-                {program.initialism}
-              </Badge>
-              <h3 className="mt-1 text-sm font-bold text-foreground tracking-tight truncate leading-snug">
-                {program.name}
-              </h3>
-            </div>
+    <Card className="group relative flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-xs transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5">
+      {/* Header Row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shadow-2xs group-hover:scale-105 transition-transform duration-200">
+            <GraduationCap className="size-5.5" />
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 shrink-0 rounded-lg text-muted-foreground hover:bg-muted"
-              >
-                <MoreHorizontal className="size-4" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 rounded-xl p-1">
-              <DropdownMenuItem
-                className="cursor-pointer p-0 focus:bg-transparent"
-                onSelect={(e) => e.preventDefault()}
-              >
-                <ProgramEditDialog icon={Pencil} triggerText="Edit Program" defaultData={program} />
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="cursor-pointer p-0 focus:bg-transparent"
-                onSelect={(e) => e.preventDefault()}
-              >
-                <ProgramDeleteDialog icon={Trash2} triggerText="Delete" program={program} />
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="min-w-0 space-y-0.5">
+            <Badge
+              variant="outline"
+              className="font-mono text-[10px] font-bold tracking-wider px-2 py-0.5 bg-violet-500/5 text-violet-600 dark:text-violet-400 border-violet-500/20"
+            >
+              {program.initialism}
+            </Badge>
+            <h3 className="text-sm font-bold text-foreground tracking-tight truncate leading-snug">
+              {program.name}
+            </h3>
+          </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="p-5 pt-2">
-        <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Program Chair
-          </p>
+        {/* Dropdown Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7.5 shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.96] cursor-pointer"
+            >
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-44 rounded-xl p-1 shadow-lg border-border/80"
+          >
+            <DropdownMenuItem
+              className="cursor-pointer p-0 focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <ProgramEditDialog icon={Pencil} triggerText="Edit Program" defaultData={program} />
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer p-0 focus:bg-transparent"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <ProgramDeleteDialog icon={Trash2} triggerText="Delete Program" program={program} />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-          {chairName ? (
-            <div className="flex items-center gap-2.5">
-              <Avatar className="size-8 border border-border/60 shrink-0">
-                <AvatarFallback className="bg-violet-500/10 text-xs font-semibold text-violet-500">
-                  {initials || "C"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-foreground truncate">{chairName}</p>
-                <p className="font-mono text-[10px] text-muted-foreground truncate">
-                  ID: {program.institutional_id || "N/A"}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between text-xs text-muted-foreground/70 italic py-0.5">
-              <span className="flex items-center gap-1.5">
-                <User className="size-3.5" /> Chair unassigned
-              </span>
-              <Badge
-                variant="outline"
-                className="text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/5"
-              >
-                Needs Chair
-              </Badge>
-            </div>
+      {/* Middle: Program Chair Status */}
+      <div className="my-4 rounded-xl border border-border/50 bg-muted/20 p-3">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+          <span>Program Chair</span>
+          {chairName && (
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold lowercase">
+              <ShieldCheck className="size-3" /> assigned
+            </span>
           )}
         </div>
-      </CardContent>
 
-      <CardFooter className="border-t border-border/40 p-3 px-5 bg-muted/10 flex items-center justify-between">
-        <span className="text-[11px] font-medium text-muted-foreground">
-          {program.student_count ?? 0} Enrolled Students
+        {chairName ? (
+          <div className="flex items-center gap-2.5">
+            <Avatar className="size-7.5 rounded-lg border border-border/60 shrink-0">
+              <AvatarFallback className="bg-violet-500/10 text-xs font-bold text-violet-600 dark:text-violet-400">
+                {initials || "C"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-foreground truncate">{chairName}</p>
+              <p className="font-mono text-[10px] text-muted-foreground truncate">
+                ID: {program.institutional_id || "N/A"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between text-xs text-muted-foreground italic py-0.5">
+            <span className="flex items-center gap-1.5">
+              <User className="size-3.5" /> Chair unassigned
+            </span>
+            <Badge
+              variant="outline"
+              className="text-[9px] font-semibold border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+            >
+              Needs Chair
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Details CTA */}
+      <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+        <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+          <Users className="size-3.5 text-muted-foreground/70" />
+          <span>{program.student_count ?? 0} Students</span>
         </span>
         <Button
           asChild
           size="sm"
           variant="ghost"
-          className="h-7 text-xs font-semibold gap-1.5 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 rounded-lg cursor-pointer"
+          className="h-7 text-xs font-bold gap-1 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 rounded-lg cursor-pointer active:scale-[0.96]"
         >
           <Link to={String(program.id)}>
             <span>View Details</span>
-            <ArrowRight className="size-3.5" />
+            <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </Button>
-      </CardFooter>
+      </div>
     </Card>
   );
 };

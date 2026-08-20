@@ -29,44 +29,39 @@ export const SystemAdminOverviewPage = () => {
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-y-auto p-6 gap-6">
-      {/* Hero Banner */}
-      <RoleHeroBanner
-        name={userName}
-        institutionalId={institutionalId}
-        role="SYS_ADMIN"
-        subtitle="Full system access to manage user accounts, institutional setup, evaluation forms, audit logs, and overall system health."
-      />
+    <div className="flex h-full flex-1 flex-col overflow-y-auto">
+      <div className="flex flex-col gap-6 p-6">
+        <RoleHeroBanner
+          name={userName}
+          institutionalId={institutionalId}
+          role="SYS_ADMIN"
+          subtitle="Full system access to manage user accounts, institutional setup, evaluation forms, audit logs, and overall system health."
+        />
 
-      {/* High-Level System Stats */}
-      <SystemOverviewStats />
+        <SystemOverviewStats />
 
-      {/* Navigation Command Shortcuts */}
-      <CommandShortcutGrid />
+        <CommandShortcutGrid />
 
-      {/* Real-time Submissions Ticker & Semester Trend */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LiveSubmissionsWidget />
-        {analytics && <SemesterTrendsChart semesterTrends={analytics.semester_trends} />}
-      </div>
-
-      {/* Evaluation KPIs */}
-      {analytics?.kpis && <KpiMetricsOverview kpis={analytics.kpis} />}
-
-      {/* Department Performance Comparisons */}
-      {analytics && (
-        <div className="grid grid-cols-1 gap-6">
-          <CollegePerformanceChart collegePerformance={analytics.college_performance} />
-        </div>
-      )}
-
-      {/* Leaderboards */}
-      {analytics && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CourseRankingsChart courseRankings={analytics.course_rankings} />
-          <FacultyRankingsChart facultyRankings={analytics.faculty_rankings} />
+          <LiveSubmissionsWidget />
+          {analytics && <SemesterTrendsChart semesterTrends={analytics.semester_trends} />}
         </div>
-      )}
+
+        {analytics?.kpis && <KpiMetricsOverview kpis={analytics.kpis} />}
+
+        {analytics && (
+          <div className="grid grid-cols-1 gap-6">
+            <CollegePerformanceChart collegePerformance={analytics.college_performance} />
+          </div>
+        )}
+
+        {analytics && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CourseRankingsChart courseRankings={analytics.course_rankings} />
+            <FacultyRankingsChart facultyRankings={analytics.faculty_rankings} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

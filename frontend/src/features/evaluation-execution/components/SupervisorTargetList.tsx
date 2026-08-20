@@ -18,20 +18,24 @@ export const SupervisorTargetList = ({
 }: SupervisorTargetListProps) => {
   const { user } = useUser();
 
-  // Self-exclusion filter: prevent supervisors evaluating themselves
+  // Guard against supervisors evaluating their own assigned teaching classes
   const validTargets = useMemo(() => {
     if (!user) return [];
     return offerings.filter((offering) => offering.faculty_id !== user.id);
   }, [offerings, user]);
 
   if (isLoading) {
-    return <div className="p-8 text-center text-xs text-muted-foreground">Loading targets...</div>;
+    return (
+      <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">
+        Loading evaluation targets...
+      </div>
+    );
   }
 
   if (validTargets.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed p-8 text-center text-xs text-muted-foreground">
-        No faculty evaluation targets under your current supervisor scope.
+      <div className="rounded-xl border border-dashed border-border/70 p-8 text-center text-xs text-muted-foreground">
+        No faculty evaluation targets found under your active jurisdiction for this term.
       </div>
     );
   }

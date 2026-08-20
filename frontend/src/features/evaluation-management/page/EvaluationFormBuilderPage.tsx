@@ -335,6 +335,7 @@ export const EvaluationFormBuilderPage = () => {
                       type={activeType}
                       formId={parsedFormId}
                       categoryId={category.id}
+                      defaultMaxRating={formTree.max_rating}
                       nextOrder={category.questions.length + 1}
                       triggerText="Add Item"
                       triggerIcon={Plus}
