@@ -31,6 +31,8 @@ import {
   type EvaluationType,
   type UpsertCategoryReq,
 } from "backend/types/evaluation-form.type";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CategoryDialogProps {
   type: EvaluationType;
@@ -131,12 +133,20 @@ export const CategoryDialog = ({
             <form.Field
               name="description"
               children={(field) => (
-                <FormTextField
-                  field={field}
-                  label="Description"
-                  disabled={isPending}
-                  placeholder="e.g. Adherence to academic syllabi and course content"
-                />
+                <div className="space-y-1.5">
+                  <Label htmlFor={field.name} className="text-xs font-semibold">
+                    Description (Optional)
+                  </Label>
+                  <Textarea
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={isPending}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="e.g. Adherence to academic syllabi and course content"
+                    className="min-h-20 text-xs rounded-xl bg-card border-border/70 resize-y"
+                  />
+                </div>
               )}
             />
           </FieldGroup>

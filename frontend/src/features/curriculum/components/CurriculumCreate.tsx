@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "@tanstack/react-form";
-import type { LucideIcon } from "lucide-react";
+import { Check, ChevronsUpDown, type LucideIcon } from "lucide-react";
 import { CurriculumSchema, type CurriculumInsert } from "backend/types/curriculum.type";
 import { useCreateCurriculum } from "../api/curriculum.service";
 import { useCourses } from "@/features/course/api/course.service";
@@ -8,6 +8,16 @@ import { useEntityDialog } from "@/hooks/use-entity-dialog";
 
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -24,16 +34,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface CurriculumCreateDialogProps {
   programId: number;
@@ -46,9 +46,11 @@ export const CurriculumCreateDialog = ({
   icon: Icon,
   triggerText = "Add Curriculum Item",
 }: CurriculumCreateDialogProps) => {
-  const { mutateAsync, isPending } = useCreateCurriculum();
+  const [courseComboOpen, setCourseComboOpen] = useState(false);
+  const [courseSearch, setCourseSearch] = useState("");
 
-  const { data: coursesData } = useCourses({ page: 1 });
+  const { mutateAsync, isPending } = useCreateCurriculum();
+  const { data: coursesData } = useCourses({ search: courseSearch || undefined, page: 1 });
   const courses = coursesData?.data ?? [];
 
   const initialFormData: CurriculumInsert = {
@@ -62,9 +64,7 @@ export const CurriculumCreateDialog = ({
 
   const form = useForm({
     defaultValues: initialFormData,
-    validators: {
-      onSubmit: CurriculumSchema.insert,
-    },
+    validators: { onSubmit: CurriculumSchema.insert },
     onSubmit: (args) => handleFormSubmitRef.current?.(args),
   });
 
@@ -78,162 +78,179 @@ export const CurriculumCreateDialog = ({
   handleFormSubmitRef.current = dialog.handleFormSubmit;
 
   return (
-    <>
-      <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
-        <DialogTrigger asChild>
-          <Button type="button" className="rounded-lg p-4 flex items-center justify-center gap-1">
-            {Icon && <Icon className="size-4" />}
-            <span className="leading-none text-sm">{triggerText}</span>
-          </Button>
-        </DialogTrigger>
+    <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button type="button" className="rounded-lg p-4 flex items-center justify-center gap-1">
+          {Icon && <Icon className="size-4" />}
+          <span className="leading-none text-sm">{triggerText}</span>
+        </Button>
+      </DialogTrigger>
 
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add Curriculum Item</DialogTitle>
-            <DialogDescription>
-              Assign a course to this program's academic curriculum structure.
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Curriculum Item</DialogTitle>
+          <DialogDescription>
+            Search and assign a course to this program's academic curriculum structure.
+          </DialogDescription>
+        </DialogHeader>
 
-          <FieldGroup>
-            {/* Course Selection */}
-            <form.Field
-              name="course_id"
-              children={(field) => (
+        <FieldGroup className="space-y-3">
+          {/* Searchable Course Dropdown / Combobox */}
+          <form.Field
+            name="course_id"
+            validators={{
+              onSubmit: ({ value }) =>
+                !value || value <= 0 ? "Please select a course" : undefined,
+            }}
+            children={(field) => {
+              const selectedCourse = courses.find((c) => c.id === field.state.value);
+
+              return (
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Course</label>
-                  <Select
-                    value={field.state.value ? String(field.state.value) : ""}
-                    onValueChange={(val) => field.handleChange(Number(val))}
-                    disabled={isPending}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.id} value={String(course.id)}>
-                          {course.initialism} - {course.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {field.state.meta.errors ? (
-                    <p className="text-xs text-destructive">{field.state.meta.errors.join(", ")}</p>
-                  ) : null}
+                  <Label className="text-xs font-semibold">Course Selection</Label>
+                  <Popover open={courseComboOpen} onOpenChange={setCourseComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={courseComboOpen}
+                        disabled={isPending}
+                        className="w-full justify-between h-9 text-xs rounded-xl font-normal"
+                      >
+                        {selectedCourse
+                          ? `${selectedCourse.initialism} — ${selectedCourse.name}`
+                          : "Search and select course..."}
+                        <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder="Search course title or code..."
+                          value={courseSearch}
+                          onValueChange={setCourseSearch}
+                          className="text-xs"
+                        />
+                        <CommandList className="max-h-52">
+                          {courses.length === 0 ? (
+                            <CommandEmpty className="p-3 text-xs text-muted-foreground text-center">
+                              No courses found.
+                            </CommandEmpty>
+                          ) : (
+                            <CommandGroup>
+                              {courses.map((course) => (
+                                <CommandItem
+                                  key={course.id}
+                                  value={String(course.id)}
+                                  onSelect={() => {
+                                    field.handleChange(course.id);
+                                    setCourseComboOpen(false);
+                                  }}
+                                  className="text-xs flex items-center justify-between cursor-pointer"
+                                >
+                                  <span>
+                                    <strong className="font-semibold text-primary">
+                                      {course.initialism}
+                                    </strong>{" "}
+                                    — {course.name}
+                                  </span>
+                                  {field.state.value === course.id && (
+                                    <Check className="size-3.5 text-primary" />
+                                  )}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="text-[11px] font-medium text-destructive">
+                      {field.state.meta.errors.join(", ")}
+                    </p>
+                  )}
                 </div>
-              )}
-            />
+              );
+            }}
+          />
 
-            {/* Year Level Selection */}
-            <form.Field
-              name="year_level"
-              children={(field) => (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Year Level</label>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(val) => field.handleChange(val as any)}
-                    disabled={isPending}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select year level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="I">I</SelectItem>
-                      <SelectItem value="II">II</SelectItem>
-                      <SelectItem value="III">III</SelectItem>
-                      <SelectItem value="IV">IV</SelectItem>
-                      <SelectItem value="V">V</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            />
-
-            {/* Semester Term Selection */}
-            <form.Field
-              name="semester_term"
-              children={(field) => (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Semester Term</label>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(val) => field.handleChange(val as any)}
-                    disabled={isPending}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1st">1st</SelectItem>
-                      <SelectItem value="2nd">2nd</SelectItem>
-                      <SelectItem value="Summer">Summer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            />
-          </FieldGroup>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={dialog.attemptClose}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <form.Subscribe
-              selector={(state) => [state.canSubmit] as const}
-              children={([canSubmit]) => (
-                <Button
-                  type="button"
-                  disabled={!canSubmit || isPending}
-                  onClick={() => form.handleSubmit()}
+          {/* Year Level Selection */}
+          <form.Field
+            name="year_level"
+            children={(field) => (
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-semibold">Year Level</Label>
+                <Select
+                  value={field.state.value}
+                  onValueChange={(val) => field.handleChange(val as any)}
+                  disabled={isPending}
                 >
-                  {isPending ? "Adding..." : "Add to Curriculum"}
-                </Button>
-              )}
-            />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  <SelectTrigger className="w-full h-9 text-xs rounded-xl">
+                    <SelectValue placeholder="Select year level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="I">Year I (First Year)</SelectItem>
+                    <SelectItem value="II">Year II (Second Year)</SelectItem>
+                    <SelectItem value="III">Year III (Third Year)</SelectItem>
+                    <SelectItem value="IV">Year IV (Fourth Year)</SelectItem>
+                    <SelectItem value="V">Year V (Fifth Year)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          />
 
-      {/* Save Confirmation Modal */}
-      <AlertDialog open={dialog.confirmSaveOpen} onOpenChange={dialog.setConfirmSaveOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Curriculum Addition</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to add this course to the program curriculum?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={dialog.confirmSave} disabled={isPending}>
-              {isPending ? "Adding..." : "Yes, add course"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          {/* Semester Term Selection */}
+          <form.Field
+            name="semester_term"
+            children={(field) => (
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-semibold">Semester Term</Label>
+                <Select
+                  value={field.state.value}
+                  onValueChange={(val) => field.handleChange(val as any)}
+                  disabled={isPending}
+                >
+                  <SelectTrigger className="w-full h-9 text-xs rounded-xl">
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1st">1st Semester</SelectItem>
+                    <SelectItem value="2nd">2nd Semester</SelectItem>
+                    <SelectItem value="Summer">Summer / Midyear</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          />
+        </FieldGroup>
 
-      {/* Discard Confirmation Modal */}
-      <AlertDialog open={dialog.confirmDiscardOpen} onOpenChange={dialog.setConfirmDiscardOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes. Closing now will discard your entry.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={dialog.confirmDiscard}>Discard</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        <DialogFooter className="pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={dialog.attemptClose}
+            disabled={isPending}
+            className="h-8 rounded-lg text-xs"
+          >
+            Cancel
+          </Button>
+          <form.Subscribe
+            selector={(state) => [state.canSubmit] as const}
+            children={([canSubmit]) => (
+              <Button
+                type="button"
+                disabled={!canSubmit || isPending}
+                onClick={() => form.handleSubmit()}
+                className="h-8 rounded-lg text-xs font-medium"
+              >
+                {isPending ? "Adding..." : "Add to Curriculum"}
+              </Button>
+            )}
+          />
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

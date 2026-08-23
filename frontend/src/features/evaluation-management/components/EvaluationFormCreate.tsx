@@ -31,6 +31,7 @@ import {
   type CreateFormReq,
   type EvaluationType,
 } from "backend/types/evaluation-form.type";
+import { Textarea } from "@/components/ui/textarea";
 
 interface EvaluationFormCreateDialogProps {
   type: EvaluationType;
@@ -129,12 +130,20 @@ export const EvaluationFormCreateDialog = ({
             <form.Field
               name="description"
               children={(field) => (
-                <FormTextField
-                  field={field}
-                  label="Description (Optional)"
-                  disabled={isPending}
-                  placeholder="e.g. Standard evaluation form for instructional effectiveness"
-                />
+                <div className="space-y-1.5">
+                  <Label htmlFor={field.name} className="text-xs font-semibold">
+                    Description (Optional)
+                  </Label>
+                  <Textarea
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={isPending}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="e.g. Standard evaluation form for instructional effectiveness"
+                    className="min-h-20 text-xs rounded-xl bg-card border-border/70 resize-y"
+                  />
+                </div>
               )}
             />
 

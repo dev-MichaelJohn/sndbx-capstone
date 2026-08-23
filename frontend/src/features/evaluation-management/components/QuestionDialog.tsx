@@ -22,7 +22,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
-import { FormTextField } from "@/components/form-text-field";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { useAddQuestion, useUpdateQuestion } from "../api/evaluation-form.service";
 import {
@@ -31,6 +30,8 @@ import {
   type QuestionSelect,
   type UpsertQuestionReq,
 } from "backend/types/evaluation-form.type";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface QuestionDialogProps {
   type: EvaluationType;
@@ -147,12 +148,25 @@ export const QuestionDialog = ({
                   !value || !value.trim() ? "Question statement is required" : undefined,
               }}
               children={(field) => (
-                <FormTextField
-                  field={field}
-                  label="Question Statement / Indicator"
-                  disabled={isPending}
-                  placeholder="e.g. Explains lesson objectives clearly at the start of class."
-                />
+                <div className="space-y-1.5">
+                  <Label htmlFor={field.name} className="text-xs font-semibold">
+                    Question Statement / Indicator
+                  </Label>
+                  <Textarea
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    disabled={isPending}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="e.g. Explains lesson objectives clearly at the start of class."
+                    className="min-h-24 text-xs rounded-xl bg-card border-border/70 resize-y"
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="text-[11px] font-medium text-destructive">
+                      {field.state.meta.errors.join(", ")}
+                    </p>
+                  )}
+                </div>
               )}
             />
           </FieldGroup>

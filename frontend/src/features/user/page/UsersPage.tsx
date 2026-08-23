@@ -1,5 +1,16 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, Users, GraduationCap, UserCheck, ShieldCheck, Filter, X, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Users,
+  GraduationCap,
+  UserCheck,
+  ShieldCheck,
+  Filter,
+  X,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -98,7 +109,9 @@ export const UsersPage = () => {
   });
 
   const users = useMemo(() => {
-    const filtered = (usersResponse?.data ?? []).filter((user) => !user.roles.includes("SYS_ADMIN"));
+    const filtered = (usersResponse?.data ?? []).filter(
+      (user) => !user.roles.includes("SYS_ADMIN"),
+    );
 
     if (verificationFilter === "VERIFIED") {
       return filtered.filter((u) => u.is_verified);
@@ -110,16 +123,20 @@ export const UsersPage = () => {
   }, [usersResponse?.data, verificationFilter]);
 
   const rawList = usersResponse?.data ?? [];
+  const { data: studentsRes } = useUsers({ page: 1, role: "STUDENT" });
+  const { data: facultyRes } = useUsers({ page: 1, role: "FACULTY" });
+  const { data: supervisorsRes } = useUsers({ page: 1, role: "SUPERVISOR" });
+
   const stats = useMemo(
     () => ({
       total: usersResponse?.pagination?.totalItems ?? rawList.length,
-      students: rawList.filter((u) => u.roles.includes("STUDENT")).length,
-      faculty: rawList.filter((u) => u.roles.includes("FACULTY")).length,
-      supervisors: rawList.filter((u) => u.roles.includes("SUPERVISOR")).length,
+      students: studentsRes?.pagination?.totalItems ?? 0,
+      faculty: facultyRes?.pagination?.totalItems ?? 0,
+      supervisors: supervisorsRes?.pagination?.totalItems ?? 0,
       verified: rawList.filter((u) => u.is_verified).length,
       unverified: rawList.filter((u) => !u.is_verified).length,
     }),
-    [usersResponse, rawList],
+    [usersResponse, rawList, studentsRes, facultyRes, supervisorsRes],
   );
 
   const activeFiltersCount = useMemo(() => {
@@ -227,7 +244,7 @@ export const UsersPage = () => {
               }}
               className="w-full lg:w-auto"
             >
-              <TabsList className="grid h-9 w-full grid-cols-4 rounded-lg bg-muted/60 p-1 lg:w-[440px]">
+              <TabsList className="grid h-9 w-full grid-cols-4 rounded-lg bg-muted/60 p-1 lg:w-110">
                 <TabsTrigger value="ALL" className="text-xs font-medium rounded-md">
                   All Users
                 </TabsTrigger>
@@ -274,7 +291,9 @@ export const UsersPage = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 rounded-xl">
-                  <DropdownMenuLabel className="text-xs font-semibold">Verification Status</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs font-semibold">
+                    Verification Status
+                  </DropdownMenuLabel>
                   <DropdownMenuCheckboxItem
                     checked={verificationFilter === "ALL"}
                     onCheckedChange={() => {
