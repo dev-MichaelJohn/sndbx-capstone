@@ -46,6 +46,7 @@ type CreateUserResult = {
   credentials: Omit<AccountSelect, "password">;
   details: PersonalDetailsSelect;
   role: AccountRoleSelect;
+  generatedPassword?: string;
 };
 
 /** Public surface of {@link userService}, for dependency injection/mocking. */
@@ -505,6 +506,11 @@ class userService implements IUserService {
       personalDetails.institutional_id = generateInstitutionalId(role);
     }
 
+    let plainPassword = credentials.password;
+    if (!plainPassword || plainPassword.trim().length === 0) {
+      plainPassword = this.generatePassword();
+    }
+
     const userDetails = await CreateRecord<"PersonalDetails">(
       "PersonalDetails",
       personalDetails,
@@ -519,7 +525,7 @@ class userService implements IUserService {
     if (!credentials.password || credentials.password.trim().length === 0)
       credentials.password = this.generatePassword();
 
-    const hash = await bcrypt.hash(credentials.password, 10);
+    const hash = await bcrypt.hash(plainPassword, 10);
     const userCredentials: AccountInsert = {
       ...credentials,
       password: hash,
@@ -557,6 +563,7 @@ class userService implements IUserService {
       credentials: this.stripPassword(userAccount),
       details: userDetails,
       role: userRole,
+      generatedPassword: plainPassword,
     };
   }
 

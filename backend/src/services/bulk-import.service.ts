@@ -13,13 +13,19 @@ import {
   type BulkEntity,
   type BulkImportResult,
 } from "@/types/bulk-import.type.js";
+import type { IEmailService } from "./email.service.js";
+import EmailService from "./email.service.js";
+import { GenerateWelcomeHtmlTemplate, GenerateWelcomeTextTemplate } from "@/utils/email.util.js";
 
 export interface IBulkImportService {
   executeImport(entity: BulkEntity, rows: unknown[]): Promise<BulkImportResult>;
 }
 
 export class bulkImportService implements IBulkImportService {
-  constructor(private userService: IUserService = UserService) {}
+  constructor(
+    private userService: IUserService = UserService,
+    private emailService: IEmailService = EmailService,
+  ) {}
 
   async executeImport(entity: BulkEntity, rows: unknown[]): Promise<BulkImportResult> {
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -252,6 +258,12 @@ export class bulkImportService implements IBulkImportService {
   }
 
   private async importUsers(rows: unknown[], result: BulkImportResult) {
+    const createdUsersToSendEmails: Array<{
+      email: string;
+      fullName: string;
+      password?: string;
+    }> = [];
+
     await db.transaction(async (tx) => {
       for (let i = 0; i < rows.length; i++) {
         const rowNum = i + 1;
@@ -269,7 +281,7 @@ export class bulkImportService implements IBulkImportService {
           validation.data;
 
         try {
-          await this.userService.createUserRecordViaExistingTx(
+          const userResult = await this.userService.createUserRecordViaExistingTx(
             {
               credentials: { email },
               personalDetails: {
@@ -284,6 +296,14 @@ export class bulkImportService implements IBulkImportService {
             tx,
           );
           result.successCount++;
+
+          createdUsersToSendEmails.push({
+            email: userResult.credentials.email,
+            fullName: [userResult.details.first_name, userResult.details.last_name]
+              .filter(Boolean)
+              .join(" "),
+            password: userResult.generatedPassword!,
+          });
         } catch (err) {
           result.failedCount++;
           result.errors.push({
@@ -293,6 +313,30 @@ export class bulkImportService implements IBulkImportService {
         }
       }
     });
+
+    // Dispatch welcome emails in parallel after transaction completes
+    await Promise.allSettled(
+      createdUsersToSendEmails.map(async (user) => {
+        try {
+          const emailPayload = {
+            recipientName: user.fullName || "User",
+            email: user.email,
+            generatedPassword: user.password!,
+          };
+
+          await this.emailService.sendEmail({
+            to: user.email,
+            options: {
+              subject: "PIT-FES Account Credentials & Security Notice",
+              text: GenerateWelcomeTextTemplate(emailPayload),
+              html: GenerateWelcomeHtmlTemplate(emailPayload),
+            },
+          });
+        } catch (emailErr) {
+          console.error(`Failed to send bulk import welcome email to ${user.email}:`, emailErr);
+        }
+      }),
+    );
   }
 }
 
