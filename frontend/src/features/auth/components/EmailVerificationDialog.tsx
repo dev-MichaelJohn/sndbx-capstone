@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { useUser } from "@/features/auth/context/user.context";
 import {
   useVerificationStatus,
   useRequestEmailVerification,
@@ -19,7 +20,8 @@ import {
 import { VerifyEmailConfirmSchema } from "backend/types/auth.type";
 
 export default function EmailVerificationDialog() {
-  const { data: status, isLoading: isCheckingStatus } = useVerificationStatus();
+  const { user, isLoading: isUserLoading } = useUser();
+  const { data: status, isLoading: isCheckingStatus } = useVerificationStatus(Boolean(user));
   const requestOtpMutation = useRequestEmailVerification();
   const confirmOtpMutation = useConfirmEmailVerification();
 
@@ -30,12 +32,17 @@ export default function EmailVerificationDialog() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isCheckingStatus && status && !status.isVerified) {
+    if (isUserLoading || isCheckingStatus) return;
+
+    // Check either the verification-status endpoint OR the user context boolean
+    const isVerified = status?.isVerified ?? (user as any)?.is_verified;
+
+    if (user && isVerified === false) {
       setIsOpen(true);
-    } else if (status?.isVerified) {
+    } else if (isVerified === true) {
       setIsOpen(false);
     }
-  }, [status, isCheckingStatus]);
+  }, [status, isCheckingStatus, user, isUserLoading]);
 
   useEffect(() => {
     if (!resendAt) return;
@@ -89,7 +96,7 @@ export default function EmailVerificationDialog() {
     },
   });
 
-  if (isCheckingStatus) return null;
+  if (isUserLoading || !user) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && setIsOpen(true)}>

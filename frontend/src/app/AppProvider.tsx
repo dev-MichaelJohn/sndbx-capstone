@@ -24,11 +24,7 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
         <QueryClientProvider client={queryClient}>
           <UserProvider>
             <TooltipProvider>
-              <Toaster
-                toastOptions={{
-                  duration: 3500,
-                }}
-              />
+              <Toaster position="bottom-right" />
               {children}
             </TooltipProvider>
           </UserProvider>
