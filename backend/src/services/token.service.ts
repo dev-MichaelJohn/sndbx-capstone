@@ -71,6 +71,7 @@ class tokenService implements ITokenService {
         user: {
           id: user.id,
           email: user.email,
+          is_verified: user.is_verified,
         },
         personalDetails: personalDetails,
         roles: roles,
