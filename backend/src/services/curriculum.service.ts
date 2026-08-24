@@ -66,7 +66,7 @@ export class curriculumService implements ICurriculumService {
       join: (query) =>
         query
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
-          .orderBy(orderFn(orderColumn))
+          .orderBy(orderFn(orderColumn)),
       where: () =>
         and(
           searchConditions,
