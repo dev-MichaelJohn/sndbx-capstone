@@ -23,7 +23,7 @@ import z from "zod";
 import db from "@/configs/db.config.js";
 
 export interface ICurriculumService {
-  getCurriculums(searchQuery: CurriculumSearch): Promise<PaginatedData<CurriculumWithDetails[]>>;
+  getCurriculums(searchQuery: CurriculumSearch): Promise<CurriculumWithDetails[]>;
   getCurriculum(id: number, tx?: PgTransaction): Promise<CurriculumWithDetails>;
   createCurriculum(data: CurriculumInsert): Promise<CurriculumSelect>;
   updateCurriculum(data: CurriculumUpdate & { curriculum_id: number }): Promise<CurriculumSelect>;
@@ -82,15 +82,9 @@ export class curriculumService implements ICurriculumService {
         ),
     });
 
-    const totalItems = rows[0]?.totalItems ?? 0;
     const data = rows.map(({ totalItems, ...rest }) => rest);
 
-    return createPaginatedData<CurriculumWithDetails[]>({
-      data,
-      currentPage: page,
-      pageSize: PAGE_SIZE,
-      totalItems,
-    });
+    return data;
   }
 
   async getCurriculum(id: number, tx?: PgTransaction) {
