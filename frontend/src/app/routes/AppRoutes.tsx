@@ -1,26 +1,27 @@
-import { Route, Routes } from "react-router";
+import { createBrowserRouter } from "react-router";
+import { RequireVerification } from "@/features/auth/components/RequireVerification";
+import PublicLandingPage from "@/components/PublicLandingPage";
+import NotFoundPage from "@/components/NotFoundPage";
+
 import { AuthRoutes } from "./AuthRoutes";
-import { SysRoutes } from "./SysRoutes";
-import { AdminRoutes } from "./AdminRoutes";
-import { SupervisorRoutes } from "./SupervisorRoutes";
 import { StudentRoutes } from "./StudentRoutes";
 import { FacultyRoutes } from "./FacultyRoutes";
-import NotFoundPage from "@/components/NotFoundPage";
-import PublicLandingPage from "@/components/PublicLandingPage";
+import { SupervisorRoutes } from "./SupervisorRoutes";
+import { SysAdminRoutes, AdminRoutes } from "./AdminRoutes";
 
-export const AppRoutes = () => {
-  return (
-    <Routes>
-      <Route path="/" element={<PublicLandingPage />} />
+export const router = createBrowserRouter([
+  // Public landing
+  { path: "/", element: <PublicLandingPage /> },
 
-      {AuthRoutes()}
-      {SysRoutes()}
-      {AdminRoutes()}
-      {SupervisorRoutes()}
-      {StudentRoutes()}
-      {FacultyRoutes()}
+  // Public Auth (Redirects away if already logged in)
+  AuthRoutes,
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  );
-};
+  // 🛑 Protected & Verified Section (Instant Gate)
+  {
+    element: <RequireVerification />,
+    children: [StudentRoutes, FacultyRoutes, SupervisorRoutes, SysAdminRoutes, AdminRoutes],
+  },
+
+  // Fallback 404
+  { path: "*", element: <NotFoundPage /> },
+]);

@@ -1,20 +1,23 @@
-import { ForgotPasswordCard } from "@/features/auth/components/ForgotPasswordCard";
+import type { RouteObject } from "react-router";
+import { RedirectIfAuthenticated } from "@/features/auth/components/RedirectIfAuthenticated";
+import { AuthPage } from "@/features/auth/page/AuthPage";
 import { LoginCard } from "@/features/auth/components/LoginCard";
 import { OTPCard } from "@/features/auth/components/OTPCard";
-import { RedirectIfAuthenticated } from "@/features/auth/components/RedirectIfAuthenticated";
+import { ForgotPasswordCard } from "@/features/auth/components/ForgotPasswordCard";
 import { ResetPasswordCard } from "@/features/auth/components/ResetPasswordCard";
-import { AuthPage } from "@/features/auth/page/AuthPage";
-import { Route } from "react-router";
 
-export const AuthRoutes = () => {
-  return (
-    <Route element={<RedirectIfAuthenticated />}>
-      <Route path="auth" element={<AuthPage />}>
-        <Route path="login" element={<LoginCard />} />
-        <Route path="otp" element={<OTPCard />} />
-        <Route path="forgot-password" element={<ForgotPasswordCard />} />
-        <Route path="reset-password" element={<ResetPasswordCard />} />
-      </Route>
-    </Route>
-  );
+export const AuthRoutes: RouteObject = {
+  path: "/auth",
+  element: <RedirectIfAuthenticated />,
+  children: [
+    {
+      element: <AuthPage />,
+      children: [
+        { path: "login", element: <LoginCard /> },
+        { path: "otp", element: <OTPCard /> },
+        { path: "forgot-password", element: <ForgotPasswordCard /> },
+        { path: "reset-password", element: <ResetPasswordCard /> },
+      ],
+    },
+  ],
 };

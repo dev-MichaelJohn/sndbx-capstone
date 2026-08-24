@@ -1,4 +1,4 @@
-import { Navigate, Route } from "react-router";
+import { Navigate, type RouteObject } from "react-router";
 import { RequireRole } from "@/features/auth/components/RequireRole";
 import SupervisorDashboard from "@/features/dashboard/SupervisorDashboard";
 import SupervisorOverviewPage from "@/features/supervisor/page/SupervisorOverviewPage";
@@ -6,35 +6,31 @@ import SupervisorEvaluationPage from "@/features/supervisor/page/SupevisorEvalua
 import SupervisorReportsPage from "@/features/supervisor/page/SupervisorReportsPage";
 import SupervisorAnalyticsPage from "@/features/supervisor/page/SupervisorAnalyticsPage";
 import SupervisorScopePage from "@/features/supervisor/page/SupervisorScopePage";
-import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
-import EmailVerificationDialog from "@/features/auth/components/EmailVerificationDialog";
 import EvaluationReportDetailPage from "@/features/evaluation-report/page/EvaluationReportDetailPage";
+import AccountSettingsPage from "@/features/account-settings/page/AccountSettingsPage";
 
-export const SupervisorRoutes = () => {
-  return (
-    <Route
-      element={
-        <>
-          <RequireRole allowed={["SUPERVISOR"]} />
-          <EmailVerificationDialog />
-        </>
-      }
-    >
-      <Route path="supervisor" element={<SupervisorDashboard />}>
-        <Route index element={<SupervisorOverviewPage />} />
-        <Route path="dashboard" element={<SupervisorOverviewPage />} />
-        <Route path="evaluate" element={<SupervisorEvaluationPage />} />
-        <Route path="reports">
-          <Route index element={<SupervisorReportsPage />} />
-          <Route path=":id" element={<SupervisorReportsPage />} />
-          <Route path=":reportId" element={<EvaluationReportDetailPage />} />
-        </Route>
-        <Route path="analytics" element={<SupervisorAnalyticsPage />} />
-        <Route path="coverage" element={<SupervisorScopePage />} />
-        <Route path="settings" element={<AccountSettingsPage />} />
-
-        <Route path="*" element={<Navigate to="/supervisor/dashboard" replace />} />
-      </Route>
-    </Route>
-  );
+export const SupervisorRoutes: RouteObject = {
+  path: "/supervisor",
+  element: <RequireRole allowed={["SUPERVISOR"]} />,
+  children: [
+    {
+      element: <SupervisorDashboard basePath="/supervisor" />,
+      children: [
+        { index: true, element: <Navigate to="dashboard" replace /> },
+        { path: "dashboard", element: <SupervisorOverviewPage /> },
+        { path: "evaluate", element: <SupervisorEvaluationPage /> },
+        {
+          path: "reports",
+          children: [
+            { index: true, element: <SupervisorReportsPage /> },
+            { path: ":reportId", element: <EvaluationReportDetailPage /> },
+          ],
+        },
+        { path: "analytics", element: <SupervisorAnalyticsPage /> },
+        { path: "coverage", element: <SupervisorScopePage /> },
+        { path: "settings", element: <AccountSettingsPage /> },
+        { path: "*", element: <Navigate to="/supervisor/dashboard" replace /> },
+      ],
+    },
+  ],
 };
