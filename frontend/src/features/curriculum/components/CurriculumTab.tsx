@@ -45,7 +45,7 @@ export const CurriculumTab = ({ programId }: CurriculumTabProps) => {
     page: 1,
   });
 
-  const curriculums = (paginatedData?.data ?? []) as CurriculumColumnType[];
+  const curriculums = (paginatedData ?? []) as CurriculumColumnType[];
 
   const columns = getCurriculumColumns();
 

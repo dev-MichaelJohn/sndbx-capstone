@@ -1,4 +1,4 @@
-import type { APIResponse, PaginatedData } from "backend/utils/response.util";
+import type { APIResponse } from "backend/utils/response.util";
 import type {
   CurriculumInsert,
   CurriculumSearch,
@@ -16,12 +16,9 @@ export const getCurriculums = async (params: CurriculumSearch) => {
       ? `/protected/programs/${program_id}/curriculum`
       : "/protected/curriculum";
 
-    const response = await apiClient.get<APIResponse<PaginatedData<CurriculumWithDetails[]>>>(
-      endpoint,
-      {
-        params: queryParams,
-      },
-    );
+    const response = await apiClient.get<APIResponse<CurriculumWithDetails[]>>(endpoint, {
+      params: queryParams,
+    });
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch curriculum records."), {
