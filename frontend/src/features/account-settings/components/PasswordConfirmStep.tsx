@@ -1,7 +1,15 @@
+// frontend/src/features/account-settings/components/PasswordConfirmStep.tsx
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, ShieldAlert, Eye, EyeOff } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { ShieldCheck, Eye, EyeOff } from "lucide-react";
+
+const MAX_OTP_LENGTH = 8;
+const OTPSlots = () =>
+  Array.from({ length: MAX_OTP_LENGTH }, (_, index) => (
+    <InputOTPSlot key={index} index={index} className="flex-1 text-sm font-bold font-mono" />
+  ));
 
 export function PasswordConfirmStep({ form }: { form: any }) {
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -22,23 +30,21 @@ export function PasswordConfirmStep({ form }: { form: any }) {
           <div className="space-y-2">
             <label
               htmlFor={field.name}
-              className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+              className="text-xs font-medium text-muted-foreground uppercase tracking-wider block"
             >
               Authorization code
             </label>
-            <div className="relative max-w-50 flex items-center">
-              <ShieldAlert className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary shrink-0 pointer-events-none" />
-              <Input
-                id={field.name}
-                name={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="8K9P2X1Q"
-                className="pl-9 h-9 text-sm font-mono uppercase tracking-[0.2em] bg-muted/30 border-border/60"
-                maxLength={8}
-              />
-            </div>
+            <InputOTP
+              id={field.name}
+              name={field.name}
+              maxLength={MAX_OTP_LENGTH}
+              containerClassName="w-full"
+              value={field.state.value}
+              onChange={(value) => field.handleChange(value.toUpperCase())}
+              onBlur={field.handleBlur}
+            >
+              <InputOTPGroup className="w-full">{OTPSlots()}</InputOTPGroup>
+            </InputOTP>
           </div>
         )}
       />

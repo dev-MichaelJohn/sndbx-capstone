@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useUser } from "@/features/auth/context/user.context";
@@ -18,6 +18,12 @@ import {
   useConfirmEmailVerification,
 } from "@/features/account-settings/api/account-settings.service";
 import { VerifyEmailConfirmSchema } from "backend/types/auth.type";
+
+const MAX_OTP_LENGTH = 8;
+const OTPSlots = () =>
+  Array.from({ length: MAX_OTP_LENGTH }, (_, index) => (
+    <InputOTPSlot key={index} index={index} className="flex-1 text-sm font-bold font-mono" />
+  ));
 
 export default function EmailVerificationDialog() {
   const { user, isLoading: isUserLoading } = useUser();
@@ -34,7 +40,6 @@ export default function EmailVerificationDialog() {
   useEffect(() => {
     if (isUserLoading || isCheckingStatus) return;
 
-    // Check either the verification-status endpoint OR the user context boolean
     const isVerified = status?.isVerified ?? (user as any)?.is_verified;
 
     if (user && isVerified === false) {
@@ -71,9 +76,7 @@ export default function EmailVerificationDialog() {
   };
 
   const form = useForm({
-    defaultValues: {
-      code: "",
-    },
+    defaultValues: { code: "" },
     onSubmit: async ({ value }) => {
       setErrorMessage(null);
       const validation = VerifyEmailConfirmSchema.safeParse(value);
@@ -145,22 +148,27 @@ export default function EmailVerificationDialog() {
             <form.Field
               name="code"
               children={(field) => (
-                <div className="space-y-1.5">
-                  <Input
+                <div className="space-y-1.5 flex flex-col items-center">
+                  <InputOTP
                     id={field.name}
                     name={field.name}
+                    maxLength={MAX_OTP_LENGTH}
+                    containerClassName="w-full justify-center"
                     value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => {
+                    disabled={confirmOtpMutation.isPending}
+                    onChange={(value) => {
                       setErrorMessage(null);
-                      field.handleChange(e.target.value);
+                      field.handleChange(value.toUpperCase());
                     }}
-                    placeholder="ENTER 8-CHAR OTP"
-                    className="text-center tracking-widest font-mono uppercase h-9 text-sm"
-                    maxLength={8}
-                  />
+                    onBlur={field.handleBlur}
+                  >
+                    <InputOTPGroup className="w-full">{OTPSlots()}</InputOTPGroup>
+                  </InputOTP>
+
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-xs text-destructive">{field.state.meta.errors.join(", ")}</p>
+                    <p className="text-xs text-destructive text-center mt-1">
+                      {field.state.meta.errors.join(", ")}
+                    </p>
                   )}
                 </div>
               )}

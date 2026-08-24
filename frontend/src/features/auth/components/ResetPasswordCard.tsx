@@ -11,14 +11,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { useConfirmPasswordReset } from "../api/auth.service";
 
-/**
- * Step 2: Reset Password card requiring the 8-character OTP code and new credentials.
- */
+const MAX_OTP_LENGTH = 8;
+const OTPSlots = () =>
+  Array.from({ length: MAX_OTP_LENGTH }, (_, index) => (
+    <InputOTPSlot key={index} index={index} className="flex-1 text-sm font-bold font-mono" />
+  ));
+
 export const ResetPasswordCard = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -99,16 +103,18 @@ export const ResetPasswordCard = () => {
               children={(field) => (
                 <Field>
                   <FieldLabel htmlFor={field.name}>Reset OTP Code</FieldLabel>
-                  <Input
+                  <InputOTP
                     id={field.name}
                     name={field.name}
+                    maxLength={MAX_OTP_LENGTH}
+                    containerClassName="w-full"
                     value={field.state.value}
                     disabled={confirmMutation.isPending}
-                    onChange={(e) => field.handleChange(e.target.value.toUpperCase())}
-                    placeholder="8K9P2X1Q"
-                    className="font-mono uppercase tracking-widest text-center"
-                    maxLength={8}
-                  />
+                    onChange={(value) => field.handleChange(value.toUpperCase())}
+                    onBlur={field.handleBlur}
+                  >
+                    <InputOTPGroup className="w-full">{OTPSlots()}</InputOTPGroup>
+                  </InputOTP>
                 </Field>
               )}
             />
