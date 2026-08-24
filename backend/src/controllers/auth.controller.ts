@@ -31,7 +31,7 @@ import z from "zod";
  * module scope so {@link IAuthController} can reference it. */
 type RefreshTokenResponseData = {
   token: string;
-  user: Pick<AccountSelect, "id" | "email"> & {
+  user: Pick<AccountSelect, "id" | "email" | "is_verified"> & {
     personalDetails: PersonalDetailsSelect;
     roles: Array<SystemRole>;
   };
@@ -196,6 +196,7 @@ class authController {
             user: {
               id: parsedUser.id,
               email: parsedUser.email,
+              is_verified: parsedUser.is_verified,
             },
             personalDetails,
             roles,
@@ -220,6 +221,7 @@ class authController {
             user: {
               id: parsedUser.id,
               email: parsedUser.email,
+              is_verified: parsedUser.is_verified,
               personalDetails: personalDetails,
               roles: roles,
             },
@@ -275,6 +277,7 @@ class authController {
       user: {
         id: info.user.id,
         email: info.user.email,
+        is_verified: info.user.is_verified,
         personalDetails: info.personalDetails,
         roles: info.roles,
       },
@@ -318,6 +321,7 @@ class authController {
             req.user = {
               id: user.user.id,
               email: user.user.email,
+              is_verified: user.is_verified,
               personalDetails: user.personalDetails,
               roles: user.roles,
             };
