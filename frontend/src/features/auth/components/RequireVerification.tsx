@@ -18,7 +18,7 @@ import { VerifyEmailConfirmSchema } from "backend/types/auth.type";
 const MAX_OTP_LENGTH = 8;
 const OTPSlots = () =>
   Array.from({ length: MAX_OTP_LENGTH }, (_, index) => (
-    <InputOTPSlot key={index} index={index} className="flex-1 text-sm font-bold font-mono" />
+    <InputOTPSlot key={index} index={index} className="h-9 flex-1 text-xs font-bold font-mono" />
   ));
 
 export const RequireVerification = () => {
@@ -100,33 +100,36 @@ export const RequireVerification = () => {
 
   return (
     <div className="flex min-h-screen w-screen items-center justify-center bg-muted/20 p-4">
-      <Card className="w-full max-w-md rounded-2xl border border-border/80 bg-card shadow-2xl">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
-            <ShieldAlert className="size-6" />
+      <Card className="w-full max-w-sm rounded-2xl border border-border/80 bg-card p-2 shadow-xl">
+        {/* Centered Icon Header */}
+        <CardHeader className="flex flex-col items-center text-center pb-2 pt-4 px-4 space-y-1">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 mb-1.5 shadow-2xs">
+            <ShieldAlert className="size-5.5" />
           </div>
-          <CardTitle className="text-lg font-bold">Email Verification Required</CardTitle>
-          <CardDescription className="text-xs">
+          <CardTitle className="text-base font-bold tracking-tight text-foreground">
+            Email Verification Required
+          </CardTitle>
+          <CardDescription className="text-xs text-muted-foreground leading-snug px-1">
             {step === "PROMPT"
-              ? `Your account (${user.email}) is currently unverified. You must complete email verification before accessing the portal.`
-              : `An 8-character verification code has been sent to ${user.email}. Enter it below.`}
+              ? `Please verify your email (${user.email}) to unlock the evaluation portal.`
+              : `An 8-character code was sent to ${user.email}. Enter it below.`}
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4 pt-2">
+        <CardContent className="space-y-3.5 pt-1 px-4 pb-4">
           {errorMessage && (
-            <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
-              <AlertCircle className="size-4 shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs text-rose-400">
+              <AlertCircle className="size-3.5 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {step === "PROMPT" ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2 pt-1">
               <Button
                 onClick={handleRequestOtp}
                 disabled={requestOtpMutation.isPending || countdown > 0}
-                className="h-10 text-xs font-bold bg-primary text-primary-foreground cursor-pointer"
+                className="h-8.5 text-xs font-semibold bg-primary text-primary-foreground cursor-pointer rounded-lg"
               >
                 {requestOtpMutation.isPending
                   ? "Sending Code..."
@@ -142,12 +145,12 @@ export const RequireVerification = () => {
                 e.stopPropagation();
                 form.handleSubmit();
               }}
-              className="space-y-4"
+              className="space-y-3"
             >
               <form.Field
                 name="code"
                 children={(field) => (
-                  <div className="space-y-1.5 flex flex-col items-center">
+                  <div className="space-y-1 flex flex-col items-center">
                     <InputOTP
                       id={field.name}
                       name={field.name}
@@ -165,7 +168,7 @@ export const RequireVerification = () => {
                     </InputOTP>
 
                     {field.state.meta.errors.length > 0 && (
-                      <p className="text-xs text-destructive text-center mt-1">
+                      <p className="text-[11px] font-medium text-destructive text-center mt-1">
                         {field.state.meta.errors.join(", ")}
                       </p>
                     )}
@@ -173,20 +176,21 @@ export const RequireVerification = () => {
                 )}
               />
 
-              <div className="flex flex-col gap-2 pt-1">
+              <div className="flex flex-col gap-1.5 pt-0.5">
                 <Button
                   type="submit"
                   disabled={confirmOtpMutation.isPending}
-                  className="h-10 text-xs font-bold cursor-pointer"
+                  className="h-8.5 text-xs font-bold cursor-pointer rounded-lg"
                 >
                   {confirmOtpMutation.isPending ? "Verifying..." : "Confirm Verification"}
                 </Button>
+
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={handleRequestOtp}
                   disabled={requestOtpMutation.isPending || countdown > 0}
-                  className="h-8 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   {countdown > 0 ? `Resend code in ${countdown}s` : "Resend Code"}
                 </Button>
@@ -194,12 +198,12 @@ export const RequireVerification = () => {
             </form>
           )}
 
-          <div className="border-t pt-3 text-center">
+          <div className="border-t border-border/50 pt-2 text-center">
             <Button
               type="button"
               variant="link"
               onClick={() => logout()}
-              className="text-xs text-muted-foreground hover:text-destructive cursor-pointer h-auto p-0"
+              className="text-[11px] text-muted-foreground hover:text-destructive cursor-pointer h-auto p-0"
             >
               Log Out of Account
             </Button>
