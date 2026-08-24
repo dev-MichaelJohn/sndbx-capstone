@@ -8,7 +8,6 @@ const analyzer = new Sentiment();
 
 /** Multi-word N-Gram Expressions (Matched BEFORE single words) */
 const NGRAM_LEXICON: Record<string, number> = {
-  // Positive Multi-Word Expressions
   "well prepared": 3,
   "well-prepared": 3,
   "master of subject": 4,
@@ -28,7 +27,6 @@ const NGRAM_LEXICON: Record<string, number> = {
   "dedicated teacher": 4,
   "passionate about teaching": 4,
 
-  // Local / Bisaya / Tagalog Positive Multi-Word Expressions
   "magaling mag-explain": 4,
   "magaling magturo": 4,
   "madaling lapitan": 3,
@@ -46,7 +44,6 @@ const NGRAM_LEXICON: Record<string, number> = {
   "dako ug natabang": 3,
   "masipag magturo": 3,
 
-  // Negative Multi-Word Expressions
   "reads off slides": -3,
   "reads ppt": -3,
   "slide reader": -3,
@@ -62,7 +59,6 @@ const NGRAM_LEXICON: Record<string, number> = {
   "high failing rate": -3,
   "waste of time": -4,
 
-  // Local / Bisaya / Tagalog Negative Multi-Word Expressions
   "nagbasa ra sa ppt": -3,
   "nagbasa ra sa powerpoint": -3,
   "palaging late": -3,
@@ -90,7 +86,6 @@ const NGRAM_LEXICON: Record<string, number> = {
   "usik sa oras": -4,
 };
 
-// Pre-compile Regex pattern for all NGRAM phrases once at module load time
 const NGRAM_PATTERNS = Object.keys(NGRAM_LEXICON)
   .sort((a, b) => b.length - a.length)
   .map((phrase) => phrase.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"));
@@ -99,7 +94,7 @@ const NGRAM_REGEX = new RegExp(NGRAM_PATTERNS.join("|"), "gi");
 
 /** Unigram Multilingual Dictionary */
 const UNIGRAM_LEXICON: Record<string, number> = {
-  // English Positive
+  // English
   approachable: 2,
   knowledgeable: 3,
   accommodating: 2,
@@ -125,8 +120,6 @@ const UNIGRAM_LEXICON: Record<string, number> = {
   dedication: 3,
   kind: 2,
   friendly: 2,
-
-  // English Negative
   unapproachable: -2,
   unprepared: -3,
   monotone: -2,
@@ -150,7 +143,7 @@ const UNIGRAM_LEXICON: Record<string, number> = {
   favoritism: -3,
   ghosting: -2,
 
-  // Tagalog Positive
+  // Tagalog
   magaling: 3,
   mabait: 2,
   masipag: 2,
@@ -161,8 +154,6 @@ const UNIGRAM_LEXICON: Record<string, number> = {
   lodi: 2,
   petmalu: 2,
   husay: 3,
-
-  // Tagalog Negative
   tamad: -3,
   magulo: -2,
   suplado: -2,
@@ -174,7 +165,7 @@ const UNIGRAM_LEXICON: Record<string, number> = {
   pahirap: -3,
   kwenta: -3,
 
-  // Bisaya Positive
+  // Bisaya
   maayo: 3,
   maayong: 3,
   mabuot: 2,
@@ -195,8 +186,6 @@ const UNIGRAM_LEXICON: Record<string, number> = {
   sinabtanay: 2,
   sayon: 2,
   sayun: 2,
-
-  // Bisaya Negative
   langay: -2,
   dugay: -2,
   tapulan: -3,
@@ -259,20 +248,9 @@ const CONTRASTIVE_CONJUNCTIONS = new Set([
   "bagamat",
   "apan",
 ]);
-const NEGATIONS = new Set([
-  "not",
-  "no",
-  "never",
-  "none",
-  "neither",
-  "nor",
-  "cannot",
-  "can't",
-  "don't",
-  "doesn't",
-  "didn't",
-  "won't",
-  "wouldn't",
+
+// English negations removed; let `sentiment` base module handle English natively to avoid double-counting.
+const LOCAL_NEGATIONS = new Set([
   "hindi",
   "di",
   "wala",
@@ -284,7 +262,7 @@ const NEGATIONS = new Set([
   "ayaw",
 ]);
 
-// Aspect Keywords for Teaching Feedback Categorization
+// Aspect Keywords Pre-compiled to Word Boundary Regexes
 const ASPECT_KEYWORDS: Record<string, string[]> = {
   PEDAGOGY: [
     "explain",
@@ -362,6 +340,11 @@ const ASPECT_KEYWORDS: Record<string, string[]> = {
   ],
 };
 
+const ASPECT_REGEXES: Record<string, RegExp> = {};
+for (const [aspect, keywords] of Object.entries(ASPECT_KEYWORDS)) {
+  ASPECT_REGEXES[aspect] = new RegExp(`\\b(${keywords.join("|")})\\b`, "i");
+}
+
 export interface AspectBreakdown {
   aspect: string;
   score: number;
@@ -379,9 +362,48 @@ export interface ComprehensiveSentimentResult {
   summary: string;
 }
 
+// Global caching for base word scores to prevent redundant processing
+const wordScoreCache: Record<string, number> = {};
+
+/**
+ * Safely retrieves the sentiment score for a single word.
+ * Checks local UNIGRAM_LEXICON first, falls back to standard English AFINN dictionary.
+ */
+const getWordScore = (word: string): number => {
+  if (UNIGRAM_LEXICON[word] !== undefined) return UNIGRAM_LEXICON[word];
+  if (wordScoreCache[word] !== undefined) return wordScoreCache[word];
+
+  const analysis = analyzer.analyze(word);
+  wordScoreCache[word] = analysis.score;
+  return analysis.score;
+};
+
+/**
+ * Look ahead or behind by N tokens to find a scorable word (skipping fillers/stop words).
+ */
+const getNearbyWordScore = (
+  tokens: string[],
+  startIndex: number,
+  direction: 1 | -1,
+  maxDistance = 2,
+): number => {
+  for (let d = 1; d <= maxDistance; d++) {
+    const idx = startIndex + d * direction;
+
+    if (idx < 0 || idx >= tokens.length) break;
+
+    const word = tokens[idx] ?? "";
+
+    if (word !== "") {
+      const score = getWordScore(word);
+      if (score !== 0) return score;
+    }
+  }
+  return 0;
+};
+
 /**
  * Deep Multilingual & Context-Aware Sentiment Analyzer.
- * Uses a pre-compiled Regex engine for $O(N)$ multi-word phrase matching.
  */
 export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSentimentResult => {
   if (!text || !text.trim()) {
@@ -399,7 +421,6 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
 
   const cleanText = text.trim();
   let textToAnalyze = cleanText.toLowerCase();
-
   const detectedIdioms: string[] = [];
   let nGramBonusScore = 0;
 
@@ -435,6 +456,7 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
       cIdx > 0 && CONTRASTIVE_CONJUNCTIONS.has(clauses[cIdx - 1]?.trim() || "");
     const clauseWeight = isPostContrastClause ? 1.6 : 1.0;
 
+    // Base analysis processes standard negations correctly for English
     const baseAnalysis = analyzer.analyze(clause, {
       extras: UNIGRAM_LEXICON,
     });
@@ -443,46 +465,48 @@ export const analyzeComplexSentiment = (text?: string | null): ComprehensiveSent
     const tokens = clause.replace(/[^\w\s-]/g, "").split(/\s+/);
 
     const matchedAspects = new Set<string>();
-    for (const [aspect, keywords] of Object.entries(ASPECT_KEYWORDS)) {
-      if (keywords.some((kw) => clause.includes(kw))) {
+    for (const [aspect, regex] of Object.entries(ASPECT_REGEXES)) {
+      if (regex.test(clause)) {
         matchedAspects.add(aspect);
       }
     }
 
+    // Apply custom local modifier windows (intensifiers, diminishers, local negations)
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i]!;
 
-      if (PRE_INTENSIFIERS.has(token) && i + 1 < tokens.length) {
-        const nextWord = tokens[i + 1]!;
-        const wordScore = UNIGRAM_LEXICON[nextWord] || 0;
-        if (wordScore !== 0) clauseScore += wordScore * 0.5;
+      if (PRE_INTENSIFIERS.has(token)) {
+        const targetScore = getNearbyWordScore(tokens, i, 1, 2);
+        if (targetScore !== 0) clauseScore += targetScore * 0.5;
       }
 
-      if (POST_INTENSIFIERS.has(token) && i - 1 >= 0) {
-        const prevWord = tokens[i - 1]!;
-        const wordScore = UNIGRAM_LEXICON[prevWord] || 0;
-        if (wordScore !== 0) clauseScore += wordScore * 0.5;
+      if (POST_INTENSIFIERS.has(token)) {
+        const targetScore = getNearbyWordScore(tokens, i, -1, 2);
+        if (targetScore !== 0) clauseScore += targetScore * 0.5;
       }
 
-      if (DIMINISHERS.has(token) && i + 1 < tokens.length) {
-        const nextWord = tokens[i + 1]!;
-        const wordScore = UNIGRAM_LEXICON[nextWord] || 0;
-        if (wordScore !== 0) clauseScore -= wordScore * 0.5;
+      if (DIMINISHERS.has(token)) {
+        const targetScore = getNearbyWordScore(tokens, i, 1, 2);
+        if (targetScore !== 0) clauseScore -= targetScore * 0.5;
       }
 
-      if (NEGATIONS.has(token) && i + 1 < tokens.length) {
-        const nextWord = tokens[i + 1]!;
-        const wordScore = UNIGRAM_LEXICON[nextWord] || 0;
-        if (wordScore !== 0) clauseScore += -2 * wordScore;
+      if (LOCAL_NEGATIONS.has(token)) {
+        const targetScore = getNearbyWordScore(tokens, i, 1, 3);
+        // Base analysis added it positively/negatively. We reverse its original effect.
+        if (targetScore !== 0) clauseScore += -2 * targetScore;
       }
     }
 
     const weightedClauseScore = clauseScore * clauseWeight;
     cumulativeScore += weightedClauseScore;
 
-    matchedAspects.forEach((aspect) => {
-      aspectScores[aspect] = (aspectScores[aspect] || 0) + weightedClauseScore;
-    });
+    // Distribute the score fairly among matched aspects to prevent inflation
+    if (matchedAspects.size > 0) {
+      const splitScore = weightedClauseScore / matchedAspects.size;
+      matchedAspects.forEach((aspect) => {
+        aspectScores[aspect] = (aspectScores[aspect] || 0) + splitScore;
+      });
+    }
   }
 
   const globalAnalysis = analyzer.analyze(cleanText.toLowerCase(), {
