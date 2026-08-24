@@ -1,8 +1,8 @@
-// frontend/src/features/curriculum/components/CurriculumCreate.tsx
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "@tanstack/react-form";
-import { Check, ChevronsUpDown, type LucideIcon, Plus } from "lucide-react";
+import { Plus, type LucideIcon } from "lucide-react";
 import { CurriculumSchema, type CurriculumInsert } from "backend/types/curriculum.type";
+import type { CourseSelect } from "backend/types/course.type";
 import { useCreateCurriculum } from "../api/curriculum.service";
 import { useCourses } from "@/features/course/api/course.service";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
@@ -10,7 +10,6 @@ import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -57,12 +56,22 @@ export const CurriculumCreateDialog = ({
   icon: Icon = Plus,
   triggerText = "Add Curriculum Item",
 }: CurriculumCreateDialogProps) => {
-  const [courseComboOpen, setCourseComboOpen] = useState(false);
   const [courseSearch, setCourseSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState<CourseSelect | null>(null);
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(courseSearch), 300);
+    return () => clearTimeout(handle);
+  }, [courseSearch]);
 
   const { mutateAsync, isPending } = useCreateCurriculum();
+
+  // Server-side search across all courses under this program
   const { data: coursesData, isLoading: isCoursesLoading } = useCourses({
     program_id: programId,
+    search: debouncedSearch.trim() || undefined,
     page: 1,
   });
   const courses = coursesData?.data ?? [];
@@ -89,19 +98,12 @@ export const CurriculumCreateDialog = ({
     successText: "Curriculum entry added successfully.",
     onReset: () => {
       setCourseSearch("");
-      setCourseComboOpen(false);
+      setDebouncedSearch("");
+      setSelectedCourse(null);
     },
   });
 
   handleFormSubmitRef.current = dialog.handleFormSubmit;
-
-  const selectedCourse = courses.find((c) => c.id === form.state.values.course_id);
-
-  const filteredCourses = courses.filter((c) => {
-    if (!courseSearch.trim()) return true;
-    const q = courseSearch.toLowerCase();
-    return c.name.toLowerCase().includes(q) || c.initialism.toLowerCase().includes(q);
-  });
 
   return (
     <>
@@ -125,7 +127,7 @@ export const CurriculumCreateDialog = ({
           </DialogHeader>
 
           <FieldGroup className="space-y-3.5 py-1">
-            {/* Searchable Course Dropdown / Combobox */}
+            {/* Dynamic Search & Select Course */}
             <form.Field
               name="course_id"
               validators={{
@@ -134,72 +136,78 @@ export const CurriculumCreateDialog = ({
               }}
               children={(field) => (
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-semibold">Course Selection</Label>
-                  <Popover open={courseComboOpen} onOpenChange={setCourseComboOpen} modal={false}>
-                    <PopoverTrigger asChild>
+                  <Label className="text-xs font-semibold">Course</Label>
+
+                  {selectedCourse ? (
+                    <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-3 text-xs">
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <span className="font-semibold text-foreground truncate">
+                          {selectedCourse.name}
+                        </span>
+                        <span className="font-mono text-[10px] font-bold text-primary">
+                          {selectedCourse.initialism}
+                        </span>
+                      </div>
                       <Button
                         type="button"
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={courseComboOpen}
-                        disabled={isPending || isCoursesLoading}
-                        className="w-full justify-between h-9 text-xs rounded-xl font-normal bg-card border-border/70 cursor-pointer"
+                        variant="ghost"
+                        size="sm"
+                        disabled={isPending}
+                        className="h-7 cursor-pointer rounded-lg px-2 text-xs hover:bg-background shrink-0"
+                        onClick={() => {
+                          setSelectedCourse(null);
+                          field.handleChange(0);
+                        }}
                       >
-                        <span className="truncate">
-                          {selectedCourse
-                            ? `${selectedCourse.initialism} — ${selectedCourse.name}`
-                            : isCoursesLoading
-                              ? "Loading courses..."
-                              : "Search and select course..."}
-                        </span>
-                        <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
+                        Change
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[--radix-popover-trigger-width] p-0 z-50 rounded-xl border border-border/80 shadow-xl"
-                      align="start"
+                    </div>
+                  ) : (
+                    <Command
+                      className="w-full rounded-xl border border-border/70 shadow-2xs"
+                      shouldFilter={false}
                     >
-                      <Command shouldFilter={false}>
-                        <CommandInput
-                          placeholder="Search course title or code..."
-                          value={courseSearch}
-                          onValueChange={setCourseSearch}
-                          className="text-xs"
-                        />
-                        <CommandList className="max-h-52">
-                          {filteredCourses.length === 0 ? (
-                            <CommandEmpty className="p-3 text-xs text-muted-foreground text-center">
-                              No courses found.
-                            </CommandEmpty>
-                          ) : (
-                            <CommandGroup>
-                              {filteredCourses.map((course) => (
-                                <CommandItem
-                                  key={course.id}
-                                  value={String(course.id)}
-                                  onSelect={() => {
-                                    field.handleChange(course.id);
-                                    setCourseComboOpen(false);
-                                  }}
-                                  className="text-xs flex items-center justify-between cursor-pointer py-2"
-                                >
-                                  <span className="truncate">
-                                    <strong className="font-semibold text-primary">
-                                      {course.initialism}
-                                    </strong>{" "}
-                                    — {course.name}
-                                  </span>
-                                  {field.state.value === course.id && (
-                                    <Check className="size-3.5 text-primary shrink-0 ml-2" />
-                                  )}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )}
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                      <CommandInput
+                        placeholder="Search course title or code (e.g. IT 101)..."
+                        value={courseSearch}
+                        onValueChange={setCourseSearch}
+                        className="text-xs"
+                      />
+                      <CommandList className="max-h-44">
+                        {isCoursesLoading ? (
+                          <CommandEmpty className="py-4 text-xs text-muted-foreground">
+                            Searching courses...
+                          </CommandEmpty>
+                        ) : courses.length === 0 ? (
+                          <CommandEmpty className="py-4 text-xs text-muted-foreground">
+                            No matching courses found.
+                          </CommandEmpty>
+                        ) : (
+                          <CommandGroup>
+                            {courses.map((course) => (
+                              <CommandItem
+                                key={course.id}
+                                value={String(course.id)}
+                                onSelect={() => {
+                                  setSelectedCourse(course);
+                                  field.handleChange(course.id);
+                                }}
+                                className="flex cursor-pointer items-center justify-between py-2 text-xs"
+                              >
+                                <span className="truncate">
+                                  <strong className="font-bold text-primary font-mono">
+                                    {course.initialism}
+                                  </strong>{" "}
+                                  — {course.name}
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        )}
+                      </CommandList>
+                    </Command>
+                  )}
+
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-[11px] font-medium text-destructive">
                       {field.state.meta.errors.join(", ")}
@@ -293,7 +301,7 @@ export const CurriculumCreateDialog = ({
                 <Button
                   type="button"
                   size="sm"
-                  disabled={!canSubmit || isPending}
+                  disabled={!canSubmit || !selectedCourse || isPending}
                   onClick={() => form.handleSubmit()}
                   className="h-8.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground shadow-sm active:scale-[0.96] cursor-pointer"
                 >
