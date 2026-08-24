@@ -9,7 +9,7 @@ import { FacultyRoutes } from "./FacultyRoutes";
 import { SupervisorRoutes } from "./SupervisorRoutes";
 import { SysAdminRoutes, AdminRoutes } from "./AdminRoutes";
 
-export const router = createBrowserRouter([
+export const AppRoutes = createBrowserRouter([
   // Public landing
   { path: "/", element: <PublicLandingPage /> },
 
