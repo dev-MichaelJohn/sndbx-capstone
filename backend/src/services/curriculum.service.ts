@@ -16,7 +16,6 @@ import {
   SoftDeleteRecord,
   UpdateRecord,
 } from "./db.service.js";
-import { createPaginatedData, type PaginatedData } from "@/utils/response.util.js";
 import type { PgTransaction } from "@/configs/db.config.js";
 import { AppError } from "@/utils/error.util.js";
 import z from "zod";
@@ -46,10 +45,9 @@ export class curriculumService implements ICurriculumService {
     const validation = await CurriculumSearchSchema.safeParseAsync(searchQuery);
     if (!validation.success) throw validation.error;
 
-    const { program_id, course_id, year_level, semester_term, search, orderBy, orderDir, page } =
+    const { program_id, course_id, year_level, semester_term, search, orderBy, orderDir } =
       validation.data;
 
-    const PAGE_SIZE = 10;
     const searchConditions = this.getSearchConditions(search);
     const columns = getColumns(CourseCurriculums);
     const orderColumn = columns[orderBy as keyof typeof columns] ?? CourseCurriculums.id;
@@ -69,8 +67,6 @@ export class curriculumService implements ICurriculumService {
         query
           .innerJoin(Courses, eq(Courses.id, CourseCurriculums.course_id))
           .orderBy(orderFn(orderColumn))
-          .limit(PAGE_SIZE)
-          .offset((page - 1) * PAGE_SIZE),
       where: () =>
         and(
           searchConditions,
