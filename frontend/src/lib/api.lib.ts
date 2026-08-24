@@ -24,7 +24,7 @@ apiClient.interceptors.response.use(
     if (newToken) {
       const tokenValue = newToken.replace(/^bearer\s+/i, "");
       localStorage.setItem("access_token", tokenValue);
-      apiClient.defaults.headers.common["Authorization"] = `bearer ${tokenValue}`;
+      apiClient.defaults.headers.common["Authorization"] = tokenValue;
     }
 
     return response;
