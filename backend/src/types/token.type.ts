@@ -36,7 +36,6 @@ export const JWTPayloadSchema = z.object({
     created_at: true,
     deleted_at: true,
     updated_at: true,
-    is_verified: true,
   }),
   personalDetails: PersonalDetailsSchema.select.omit({
     created_at: true,

@@ -6,6 +6,7 @@ declare global {
     interface User {
       id: number;
       email: string;
+      is_verified?: boolean;
       personalDetails: PersonalDetailsSelect;
       roles: Array<SystemRole>;
     }
