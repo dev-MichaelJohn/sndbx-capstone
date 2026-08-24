@@ -13,6 +13,8 @@ import env from "@/configs/env.config.js";
 export const createApp = (): Express => {
   const app = express();
 
+  app.set("trust proxy", 1);
+
   // Enable Gzip/Brotli response compression (~70% payload size reduction)
   app.use(compression());
 
