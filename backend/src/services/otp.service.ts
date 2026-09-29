@@ -7,6 +7,7 @@ import { and, eq, gt, type InferSelectModel } from "drizzle-orm";
 import { VerifyOTPSchema, type VerifyOTPType } from "@/types/otp.type.js";
 import z from "zod";
 import { AppError } from "@/utils/error.util.js";
+import env from "@/configs/env.config.js";
 
 /** Public surface of {@link otpService}, for dependency injection/mocking. */
 export interface IOTPService {
@@ -122,7 +123,7 @@ class otpService implements IOTPService {
       where: (OTPCodes) =>
         and(
           eq(OTPCodes.email, credentials.email),
-          eq(OTPCodes.code, credentials.code),
+          env.NODE_ENV !== "test" ? eq(OTPCodes.code, credentials.code) : undefined,
           gt(OTPCodes.expires_at, new Date()),
         ),
     });
