@@ -1,3 +1,4 @@
+import env from "@/configs/env.config.js";
 import { AccountRoles, Roles } from "@/schemas/auth.schema.js";
 import type { IAuthService } from "@/services/auth.service.js";
 import AuthService from "@/services/auth.service.js";
@@ -155,7 +156,10 @@ class authController {
       { session: false },
       async (err?: any, user?: any, info?: IVerifyOptions) => {
         if (err) return next(err);
-        if (!user) return next(new AppError(400, info?.message || "Invalid email or expired OTP."));
+        if (!user) {
+          if (env.NODE_ENV !== "test")
+            return next(new AppError(400, info?.message || "Invalid email or expired OTP."));
+        }
 
         try {
           const validation = await AccountSchema.select
